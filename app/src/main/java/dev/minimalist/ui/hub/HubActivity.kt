@@ -437,8 +437,6 @@ internal fun HubPageListFrame(
     backLabel: String = t("‹ Hub"),
     trailing: @Composable (() -> Unit)? = null,
     footer: @Composable (() -> Unit)? = null,
-    /** Applied to the list itself, for gestures that belong to the body rather than the page. */
-    bodyModifier: Modifier = Modifier,
     content: LazyListScope.() -> Unit,
 ) {
     val scroll = key(scrollKey) { rememberLazyListState() }
@@ -451,7 +449,7 @@ internal fun HubPageListFrame(
         footer = footer,
     ) { modifier ->
         LazyColumn(
-            modifier = modifier.then(bodyModifier),
+            modifier = modifier,
             state = scroll,
             contentPadding = PaddingValues(top = 20.dp),
             content = content,
@@ -460,17 +458,19 @@ internal fun HubPageListFrame(
 }
 
 /**
- * The chrome both frames share: the way back, the title, and the footer. [body] is handed the
- * modifier for the scrolling middle so it can be either a column or a lazy list.
+ * The frame with nothing in the middle: the way back, the title, and the footer, around whatever
+ * [body] makes of the space between them. [body] is handed the modifier for that space, so a page
+ * whose middle is neither a column nor a list — one that pages sideways, say — can still be a
+ * page of the hub.
  */
 @Composable
-private fun HubPageChrome(
+internal fun HubPageChrome(
     title: String,
     onBack: () -> Unit,
-    subtitle: String?,
-    backLabel: String,
-    trailing: @Composable (() -> Unit)?,
-    footer: @Composable (() -> Unit)?,
+    subtitle: String? = null,
+    backLabel: String = t("‹ Hub"),
+    trailing: @Composable (() -> Unit)? = null,
+    footer: @Composable (() -> Unit)? = null,
     body: @Composable (Modifier) -> Unit,
 ) {
     Column(
