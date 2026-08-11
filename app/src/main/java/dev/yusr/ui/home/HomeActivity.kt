@@ -76,6 +76,7 @@ import dev.yusr.domain.PrayerWindow
 import dev.yusr.service.GuardService
 import dev.yusr.ui.AppLauncher
 import dev.yusr.ui.Hairline
+import dev.yusr.ui.PauseRing
 import dev.yusr.ui.hub.HubActivity
 import dev.yusr.ui.hub.HubScreen
 import dev.yusr.ui.noRippleClickable
@@ -336,13 +337,22 @@ private fun HomeScreen(
             val window = activeWindow
             if (window != null) {
                 // Nothing to tap during salah. That is the whole point of the window, and a list
-                // of names that all refuse is worse than no list.
-                Text(
-                    text = window.label,
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(top = 16.dp),
-                )
+                // of names that all refuse is worse than no list. What there is instead is the
+                // name of the prayer and how much of the stop is left, which is the one question
+                // a closed phone in your hand raises.
+                Column(modifier = Modifier.padding(top = 16.dp)) {
+                    Text(
+                        text = prayerName(window),
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                    PauseRing(
+                        window = window,
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(top = 24.dp),
+                    )
+                }
             } else {
                 FavoriteList(
                     favorites = favorites,
@@ -721,6 +731,19 @@ internal fun prayerName(entry: PrayerEntry): String = when {
     entry.prayer == Prayer.DHUHR -> t("Dhuhr & ʿasr")
     entry.prayer == Prayer.MAGHRIB -> t("Maghrib & ʿishāʾ")
     else -> t(prayerName(entry.prayer))
+}
+
+/**
+ * The same, for a window the phone has actually stopped for.
+ *
+ * [PrayerWindow.label] builds one out of the enum's own spelling, which is English wherever it is
+ * printed — so the block screen headed an Arabic phone with "maghrib and isha" until this existed.
+ */
+internal fun prayerName(window: PrayerWindow): String = when {
+    window.through == null -> prayerName(window.prayer)
+    window.prayer == Prayer.DHUHR -> t("Dhuhr & ʿasr")
+    window.prayer == Prayer.MAGHRIB -> t("Maghrib & ʿishāʾ")
+    else -> prayerName(window.prayer)
 }
 
 /** t("Fajr"), t("ʿAsr"), t("ʿIshāʾ") — set the way they are said, not the way the enum spells them. */

@@ -27,17 +27,18 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.yusr.container
 import dev.yusr.domain.PrayerWindow
-import dev.yusr.domain.PrayerWindows
 import dev.yusr.domain.RefusalReason
 import dev.yusr.ui.t
 import dev.yusr.ui.AppLauncher
-import dev.yusr.util.DayClock
+import dev.yusr.ui.PauseRing
+import dev.yusr.ui.home.prayerName
 import dev.yusr.ui.YusrButton
 import androidx.compose.ui.draw.clip
 import dev.yusr.ui.theme.Faint
@@ -130,7 +131,9 @@ private fun BlockScreen(
     val headline = when {
         sessionOver -> t("time is up")
         reason == RefusalReason.PERMANENTLY_BLOCKED -> t("blocked")
-        reason == RefusalReason.PRAYER -> prayerWindow?.label ?: t("salah")
+        // Named in the language being read. The window's own label is built from the enum, which
+        // spells "maghrib and isha" in English on a phone that has been Arabic all day.
+        reason == RefusalReason.PRAYER -> prayerWindow?.let { prayerName(it) } ?: t("salah")
         reason == RefusalReason.BLACKOUT -> t("not right now")
         reason == RefusalReason.DAILY_OPENS_SPENT -> t("that was the last one")
         else -> t("budget spent")
@@ -140,17 +143,9 @@ private fun BlockScreen(
         sessionOver -> t("your session on %s has ended.", label.lowercase(Locale.getDefault()))
         reason == RefusalReason.PERMANENTLY_BLOCKED ->
             t("%s is blocked outright. no countdown will open it.", label.lowercase(Locale.getDefault()))
-        reason == RefusalReason.PRAYER -> {
-            val remaining = prayerWindow?.let { window ->
-                val local = DayClock.localDateTime(System.currentTimeMillis())
-                PrayerWindows.minutesUntilEnd(window, local.hour * 60 + local.minute)
-            }
-            if (remaining != null) {
-                t("the phone is closed for salah. it opens again in %s.", DayClock.formatMinutes(remaining))
-            } else {
-                t("the phone is closed for salah.")
-            }
-        }
+        // No "it opens again in 14m" here: that number is a countdown, it was printed once and
+        // then sat still while the minute it named went by, and it now runs in the ring below.
+        reason == RefusalReason.PRAYER -> t("the phone is closed for salah.")
         reason == RefusalReason.BLACKOUT ->
             t("a blackout window is in force. only favourites open until it ends.")
         reason == RefusalReason.DAILY_OPENS_SPENT ->
@@ -180,6 +175,15 @@ private fun BlockScreen(
             color = Faint,
             modifier = Modifier.padding(top = 16.dp),
         )
+
+        prayerWindow?.let { window ->
+            PauseRing(
+                window = window,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 28.dp),
+            )
+        }
 
         Text(
             text = if (reason == RefusalReason.PRAYER) {

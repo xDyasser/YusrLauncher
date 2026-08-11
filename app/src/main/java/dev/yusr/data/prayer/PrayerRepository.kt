@@ -8,6 +8,7 @@ import dev.yusr.data.settings.SettingsStore
 import dev.yusr.domain.AsrMethod
 import dev.yusr.domain.Fadila
 import dev.yusr.domain.Hijri
+import dev.yusr.domain.Madhab
 import dev.yusr.domain.NextPrayer
 import dev.yusr.domain.Night
 import dev.yusr.domain.NightTimes
@@ -37,6 +38,11 @@ data class PrayerToday(
     /** The prayer whose time is in, which is the one the faḍīla countdown is about. */
     val current: Prayer,
     val fadilaEnds: Map<Prayer, Int>,
+    /**
+     * Where a preferred time begins when that is not the prayer's own entry above — ʿaṣr under
+     * the Shīʿī schools, whose faḍīla is counted from zawāl. Empty everywhere else.
+     */
+    val fadilaStarts: Map<Prayer, Int> = emptyMap(),
     /** Sharʿī midnight and the last third, for the screens that print the night as well as the day. */
     val night: NightTimes,
     /**
@@ -48,7 +54,7 @@ data class PrayerToday(
 ) {
     /** How long is left of the current prayer's preferred time, or null if that has passed. */
     val fadilaRemaining: Int?
-        get() = Fadila.remaining(fadilaEnds, timetable, current, minuteOfDay)
+        get() = Fadila.remaining(fadilaEnds, timetable, current, minuteOfDay, fadilaStarts)
 
     fun endOfFadila(prayer: Prayer): Int? = fadilaEnds[prayer]
 }
@@ -181,6 +187,7 @@ class PrayerRepository(
         val minuteOfDay = local.hour * 60 + local.minute
         val timetable = timetable(settings, date)
 
+        val branch = settings.effectiveMadhab.branch
         val fadila = if (settings.showFadila) {
             // The one-shadow asr is what closes dhuhr's preferred time whatever the user's own
             // asr rule is, so it is computed on its own terms rather than read off the timetable.
@@ -195,6 +202,20 @@ class PrayerRepository(
                 ),
             ).minuteOfDay(Prayer.ASR)
 
+            // Only the Shīʿī reckoning measures the aqdām, and the solver is not run twice for
+            // boundaries nobody on this phone is going to be shown.
+            fun shadow(factor: Double): Int? = if (branch == Madhab.Branch.SHIA) {
+                PrayerTimes.shadowIncrease(
+                    date = date,
+                    latitude = settings.latitude,
+                    longitude = settings.longitude,
+                    utcOffsetMinutes = utcOffsetMinutes(date),
+                    factor = factor,
+                )
+            } else {
+                null
+            }
+
             Fadila.ends(
                 timetable = timetable,
                 standardAsrMinuteOfDay = standardAsr,
@@ -205,6 +226,9 @@ class PrayerRepository(
                     utcOffsetMinutes = utcOffsetMinutes(date),
                     angle = Fadila.SHAFAQ_ANGLE,
                 ),
+                branch = branch,
+                qadamayniMinuteOfDay = shadow(Fadila.DHUHR_AQDAM_SHADOW),
+                aqdamAsrMinuteOfDay = shadow(Fadila.ASR_AQDAM_SHADOW),
             )
         } else {
             emptyMap()
@@ -217,6 +241,7 @@ class PrayerRepository(
             next = PrayerTimes.next(timetable, minuteOfDay),
             current = PrayerTimes.current(timetable, minuteOfDay),
             fadilaEnds = fadila,
+            fadilaStarts = if (fadila.isEmpty()) emptyMap() else Fadila.starts(timetable, branch),
             night = Night.of(timetable),
             entries = timetable.entries(
                 combineDhuhrAsr = settings.combineDhuhrAsr,
