@@ -40,10 +40,28 @@ class PrayerWindowsTest {
         val dhuhr = windows[1]
         assertEquals(Prayer.DHUHR, dhuhr.prayer)
         assertEquals(Prayer.ASR, dhuhr.through)
-        // One span from dhuhr through the end of asr, rather than two with a gap between.
         assertEquals(at(12, 22), dhuhr.startMinuteOfDay)
-        assertEquals(at(16, 1), dhuhr.endMinuteOfDay)
+        assertEquals(at(12, 42), dhuhr.endMinuteOfDay)
         assertEquals("dhuhr and asr", dhuhr.label)
+    }
+
+    /**
+     * The bug this replaced: the joined window ran to the second prayer's own adhan, so choosing
+     * to pray the pair together — two stops a day instead of four — bought a phone that was shut
+     * for three and a half hours of the afternoon.
+     */
+    @Test
+    fun `a joined pair pauses for as long as a single prayer, not until the second adhan`() {
+        val config = PrayerWindowConfig(minutesBefore = 5, minutesAfter = 20)
+        val single = PrayerWindows.windowsFor(timetable, config)
+            .first { it.prayer == Prayer.MAGHRIB }
+        val joined = PrayerWindows.windowsFor(timetable, config.copy(combineMaghribIsha = true))
+            .first { it.prayer == Prayer.MAGHRIB }
+
+        assertEquals(single.startMinuteOfDay, joined.startMinuteOfDay)
+        assertEquals(single.endMinuteOfDay, joined.endMinuteOfDay)
+        // And the phone is open again long before isha's own time at 20:34.
+        assertFalse(PrayerWindows.isActive(joined, at(20, 34)))
     }
 
     @Test
@@ -77,6 +95,20 @@ class PrayerWindowsTest {
         assertTrue(PrayerWindows.isActive(isha, at(23, 55)))
         assertTrue(PrayerWindows.isActive(isha, at(0, 10)))
         assertFalse(PrayerWindows.isActive(isha, at(0, 20)))
+    }
+
+    /** What the ring on the block screen is a fraction of, so it has to survive midnight too. */
+    @Test
+    fun `a window knows how long it is on both sides of midnight`() {
+        val config = PrayerWindowConfig(minutesBefore = 5, minutesAfter = 25)
+        assertEquals(
+            30,
+            PrayerWindows.windowsFor(timetable, config).first { it.prayer == Prayer.FAJR }.lengthMinutes,
+        )
+        val late = PrayerTimetable(timetable.minutes + (Prayer.ISHA to at(23, 50)))
+        val isha = PrayerWindows.windowsFor(late, config).first { it.prayer == Prayer.ISHA }
+        assertTrue(isha.spansMidnight)
+        assertEquals(30, isha.lengthMinutes)
     }
 
     @Test

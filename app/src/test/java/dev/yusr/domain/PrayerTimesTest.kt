@@ -219,4 +219,36 @@ class PrayerTimesTest {
 
         assertTrue(fajrUnder(HighLatitudeRule.SEVENTH_OF_NIGHT) > fajrUnder(HighLatitudeRule.MIDDLE_OF_NIGHT))
     }
+
+    // ---- shadows ---------------------------------------------------------------------------
+
+    /**
+     * The shadow solver is only ever asked for fractions of a length — the aqdām of the Shīʿī
+     * faḍīla — so it is pinned against the one shadow the timetable itself already computes.
+     */
+    @Test
+    fun `a shadow grown by one length is the standard asr`() {
+        val date = LocalDate.of(2026, 6, 15)
+        val asr = PrayerTimes.compute(
+            date, 21.4225, 39.8262, 180,
+            PrayerConfig(method = CalculationMethod.UMM_AL_QURA, asr = AsrMethod.STANDARD),
+        ).minuteOfDay(Prayer.ASR)
+
+        val shadow = PrayerTimes.shadowIncrease(date, 21.4225, 39.8262, 180, factor = 1.0)
+        assertNear(asr, shadow!!, 1, "one shadow")
+    }
+
+    /** A shorter shadow is an earlier moment, and every aqdām boundary is inside the afternoon. */
+    @Test
+    fun `four aqdam fall between dhuhr and the standard asr`() {
+        val date = LocalDate.of(2026, 6, 15)
+        val times = PrayerTimes.compute(
+            date, 21.4225, 39.8262, 180,
+            PrayerConfig(method = CalculationMethod.JAFARI, asr = AsrMethod.STANDARD),
+        )
+        val aqdam = PrayerTimes.shadowIncrease(date, 21.4225, 39.8262, 180, factor = 4.0 / 7.0)!!
+
+        assertTrue("$aqdam should follow dhuhr", aqdam > times.minuteOfDay(Prayer.DHUHR))
+        assertTrue("$aqdam should precede asr", aqdam < times.minuteOfDay(Prayer.ASR))
+    }
 }

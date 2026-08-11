@@ -247,6 +247,34 @@ object PrayerTimes {
         return normaliseMinuteOfDay((hours * 60.0).roundToInt())
     }
 
+    /**
+     * The moment a gnomon's shadow has grown by [factor] times its own length, as minutes past
+     * local midnight, or null on a day the sun never gets that low.
+     *
+     * The timetable needs one of these — asr, at a factor of one or two — but the Jaʿfarī faḍīla
+     * boundaries are the same geometry at fractions of it: the *aqdām*, measured in feet of a
+     * seven-foot man, put the preferred time of ẓuhr at two of them and of ʿaṣr at four, which is
+     * a shadow grown by 2/7 and 4/7. Nothing else in the app measures a shadow, so this is the
+     * only door out to it.
+     */
+    fun shadowIncrease(
+        date: LocalDate,
+        latitude: Double,
+        longitude: Double,
+        utcOffsetMinutes: Int,
+        factor: Double,
+    ): Int? {
+        val jDate = julianDay(date) - longitude / (15.0 * 24.0)
+        var guess = 13.0 / 24.0
+        repeat(2) {
+            guess = asrTime(jDate, latitude, factor, guess)
+            if (guess.isNaN()) return null
+        }
+        val hours = guess * 24.0 + utcOffsetMinutes / 60.0 - longitude / 15.0
+        if (hours.isNaN()) return null
+        return normaliseMinuteOfDay((hours * 60.0).roundToInt())
+    }
+
     // ---- the arithmetic ------------------------------------------------------------------
 
     /**

@@ -445,8 +445,7 @@ private val GATE_AND_BLOCK = mapOf(
     "go and pray. that is the whole idea." to "قُم فصلِّ. هذا كل المقصود.",
     "it resets tomorrow. that is the whole idea." to "يعود غدًا. هذا كل المقصود.",
     "the phone is closed for salah." to "الهاتف مغلق للصلاة.",
-    "the phone is closed for salah. it opens again in %s." to
-        "الهاتف مغلق للصلاة. يُفتح بعد %s.",
+    "until it opens" to "حتى يُفتح",
     "a blackout window is in force. only favourites open until it ends." to
         "نافذة إظلام سارية. لا يُفتح إلا المفضّل حتى تنتهي.",
     "your session on %s has ended." to "انتهت جلستك في %s.",

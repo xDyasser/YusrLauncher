@@ -159,6 +159,15 @@ class GuardService : LifecycleService() {
             return true
         }
 
+        // A spent bypass is not re-argued. The refusal it was spent on — the prayer window, the
+        // blackout, the exhausted budget — is still in force a second later and will be in force
+        // for the whole session, so re-deciding here closed the app on the very next tick: a few
+        // seconds of the app, for one of three bypasses a week. The grant is the decision, and it
+        // ends the only way it should, at [SessionGovernor.isExpiredFor] above.
+        val bypassed = SessionGovernor.grant?.wasBypass == true &&
+            SessionGovernor.isGrantedFor(packageName, now)
+        if (bypassed) return true
+
         // Re-evaluate mid-session: a budget can run out, or a blackout can begin, while you sit
         // inside the app. A prayer window is checked whatever the app is, because unlike the
         // other limits it closes favourites too — being already inside one is exactly the case
