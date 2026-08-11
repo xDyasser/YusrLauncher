@@ -58,7 +58,10 @@ fun PauseRing(window: PrayerWindow, modifier: Modifier = Modifier) {
     val total = (window.lengthMinutes * 60L).coerceAtLeast(1L)
     val left = (secondsLeft.toFloat() / total).coerceIn(0f, 1f)
 
+    // Both colours are read here rather than in the draw lambda: these are composable getters,
+    // and a draw scope is not a composition.
     val remaining = MaterialTheme.colorScheme.primary
+    val track = Fainter
 
     Box(modifier = modifier.size(DIAMETER), contentAlignment = Alignment.Center) {
         Canvas(modifier = Modifier.size(DIAMETER)) {
@@ -66,7 +69,7 @@ fun PauseRing(window: PrayerWindow, modifier: Modifier = Modifier) {
             val inset = stroke.width / 2f
             val arc = Size(size.width - stroke.width, size.height - stroke.width)
             drawArc(
-                color = Fainter,
+                color = track,
                 startAngle = 0f,
                 sweepAngle = 360f,
                 useCenter = false,
