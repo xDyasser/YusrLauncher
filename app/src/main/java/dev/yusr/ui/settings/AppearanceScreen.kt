@@ -61,6 +61,7 @@ fun AppearanceScreen() {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
     val navServiceOn = remember(refresh) { Permissions.navServiceEnabled(context) }
+    val gestures = remember(refresh) { Permissions.gestureNavigation(context) }
 
     YusrPage(title = t("Appearance and navigation")) {
         Text(text = t("LANGUAGE"), style = MaterialTheme.typography.labelSmall, color = Faint)
@@ -142,13 +143,41 @@ fun AppearanceScreen() {
                 color = Faint,
                 modifier = Modifier.padding(top = 8.dp),
             )
-            Text(
-                text = t("if your phone is set to gesture navigation and it feels wrong here, it ") +
-                    t("is the system setting that decides it: Settings → System → Navigation mode."),
-                style = MaterialTheme.typography.bodyMedium,
-                color = Faint,
-                modifier = Modifier.padding(top = 12.dp),
-            )
+            // Which mode the phone is actually in, said plainly, because "it is a system setting"
+            // is only half an answer to someone looking at three buttons and wondering whether
+            // the launcher put them there. The setup checklist asks for the gestures once; here
+            // the line reports and offers the way over, and says nothing on a phone that will not
+            // tell us which mode it is in.
+            when (gestures) {
+                true -> Text(
+                    text = t("your phone is on gesture navigation, which is what this was built for."),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Faint,
+                    modifier = Modifier.padding(top = 12.dp),
+                )
+                false -> {
+                    Text(
+                        text = t("your phone is on the three buttons. gestures give that strip back ") +
+                            t("to the screen — it is a system setting, not something set here: ") +
+                            t("Settings → System → Navigation mode."),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Faint,
+                        modifier = Modifier.padding(top = 12.dp),
+                    )
+                    YusrButton(
+                        label = t("open navigation settings"),
+                        modifier = Modifier.padding(top = 12.dp),
+                    ) {
+                        runCatching {
+                            context.startActivity(
+                                Permissions.navigationModeSettings(context)
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                            )
+                        }
+                    }
+                }
+                null -> Unit
+            }
 
             Text(
                 text = t("A STRIP OF OUR OWN · OFF"),

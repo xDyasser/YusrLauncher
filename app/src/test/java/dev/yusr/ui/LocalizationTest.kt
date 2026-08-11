@@ -1,5 +1,6 @@
 package dev.yusr.ui
 
+import dev.yusr.data.quran.Reciters
 import dev.yusr.domain.AppTier
 import dev.yusr.domain.CalculationMethod
 import dev.yusr.util.DayClock
@@ -72,6 +73,29 @@ class LocalizationTest {
         Locale.setDefault(Locale.ENGLISH)
         assertEquals("favourite", tierName(AppTier.FAVORITE))
         assertEquals("fav", tierPill(AppTier.FAVORITE))
+    }
+
+    /**
+     * The reciters are the one list of names in the app that is data rather than wording, so the
+     * table cannot catch anything about them: a reciter added with the Arabic name left off would
+     * print a Latin name in the middle of an Arabic list, or an empty row, and nothing else in
+     * the app would fail.
+     */
+    @Test
+    fun `every reciter is named in the language being read`() {
+        Locale.setDefault(Locale.forLanguageTag("ar"))
+        Reciters.ALL.forEach { reciter ->
+            assertTrue(
+                "no Arabic name: ${reciter.id}",
+                reciter.arabicName.any { it in '\u0600'..'\u06FF' },
+            )
+            assertEquals(reciter.arabicName, reciterName(reciter))
+        }
+        Locale.setDefault(Locale.ENGLISH)
+        Reciters.ALL.forEach { reciter ->
+            assertTrue("no name: ${reciter.id}", reciter.name.isNotBlank())
+            assertEquals(reciter.name, reciterName(reciter))
+        }
     }
 
     /**
