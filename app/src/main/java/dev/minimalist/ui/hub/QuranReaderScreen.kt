@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -297,16 +298,27 @@ private fun Reader(
         // them except al-Fātiḥa — where it is the first, and so already in the list below.
         // Everywhere else it is printed here, once; the stored text of ayah 1 no longer
         // carries it, so there is no chance of reading it twice.
-        if (Basmala.headingBelongsAbove(surah, ayah = 1)) {
-            item(key = "basmala") {
-                Text(
-                    text = Basmala.ARABIC,
-                    style = QuranStyle,
-                    color = Faint,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 18.dp),
-                )
-            }
+        //
+        // Where it does not belong, the room it would take is left empty rather than closed up.
+        // The same line of the same text, in no colour at all, is the only way to be sure the
+        // space is exactly the space — so the first ayah of al-Tawba begins where the first ayah
+        // of every other sūrah begins, and turning between them does not shift the page under
+        // the eye.
+        item(key = "basmala") {
+            val heads = Basmala.headingBelongsAbove(surah, ayah = 1)
+            Text(
+                text = Basmala.ARABIC,
+                style = QuranStyle,
+                color = if (heads) Faint else Color.Transparent,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    // Invisible is not absent: a sūrah with no basmala must not have one read out
+                    // over it, so where the line is only holding the space it is taken out of the
+                    // screen reader's hands entirely.
+                    .then(if (heads) Modifier else Modifier.clearAndSetSemantics { })
+                    .padding(bottom = 18.dp),
+            )
         }
 
         items(ayat, key = { it.ayah }) { ayah ->
