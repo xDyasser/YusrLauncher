@@ -3,10 +3,10 @@
 ## 1. Install
 
 Download the APK from the latest CI run — **Actions → Build APK → artifacts →
-`minimalist-debug-apk`** — unzip it, and copy `app-debug.apk` to the phone. Open it and allow
+`yusr-debug-apk`** — unzip it, and copy `app-debug.apk` to the phone. Open it and allow
 installing from that source when prompted.
 
-Every build is signed with the same key (`app/minimalist.keystore`, checked in), so a newer APK
+Every build is signed with the same key (`app/yusr.keystore`, checked in), so a newer APK
 installs straight over the one already on the phone and your rules, timetable and settings stay
 where they are. If you are coming from a build made before that key existed, that one upgrade
 still needs an uninstall first — after it, upgrades are ordinary. The app is also included in
@@ -299,10 +299,10 @@ Requirements:
   options → USB debugging).
 
 ```
-adb shell dpm set-device-owner dev.minimalist/.admin.MinimalAdminReceiver
+adb shell dpm set-device-owner dev.yusr/.admin.YusrAdminReceiver
 ```
 
-Expected output: `Success: Device owner set to package dev.minimalist`.
+Expected output: `Success: Device owner set to package dev.yusr`.
 
 If it fails with "Not allowed to set the device owner because there are already several users on
 the device", an account exists — remove every account, or factory reset, and try again.
@@ -312,7 +312,7 @@ the device", an account exists — remove every account, or factory reset, and t
 There are exactly two ways out:
 
 ```
-adb shell dpm remove-active-admin dev.minimalist/.admin.MinimalAdminReceiver
+adb shell dpm remove-active-admin dev.yusr/.admin.YusrAdminReceiver
 ```
 
 or a factory reset. There is no in-app button for this, on purpose. Do not set device owner on a

@@ -63,7 +63,7 @@ jobs:
       - name: Upload signed release APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: minimalist-release-apk
+          name: yusr-release-apk
           path: ${{ steps.sign_app.outputs.signedReleaseFile }}
           if-no-files-found: error
 

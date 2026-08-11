@@ -134,10 +134,10 @@ settings that keep it alive, and how to remove it.
 
 ## Building
 
-CI builds a debug APK on every push: **Actions → Build APK → `minimalist-debug-apk`**. Download,
+CI builds a debug APK on every push: **Actions → Build APK → `yusr-debug-apk`**. Download,
 unzip, sideload.
 
-Every build — local or CI — is signed with the key checked in at `app/minimalist.keystore`, so a
+Every build — local or CI — is signed with the key checked in at `app/yusr.keystore`, so a
 new version installs over the old one instead of asking you to uninstall first. It guards
 nothing: the app is never published, and the password is in `app/build.gradle.kts` beside it.
 Settings and rules are also included in Android's backup, so a genuine reinstall or a move to a

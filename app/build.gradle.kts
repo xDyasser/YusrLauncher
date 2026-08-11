@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "dev.minimalist"
+    namespace = "dev.yusr"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "dev.minimalist"
+        applicationId = "dev.yusr"
         minSdk = 33
         targetSdk = 35
         versionCode = 2
@@ -27,22 +27,22 @@ android {
      * never published, and the password is in the file below.
      */
     signingConfigs {
-        create("minimalist") {
-            storeFile = file("minimalist.keystore")
-            storePassword = "minimalist"
-            keyAlias = "minimalist"
-            keyPassword = "minimalist"
+        create("yusr") {
+            storeFile = file("yusr.keystore")
+            storePassword = "yusrlauncher"
+            keyAlias = "yusr"
+            keyPassword = "yusrlauncher"
         }
     }
 
     buildTypes {
         debug {
-            signingConfig = signingConfigs.getByName("minimalist")
+            signingConfig = signingConfigs.getByName("yusr")
         }
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("minimalist")
+            signingConfig = signingConfigs.getByName("yusr")
         }
     }
 

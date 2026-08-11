@@ -2,7 +2,7 @@
 <resources>
     <!-- Light is the default; values-night/themes.xml holds the dark twin. Compose paints the
          real screen, but this decides the colour of the window before the first frame lands. -->
-    <style name="Theme.Minimalist" parent="@android:style/Theme.Material.Light.NoActionBar">
+    <style name="Theme.Yusr" parent="@android:style/Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/paper</item>
         <item name="android:statusBarColor">@color/paper</item>
         <item name="android:navigationBarColor">@color/paper</item>

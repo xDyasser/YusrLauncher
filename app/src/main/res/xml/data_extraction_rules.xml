@@ -10,12 +10,12 @@
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <include domain="database" path="minimalist.db" />
+        <include domain="database" path="yusr.db" />
         <include domain="sharedpref" path="." />
         <include domain="file" path="datastore" />
     </cloud-backup>
     <device-transfer>
-        <include domain="database" path="minimalist.db" />
+        <include domain="database" path="yusr.db" />
         <include domain="sharedpref" path="." />
         <include domain="file" path="datastore" />
     </device-transfer>

@@ -37,13 +37,13 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
-        android:name=".MinimalistApp"
+        android:name=".YusrApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Minimalist">
+        android:theme="@style/Theme.Yusr">
 
         <!-- The home screen. -->
         <activity
@@ -53,7 +53,7 @@
             android:stateNotNeeded="true"
             android:excludeFromRecents="true"
             android:windowSoftInputMode="adjustResize"
-            android:theme="@style/Theme.Minimalist">
+            android:theme="@style/Theme.Yusr">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.HOME" />
@@ -110,7 +110,7 @@
         </service>
 
         <service
-            android:name=".service.MinimalNotificationListener"
+            android:name=".service.YusrNotificationListener"
             android:exported="true"
             android:label="@string/notification_listener_label"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
@@ -134,7 +134,7 @@
         </service>
 
         <receiver
-            android:name=".admin.MinimalAdminReceiver"
+            android:name=".admin.YusrAdminReceiver"
             android:exported="true"
             android:permission="android.permission.BIND_DEVICE_ADMIN">
             <meta-data
