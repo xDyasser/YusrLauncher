@@ -16,9 +16,13 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -403,6 +407,72 @@ internal fun HubPageFrame(
     content: @Composable () -> Unit,
 ) {
     val scroll = key(scrollKey) { rememberScrollState() }
+    HubPageChrome(
+        title = title,
+        onBack = onBack,
+        subtitle = subtitle,
+        backLabel = backLabel,
+        trailing = trailing,
+        footer = footer,
+    ) { modifier ->
+        Column(modifier = modifier.verticalScroll(scroll).padding(top = 20.dp)) {
+            content()
+        }
+    }
+}
+
+/**
+ * The same frame, over a list that composes only what is on the screen.
+ *
+ * A page whose body is a few dozen rows can be laid out in one go; a page whose body is the two
+ * hundred and eighty-six āyāt of al-Baqara cannot, and measuring all of them at once is a visible
+ * stall on the frame that swaps one sūrah for the next. Pages that long take this frame instead.
+ */
+@Composable
+internal fun HubPageListFrame(
+    title: String,
+    onBack: () -> Unit,
+    subtitle: String? = null,
+    scrollKey: Any? = null,
+    backLabel: String = t("‹ Hub"),
+    trailing: @Composable (() -> Unit)? = null,
+    footer: @Composable (() -> Unit)? = null,
+    content: LazyListScope.() -> Unit,
+) {
+    val scroll = key(scrollKey) { rememberLazyListState() }
+    HubPageChrome(
+        title = title,
+        onBack = onBack,
+        subtitle = subtitle,
+        backLabel = backLabel,
+        trailing = trailing,
+        footer = footer,
+    ) { modifier ->
+        LazyColumn(
+            modifier = modifier,
+            state = scroll,
+            contentPadding = PaddingValues(top = 20.dp),
+            content = content,
+        )
+    }
+}
+
+/**
+ * The frame with nothing in the middle: the way back, the title, and the footer, around whatever
+ * [body] makes of the space between them. [body] is handed the modifier for that space, so a page
+ * whose middle is neither a column nor a list — one that pages sideways, say — can still be a
+ * page of the hub.
+ */
+@Composable
+internal fun HubPageChrome(
+    title: String,
+    onBack: () -> Unit,
+    subtitle: String? = null,
+    backLabel: String = t("‹ Hub"),
+    trailing: @Composable (() -> Unit)? = null,
+    footer: @Composable (() -> Unit)? = null,
+    body: @Composable (Modifier) -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -439,11 +509,7 @@ internal fun HubPageFrame(
             trailing?.invoke()
         }
 
-        Column(
-            modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(scroll).padding(top = 20.dp),
-        ) {
-            content()
-        }
+        body(Modifier.fillMaxWidth().weight(1f))
 
         if (footer != null) {
             Hairline()
