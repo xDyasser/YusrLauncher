@@ -152,6 +152,17 @@ data class AppSettings(
     /** When the last digest actually went out, so a missed slot is not skipped silently. */
     val lastDigestDeliveredAt: Long = 0L,
     val onboardingComplete: Boolean = false,
+    /**
+     * Whether the setup checklist has ever been put in front of the user of its own accord.
+     *
+     * Separate from [onboardingComplete], and the reason is the difference between "not finished"
+     * and "not seen". The home screen opens the checklist once, on the first launch after
+     * install, because none of the permissions this app needs can be granted by the app and the
+     * screen that asks for them is behind a gesture nobody has been taught yet. Once shown it is
+     * never forced again — someone who chose to leave setup half done chose that, and a launcher
+     * that reopened the same screen on every unlock would be one they could not use.
+     */
+    val setupPrompted: Boolean = false,
     val catalogSeeded: Boolean = false,
     /** Whether the browsers have been given the handoff exemption once, on an existing install. */
     val handoffSeeded: Boolean = false,
@@ -198,6 +209,7 @@ class SettingsStore(private val context: Context) {
         val LAST_DIGEST = longPreferencesKey("last_digest_delivered_at")
         val SUPPRESS = booleanPreferencesKey("suppress_notifications")
         val ONBOARDED = booleanPreferencesKey("onboarding_complete")
+        val SETUP_PROMPTED = booleanPreferencesKey("setup_prompted")
         val SEEDED = booleanPreferencesKey("catalog_seeded")
         val HANDOFF_SEEDED = booleanPreferencesKey("handoff_seeded")
         val THEME = stringPreferencesKey("theme_mode")
@@ -251,6 +263,11 @@ class SettingsStore(private val context: Context) {
             suppressNotifications = prefs[Keys.SUPPRESS] ?: defaults.suppressNotifications,
             lastDigestDeliveredAt = prefs[Keys.LAST_DIGEST] ?: defaults.lastDigestDeliveredAt,
             onboardingComplete = prefs[Keys.ONBOARDED] ?: defaults.onboardingComplete,
+            // An install from before this key existed has already been through setup by hand, so
+            // it is treated as prompted rather than shown the checklist on the next unlock.
+            setupPrompted = prefs[Keys.SETUP_PROMPTED]
+                ?: prefs[Keys.ONBOARDED]
+                ?: defaults.setupPrompted,
             catalogSeeded = prefs[Keys.SEEDED] ?: defaults.catalogSeeded,
             handoffSeeded = prefs[Keys.HANDOFF_SEEDED] ?: defaults.handoffSeeded,
             themeMode = prefs[Keys.THEME]?.let { stored ->
@@ -326,6 +343,8 @@ class SettingsStore(private val context: Context) {
     }
 
     suspend fun setOnboardingComplete(complete: Boolean) = putBoolean(Keys.ONBOARDED, complete)
+
+    suspend fun setSetupPrompted(prompted: Boolean) = putBoolean(Keys.SETUP_PROMPTED, prompted)
 
     suspend fun setCatalogSeeded(seeded: Boolean) = putBoolean(Keys.SEEDED, seeded)
 

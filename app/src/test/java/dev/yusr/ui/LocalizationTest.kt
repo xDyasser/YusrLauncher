@@ -1,6 +1,7 @@
 package dev.yusr.ui
 
 import dev.yusr.domain.AppTier
+import dev.yusr.domain.CalculationMethod
 import dev.yusr.util.DayClock
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -88,6 +89,65 @@ class LocalizationTest {
         assertEquals("45 د", DayClock.formatMinutes(45))
         assertEquals("2 س", DayClock.formatMinutes(120))
         assertEquals("2 س 30 د", DayClock.formatMinutes(150))
+    }
+
+    /**
+     * The pill and the word sit on the same screen — the row you tap, and the line under the app's
+     * name — so in English the short one has to be the long one cut short rather than a second
+     * vocabulary for the same four things.
+     */
+    @Test
+    fun `the english pill is the english word cut short`() {
+        Locale.setDefault(Locale.ENGLISH)
+        AppTier.entries.forEach { tier ->
+            assertTrue(
+                "pill ${tierPill(tier)} is not the start of ${tierName(tier)}",
+                tierName(tier).startsWith(tierPill(tier)),
+            )
+        }
+    }
+
+    /**
+     * The calculation method used to be named four ways, one of them the enum's own constant, and
+     * `UMM_AL_QURA` is that in every language. Both registers are checked in both languages
+     * because the settings row prints one and the madhab screen the other.
+     */
+    @Test
+    fun `every calculation method has a name and a pill in both languages`() {
+        Locale.setDefault(Locale.forLanguageTag("ar"))
+        CalculationMethod.entries.forEach { method ->
+            assertTrue("method name: $method", methodName(method).any { it in '\u0600'..'\u06FF' })
+            assertTrue("method pill: $method", methodPill(method).any { it in '\u0600'..'\u06FF' })
+        }
+        Locale.setDefault(Locale.ENGLISH)
+        assertEquals("Umm al-Qurā", methodName(CalculationMethod.UMM_AL_QURA))
+        assertEquals("makkah", methodPill(CalculationMethod.UMM_AL_QURA))
+    }
+
+    /**
+     * The one that is invisible in English and unmissable in Arabic: `%d` follows the locale and
+     * `%s` does not, so a screen that used both printed two numeral systems side by side — the
+     * countdown flipping from Western to Arabic-Indic as it crossed a minute, a prayer time in one
+     * set of digits beside its offset in the other.
+     */
+    @Test
+    fun `numbers are the same digits whatever the language`() {
+        listOf(Locale.ENGLISH, Locale.forLanguageTag("ar")).forEach { locale ->
+            Locale.setDefault(locale)
+            assertEquals("in $locale", "07:05", DayClock.clock(7 * 60 + 5))
+            assertEquals("in $locale", "23:40", DayClock.clock(23 * 60 + 40))
+            // Either side of the boundary the countdown crosses on its way to zero.
+            assertEquals("in $locale", "1:05", DayClock.formatSeconds(65))
+            assertEquals("in $locale", "1,234", t("%,d", 1234))
+            assertEquals("in $locale", "21.250", t("%.3f", 21.25))
+        }
+    }
+
+    /** Out of range rather than invalid: a midnight past the end of the day is still a time. */
+    @Test
+    fun `a minute of the day outside the day wraps`() {
+        assertEquals("00:30", DayClock.clock(24 * 60 + 30))
+        assertEquals("23:30", DayClock.clock(-30))
     }
 
     @Test

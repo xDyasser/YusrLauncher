@@ -29,7 +29,6 @@ import dev.yusr.domain.Hijri
 import dev.yusr.domain.Prayer
 import dev.yusr.ui.t
 import dev.yusr.ui.Hairline
-import dev.yusr.ui.home.clock
 import dev.yusr.ui.home.prayerName
 import dev.yusr.ui.theme.Dim
 import dev.yusr.ui.theme.Faint
@@ -119,7 +118,7 @@ fun PrayerTimesScreen(onBack: () -> Unit) {
                         // already arrived, and the line would be a small untruth without this.
                         entry.secondMinuteOfDay?.let { second ->
                             Text(
-                                text = t("%s from %s", prayerName(entry.with ?: entry.prayer), clock(second)),
+                                text = t("%s from %s", prayerName(entry.with ?: entry.prayer), DayClock.clock(second)),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Dim,
                             )
@@ -128,7 +127,7 @@ fun PrayerTimesScreen(onBack: () -> Unit) {
                         // is the only line on the screen that is an argument rather than a fact.
                         snapshot.endOfFadila(entry.prayer)?.let { end ->
                             Text(
-                                text = t("faḍīla to %s", clock(end)),
+                                text = t("faḍīla to %s", DayClock.clock(end)),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Dim,
                             )
@@ -145,7 +144,7 @@ fun PrayerTimesScreen(onBack: () -> Unit) {
                         color = if (isNext) Gold else Dim,
                     )
                     Text(
-                        text = clock(minute),
+                        text = DayClock.clock(minute),
                         style = MaterialTheme.typography.bodyLarge,
                         color = if (isNext) MaterialTheme.colorScheme.primary else Faint,
                     )
@@ -177,7 +176,7 @@ private fun Boundary(label: String, minuteOfDay: Int) {
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(text = label, style = MaterialTheme.typography.bodySmall, color = Dim)
-        Text(text = clock(minuteOfDay), style = MaterialTheme.typography.bodySmall, color = Dim)
+        Text(text = DayClock.clock(minuteOfDay), style = MaterialTheme.typography.bodySmall, color = Dim)
     }
 }
 

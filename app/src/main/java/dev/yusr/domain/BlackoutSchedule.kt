@@ -63,12 +63,6 @@ object BlackoutSchedule {
 
     private fun previousDay(dayOfWeek: Int): Int = if (dayOfWeek == 1) 7 else dayOfWeek - 1
 
-    fun formatMinuteOfDay(minuteOfDay: Int): String {
-        val h = (minuteOfDay / 60) % 24
-        val m = minuteOfDay % 60
-        return "%02d:%02d".format(h, m)
-    }
-
     /** Bit 0 = Monday .. bit 6 = Sunday, so a window fits in one Room column. */
     fun daysToMask(days: Set<Int>): Int = days.fold(0) { acc, d -> acc or (1 shl (d - 1)) }
 

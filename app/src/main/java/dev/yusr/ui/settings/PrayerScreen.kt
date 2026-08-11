@@ -32,6 +32,8 @@ import dev.yusr.domain.CalculationMethod
 import dev.yusr.domain.Prayer
 import dev.yusr.domain.PrayerTimetable
 import dev.yusr.ui.home.prayerName
+import dev.yusr.ui.methodName
+import dev.yusr.ui.methodPill
 import dev.yusr.ui.t
 import dev.yusr.ui.YusrButton
 import dev.yusr.ui.YusrPage
@@ -86,7 +88,7 @@ fun PrayerScreen() {
     YusrPage(
         title = t("Prayer times and salah"),
         subtitle = if (prayer.configured) {
-            "%.4f, %.4f · %s".format(prayer.latitude, prayer.longitude, prayer.method.label)
+            t("%.4f, %.4f · %s", prayer.latitude, prayer.longitude, methodName(prayer.method))
         } else {
             t("set a location and the rest follows")
         },
@@ -131,7 +133,7 @@ fun PrayerScreen() {
             )
             CalculationMethod.entries.chunked(4).forEach { row ->
                 PillPicker(
-                    options = row.map { it.shortLabel },
+                    options = row.map { methodPill(it) },
                     selectedIndex = row.indexOf(prayer.method),
                     modifier = Modifier.padding(bottom = 8.dp),
                 ) { index -> scope.launch { store.setMethod(row[index]); refresh++ } }
@@ -349,7 +351,7 @@ private fun TodaysTimes(timetable: PrayerTimetable?, prayer: PrayerSettings) {
                     modifier = Modifier.weight(1f),
                 )
                 Text(
-                    text = "%02d:%02d".format(minute / 60, minute % 60),
+                    text = DayClock.clock(minute),
                     style = MaterialTheme.typography.bodyLarge,
                     color = if (which.isPrayer) MaterialTheme.colorScheme.onBackground else Faint,
                 )
@@ -461,8 +463,7 @@ private fun OffsetRow(prayer: Prayer, minutes: Int, at: Int?, onChange: (Int) ->
         Text(
             // The prayer as it is said, not as the enum spells it: "ʿAsr", "العصر" — never
             // "asr", which is what the constant's own name lowercased comes to in any language.
-            text = prayerName(prayer) +
-                (at?.let { "  %02d:%02d".format(it / 60, it % 60) } ?: ""),
+            text = prayerName(prayer) + (at?.let { "  " + DayClock.clock(it) } ?: ""),
             style = MaterialTheme.typography.bodyMedium,
             color = Faint,
             modifier = Modifier.weight(1f),
@@ -505,25 +506,3 @@ private suspend fun useDeviceLocation(
     return t("location set from the device.")
 }
 
-/** Full names for the subtitle, short ones for the pills. */
-private val CalculationMethod.label: String
-    get() = when (this) {
-        CalculationMethod.MWL -> t("muslim world league")
-        CalculationMethod.ISNA -> t("isna")
-        CalculationMethod.EGYPTIAN -> t("egyptian authority")
-        CalculationMethod.UMM_AL_QURA -> t("umm al-qura")
-        CalculationMethod.KARACHI -> t("karachi")
-        CalculationMethod.JAFARI -> t("jafari (qum)")
-        CalculationMethod.TEHRAN -> t("tehran")
-    }
-
-internal val CalculationMethod.shortLabel: String
-    get() = when (this) {
-        CalculationMethod.MWL -> t("mwl")
-        CalculationMethod.ISNA -> t("isna")
-        CalculationMethod.EGYPTIAN -> t("egypt")
-        CalculationMethod.UMM_AL_QURA -> t("makkah")
-        CalculationMethod.KARACHI -> t("karachi")
-        CalculationMethod.JAFARI -> t("jafari")
-        CalculationMethod.TEHRAN -> t("tehran")
-    }

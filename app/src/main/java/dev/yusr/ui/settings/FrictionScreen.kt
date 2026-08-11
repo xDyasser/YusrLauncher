@@ -49,46 +49,58 @@ fun FrictionScreen() {
 
     val current = settings ?: return
 
-    YusrPage(title = t("Friction"), subtitle = t("stricter takes effect at once; looser waits %s minutes", current.cooldownMinutes)) {
+    // The cooldown as the rest of the app says it — "30m", "2h 30m" — rather than as a bare count
+    // of minutes. It is the same number the knob below shows, and showing it two ways on one
+    // screen reads as two different settings.
+    YusrPage(
+        title = t("Friction"),
+        subtitle = t(
+            "stricter takes effect at once; looser waits %s",
+            DayClock.formatMinutes(current.cooldownMinutes),
+        ),
+    ) {
+        // The knobs no longer clamp what they ask for. Both ends are the mutator's now — it is
+        // the one place every change passes through, and a floor enforced on the screen and a
+        // ceiling enforced in the store would be the same rule written twice.
         Knob(
             caption = t("base wait"),
             value = t("%ss", current.policy.baseDelaySeconds),
-            onDown = { scope.launch { report(mutator.setBaseDelay((current.policy.baseDelaySeconds - 5).coerceAtLeast(0))) } },
+            onDown = { scope.launch { report(mutator.setBaseDelay(current.policy.baseDelaySeconds - 5)) } },
             onUp = { scope.launch { report(mutator.setBaseDelay(current.policy.baseDelaySeconds + 5)) } },
         )
 
         Knob(
             caption = t("added per open today"),
             value = t("%ss", current.policy.escalationSecondsPerOpen),
-            onDown = { scope.launch { report(mutator.setEscalation((current.policy.escalationSecondsPerOpen - 5).coerceAtLeast(0))) } },
+            onDown = { scope.launch { report(mutator.setEscalation(current.policy.escalationSecondsPerOpen - 5)) } },
             onUp = { scope.launch { report(mutator.setEscalation(current.policy.escalationSecondsPerOpen + 5)) } },
         )
 
         Knob(
             caption = t("reason length"),
             value = t("%s chars", current.policy.minReasonLength),
-            onDown = { scope.launch { report(mutator.setMinReasonLength((current.policy.minReasonLength - 5).coerceAtLeast(0))) } },
+            onDown = { scope.launch { report(mutator.setMinReasonLength(current.policy.minReasonLength - 5)) } },
             onUp = { scope.launch { report(mutator.setMinReasonLength(current.policy.minReasonLength + 5)) } },
         )
 
         Knob(
             caption = t("session length"),
             value = DayClock.formatMinutes(current.policy.defaultSessionMinutes),
-            onDown = { scope.launch { report(mutator.setDefaultSessionMinutes((current.policy.defaultSessionMinutes - 1).coerceAtLeast(1))) } },
+            onDown = { scope.launch { report(mutator.setDefaultSessionMinutes(current.policy.defaultSessionMinutes - 1)) } },
             onUp = { scope.launch { report(mutator.setDefaultSessionMinutes(current.policy.defaultSessionMinutes + 1)) } },
         )
 
         Knob(
             caption = t("cooldown on loosening"),
             value = DayClock.formatMinutes(current.cooldownMinutes),
-            onDown = { scope.launch { report(mutator.setCooldownMinutes((current.cooldownMinutes - 10).coerceAtLeast(0))) } },
+            onDown = { scope.launch { report(mutator.setCooldownMinutes(current.cooldownMinutes - 10)) } },
             onUp = { scope.launch { report(mutator.setCooldownMinutes(current.cooldownMinutes + 10)) } },
         )
 
         Knob(
             caption = t("emergency bypasses per week"),
             value = current.bypassesPerWeek.toString(),
-            onDown = { scope.launch { report(mutator.setBypassesPerWeek((current.bypassesPerWeek - 1).coerceAtLeast(0))) } },
+            onDown = { scope.launch { report(mutator.setBypassesPerWeek(current.bypassesPerWeek - 1)) } },
             onUp = { scope.launch { report(mutator.setBypassesPerWeek(current.bypassesPerWeek + 1)) } },
         )
 

@@ -232,8 +232,12 @@ fun SetupChecklistScreen(onReviewApps: () -> Unit = {}) {
             }
         }
 
+        // Where the long press is taught. The gesture is the only way into settings and it is not
+        // one a phone advertises, so it is said here — on the screen someone is looking at when
+        // they have just found out there is something to come back to.
         Text(
-            text = t("you can come back here whenever something stops working."),
+            text = t("you can come back here whenever something stops working.") + " " +
+                t("settings are a long press on the clock."),
             style = MaterialTheme.typography.bodyMedium,
             color = Faint,
             modifier = Modifier.padding(top = 16.dp, bottom = 24.dp),
