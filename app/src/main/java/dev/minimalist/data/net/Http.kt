@@ -118,5 +118,5 @@ object Http {
     /** A sūra of recitation. Al-Baqarah at a high bitrate is the ceiling worth allowing for. */
     private const val MAX_AUDIO_BYTES = 220L * 1024 * 1024
 
-    private const val USER_AGENT = "Minimalist launcher"
+    private const val USER_AGENT = "Yusr Launcher"
 }

@@ -508,7 +508,7 @@ private val SETUP = mapOf(
     "yes, lock it in" to "نعم، أحكِمها",
     "not yet" to "ليس بعد",
     "lock these rules in" to "أحكِم هذه القواعد",
-    "Keeps Minimalist from being removed on impulse." to "يمنع حذف التطبيق في لحظة اندفاع.",
+    "Keeps Yusr Launcher from being removed on impulse." to "يمنع حذف التطبيق في لحظة اندفاع.",
 )
 
 /**
@@ -569,8 +569,8 @@ private val PROSE = mapOf(
     "accessibility service, because nothing else may press those. leave it off " to
         "خدمة إمكانية وصول، إذ لا شيء غيرها يملك ضغط تلك. فدعه مُعطّلًا ",
     "unless you need it." to "ما لم تحتج إليه.",
-    "the strip needs the Minimalist navigation accessibility service " to
-        "يحتاج الشريط إلى خدمة تنقّل Minimalist في إمكانية الوصول ",
+    "the strip needs the Yusr Launcher navigation accessibility service " to
+        "يحتاج الشريط إلى خدمة تنقّل يُسر في إمكانية الوصول ",
     "switched on before it can appear." to "أن تُفعَّل قبل أن يظهر.",
     "adding one is instant; removing one waits out the cooldown" to
         "الإضافة فورية؛ والحذف ينتظر انقضاء المهلة",

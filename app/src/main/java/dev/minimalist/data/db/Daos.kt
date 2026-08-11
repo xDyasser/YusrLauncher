@@ -149,6 +149,9 @@ interface QuranAyahDao {
     @Query("SELECT COUNT(*) FROM quran_ayat")
     suspend fun count(): Int
 
+    @Query("SELECT COUNT(*) FROM quran_ayat")
+    fun observeCount(): Flow<Int>
+
     @Query("SELECT * FROM quran_ayat ORDER BY RANDOM() LIMIT 1")
     suspend fun random(): QuranAyahEntity?
 

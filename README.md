@@ -1,4 +1,4 @@
-# Minimalist
+# Yusr Launcher
 
 An Android launcher that cuts phone usage by force rather than by suggestion.
 

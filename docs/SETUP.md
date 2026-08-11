@@ -270,9 +270,9 @@ a one-way door — there is no unlock button, by design.
 Aggressive battery management is the single biggest threat to enforcement — a killed guard
 service means no limits. On a Redmi (HyperOS or MIUI), do all of these:
 
-- **Settings → Apps → Minimalist → Battery saver → No restrictions.**
-- **Settings → Apps → Minimalist → Autostart → on.**
-- **Recents → hold the Minimalist card → the padlock**, so clearing recents does not kill it.
+- **Settings → Apps → Yusr Launcher → Battery saver → No restrictions.**
+- **Settings → Apps → Yusr Launcher → Autostart → on.**
+- **Recents → hold the Yusr Launcher card → the padlock**, so clearing recents does not kill it.
 - **Settings → Battery → turn off "Optimise battery use"** for this app if the toggle exists
   separately.
 - If MIUI Optimisation is available in Developer options, leaving it on is fine; the app uses no
@@ -282,7 +282,7 @@ Check it worked: leave the phone idle for an hour, then open a gated app. If the
 the service survived.
 
 Other manufacturers have their own version of this — Samsung's "Deep sleeping apps", OnePlus's
-"Battery optimisation", Huawei's "App launch". Exempt Minimalist wherever you find it.
+"Battery optimisation", Huawei's "App launch". Exempt Yusr Launcher wherever you find it.
 
 ## 4. Device owner (optional, strongest, hardest to undo)
 
@@ -321,7 +321,7 @@ phone you cannot afford to reset.
 ## 5. Removing the app
 
 - **Device owner set:** run the `remove-active-admin` command above first, then uninstall.
-- **Device admin only:** Settings → Security → Device admin apps → Minimalist → deactivate, then
+- **Device admin only:** Settings → Security → Device admin apps → Yusr Launcher → deactivate, then
   uninstall normally. You will be shown a warning first; that is the point.
 - **Neither:** uninstall normally.
 
@@ -370,7 +370,7 @@ update — and if you are stuck on the broken build, see below.
 **Stuck with a home screen that will not open.** Nothing on the phone is lost. Pull down the
 notification shade and open Settings from the gear, set any other launcher as the home app
 (**Settings → Home screen**, or **Apps → Default apps → Launcher**), install the newer APK over
-the top — same signing key, so your rules and settings survive — then set Minimalist back as home.
+the top — same signing key, so your rules and settings survive — then set Yusr Launcher back as home.
 
 **Choosing a widget throws you back to the home screen.** Fixed. The screen used to open the
 system's widget picker, which HyperOS and some other ROMs do not ship — the launch failed and took

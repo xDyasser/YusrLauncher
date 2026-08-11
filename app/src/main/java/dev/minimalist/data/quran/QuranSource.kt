@@ -5,6 +5,8 @@ import dev.minimalist.data.db.MinimalistDatabase
 import dev.minimalist.data.db.QuranAyahEntity
 import dev.minimalist.data.settings.AyahLanguage
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 
@@ -75,6 +77,27 @@ class QuranSource(private val context: Context) {
     suspend fun downloadedCount(): Int = runCatching { dao.count() }.getOrDefault(0)
 
     /**
+     * Whether the whole book is on the device, as it changes.
+     *
+     * A screen whose ayah depends on this — the home screen's opening one does — needs to hear
+     * about the download finishing rather than waiting to be reopened.
+     */
+    val downloaded: Flow<Boolean> = dao.observeCount().map { it > 0 }
+
+    /**
+     * The ayah shown to someone who has never read a line here — a fresh install, before the
+     * bookmark exists.
+     *
+     * Until the Qur'an is downloaded that is "inna maʿa l-ʿusri yusrā", out of the same bundled
+     * set everything else on this screen comes from: the app is named for that promise, and a
+     * launcher whose first ayah is the one it is named for says what it is for without a word of
+     * explanation. Once the whole book is on the device there is a better opening — the book's
+     * own — and the home screen starts there instead. From either, a tap steps on as usual.
+     */
+    suspend fun opening(): Ayah? =
+        if (downloadedCount() > 0) at(1, 1) else at(OPENING_SURAH, OPENING_AYAH)
+
+    /**
      * One sūrah in full, or an empty list if the Qur'an has not been downloaded.
      *
      * The bundled handful is deliberately not used as a fallback here. It is two dozen āyāt drawn
@@ -129,5 +152,9 @@ class QuranSource(private val context: Context) {
     private companion object {
         const val ASSET = "ayat_fallback.json"
         const val WRITE_CHUNK = 500
+
+        /** ash-Sharḥ 94:6 — "indeed, with hardship comes ease". */
+        const val OPENING_SURAH = 94
+        const val OPENING_AYAH = 6
     }
 }

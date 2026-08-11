@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Minimalist"
+rootProject.name = "YusrLauncher"
 include(":app")
