@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The rules, the app list, the prayer settings and the downloaded Qur'an are all worth keeping
+    across a reinstall or a move to a new phone: they took a sitting to decide, and losing them
+    is the difference between carrying on and starting again.
+
+    Nothing here leaves the device except through the user's own backup, which they turned on.
+    The usage history is deliberately left out of it — it is a diary of behaviour, it is large,
+    and it means nothing on another phone.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="database" path="minimalist.db" />
+        <include domain="sharedpref" path="." />
+        <include domain="file" path="datastore" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="database" path="minimalist.db" />
+        <include domain="sharedpref" path="." />
+        <include domain="file" path="datastore" />
+    </device-transfer>
+</data-extraction-rules>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No event types and no window content: this service exists only to place a strip of its own
+     and to press back / home / recents on request. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagDefault"
+    android:canRetrieveWindowContent="false"
+    android:description="@string/nav_service_description"
+    android:notificationTimeout="1000"
+    android:summary="@string/nav_service_summary" />
