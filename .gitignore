@@ -1,0 +1,18 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build
+/app/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+*.apk
+*.keystore
+!gradle/wrapper/gradle-wrapper.jar
+# The one exception: the app's own signing key, deliberately checked in so that every build —
+# local or CI — is signed identically and installs over the last one instead of asking to be
+# uninstalled first. It guards nothing; the app is never published to a store.
+!/app/minimalist.keystore

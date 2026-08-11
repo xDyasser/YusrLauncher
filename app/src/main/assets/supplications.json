@@ -1,0 +1,92 @@
+{
+ "_note": "Hisn al-Muslim, a hand-made selection. Every entry carries its source so it can be checked. Adding to this file is the supported way to extend it: no code changes are needed, only a new item in a section. Mafatih al-Jinan is not here — it is the whole book, in assets/mafatih, written by tools/import_mafatih.py.",
+ "collections": [
+  {
+   "id": "hisn",
+   "title": "Ḥiṣn al-Muslim",
+   "arabicTitle": "حصن المسلم",
+   "attribution": "Saʿīd b. ʿAlī al-Qaḥṭānī · a selection",
+   "sections": [
+    {
+     "id": "morning",
+     "title": "Morning",
+     "subtitle": "After fajr",
+     "items": [
+      {
+       "title": "Aṣbaḥnā",
+       "arabic": "أَصْبَحْنَا وَأَصْبَحَ ٱلْمُلْكُ لِلَّهِ، وَٱلْحَمْدُ لِلَّهِ، لَا إِلَٰهَ إِلَّا ٱللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ ٱلْمُلْكُ وَلَهُ ٱلْحَمْدُ وَهُوَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ",
+       "english": "We have entered the morning and the dominion has entered the morning belonging to God. Praise be to God. There is no god but God alone, who has no partner; His is the dominion and His is the praise, and He is able to do all things.",
+       "source": "Ḥiṣn al-Muslim · adhkār of the morning"
+      },
+      {
+       "title": "Sayyid al-Istighfār",
+       "arabic": "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَٰهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَىٰ عَهْدِكَ وَوَعْدِكَ مَا ٱسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ وَأَبُوءُ بِذَنْبِي فَٱغْفِرْ لِي فَإِنَّهُ لَا يَغْفِرُ ٱلذُّنُوبَ إِلَّا أَنْتَ",
+       "english": "O God, You are my Lord; there is no god but You. You created me and I am Your servant, and I hold to Your covenant and Your promise as much as I am able. I seek refuge in You from the evil of what I have done. I acknowledge Your favour upon me and I acknowledge my sin, so forgive me — for none forgives sins but You.",
+       "source": "Ḥiṣn al-Muslim · the finest way of seeking forgiveness"
+      }
+     ]
+    },
+    {
+     "id": "evening",
+     "title": "Evening",
+     "subtitle": "After ʿaṣr",
+     "items": [
+      {
+       "title": "Amsaynā",
+       "arabic": "أَمْسَيْنَا وَأَمْسَى ٱلْمُلْكُ لِلَّهِ، وَٱلْحَمْدُ لِلَّهِ، لَا إِلَٰهَ إِلَّا ٱللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ ٱلْمُلْكُ وَلَهُ ٱلْحَمْدُ وَهُوَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ",
+       "english": "We have entered the evening and the dominion has entered the evening belonging to God. Praise be to God. There is no god but God alone, who has no partner; His is the dominion and His is the praise, and He is able to do all things.",
+       "source": "Ḥiṣn al-Muslim · adhkār of the evening"
+      },
+      {
+       "title": "Bismillāh alladhī lā yaḍurru",
+       "arabic": "بِسْمِ ٱللَّهِ ٱلَّذِي لَا يَضُرُّ مَعَ ٱسْمِهِ شَيْءٌ فِي ٱلْأَرْضِ وَلَا فِي ٱلسَّمَاءِ وَهُوَ ٱلسَّمِيعُ ٱلْعَلِيمُ",
+       "english": "In the name of God, with whose name nothing on earth or in the heaven can cause harm, and He is the Hearing, the Knowing.",
+       "note": "Said three times.",
+       "source": "Ḥiṣn al-Muslim"
+      }
+     ]
+    },
+    {
+     "id": "prayer",
+     "title": "After prayer",
+     "subtitle": "Taʿqībāt",
+     "items": [
+      {
+       "title": "The tasbīḥ after prayer",
+       "arabic": "سُبْحَانَ ٱللَّهِ\nٱلْحَمْدُ لِلَّهِ\nٱللَّهُ أَكْبَرُ",
+       "english": "Glory be to God — thirty-three times.\nPraise be to God — thirty-three times.\nGod is greater — thirty-four times.",
+       "note": "The tasbīḥ screen keeps the count.",
+       "source": "Ḥiṣn al-Muslim"
+      },
+      {
+       "title": "Āyat al-Kursī",
+       "arabic": "ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ ٱلْحَىُّ ٱلْقَيُّومُ ۚ لَا تَأْخُذُهُۥ سِنَةٌۭ وَلَا نَوْمٌۭ ۚ لَّهُۥ مَا فِى ٱلسَّمَٰوَٰتِ وَمَا فِى ٱلْأَرْضِ ۗ مَن ذَا ٱلَّذِى يَشْفَعُ عِندَهُۥٓ إِلَّا بِإِذْنِهِۦ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَىْءٍۢ مِّنْ عِلْمِهِۦٓ إِلَّا بِمَا شَآءَ ۚ وَسِعَ كُرْسِيُّهُ ٱلسَّمَٰوَٰتِ وَٱلْأَرْضَ ۖ وَلَا يَـُٔودُهُۥ حِفْظُهُمَا ۚ وَهُوَ ٱلْعَلِىُّ ٱلْعَظِيمُ",
+       "english": "God — there is no god but He, the Living, the Sustaining… (as above).",
+       "source": "Al-Baqara 2:255"
+      }
+     ]
+    },
+    {
+     "id": "going-out",
+     "title": "Going out",
+     "subtitle": "Leaving, travelling, returning",
+     "items": [
+      {
+       "title": "Leaving the house",
+       "arabic": "بِسْمِ ٱللَّهِ، تَوَكَّلْتُ عَلَى ٱللَّهِ، وَلَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِٱللَّهِ",
+       "english": "In the name of God; I place my trust in God; there is no power and no strength except by God.",
+       "source": "Ḥiṣn al-Muslim"
+      },
+      {
+       "title": "Setting out",
+       "arabic": "سُبْحَٰنَ ٱلَّذِى سَخَّرَ لَنَا هَٰذَا وَمَا كُنَّا لَهُۥ مُقْرِنِينَ ۝ وَإِنَّآ إِلَىٰ رَبِّنَا لَمُنقَلِبُونَ",
+       "english": "Glory be to Him who has subjected this to us, and we could not have done it ourselves; and to our Lord we are surely returning.",
+       "source": "Az-Zukhruf 43:13–14"
+      }
+     ]
+    }
+   ],
+   "missing": "A short selection of the best known of the book's supplications, not the whole of it. Add more to assets/supplications.json from an edition you trust and they will appear here."
+  }
+ ]
+}

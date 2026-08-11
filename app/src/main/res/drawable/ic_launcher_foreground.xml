@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- A single horizontal stroke: the minimum mark. -->
+    <path
+        android:fillColor="#FFEDEDED"
+        android:pathData="M32,52h44v4h-44z" />
+</vector>
