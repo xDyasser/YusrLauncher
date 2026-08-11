@@ -50,12 +50,12 @@ import dev.yusr.domain.FastingCalendar
 import dev.yusr.domain.Madhab
 import dev.yusr.domain.Qibla
 import dev.yusr.ui.isArabic
+import dev.yusr.ui.methodPill
 import dev.yusr.ui.t
 import dev.yusr.ui.Hairline
 import dev.yusr.ui.SectionLabel
 import dev.yusr.ui.noRippleClickable
 import dev.yusr.ui.settings.SettingsActivity
-import dev.yusr.ui.settings.shortLabel
 import dev.yusr.ui.theme.Backdrop
 import dev.yusr.ui.theme.Dim
 import dev.yusr.ui.theme.Faint
@@ -366,7 +366,11 @@ private fun QiblaBlock(
                 color = MaterialTheme.colorScheme.primary,
             )
             Text(
-                text = t("%,d km to Makkah · %s").format(
+                // Formatted by t rather than by String.format on its result: the second takes the
+                // default locale, which under Arabic sets %,d in Arabic-Indic digits with an
+                // Arabic thousands separator while the line beside it stays Western.
+                text = t(
+                    "%,d km to Makkah · %s",
                     distance.roundToInt(),
                     // A dial that cannot turn is still worth showing, but only if it says so —
                     // otherwise it looks like a compass that has stuck.
@@ -395,7 +399,7 @@ private fun prayerSubtitle(today: PrayerToday?, fadila: Boolean): String = when 
  * for it nor anything at all in Arabic.
  */
 private fun settingsMadhabLine(madhab: Madhab, method: CalculationMethod): String =
-    "${t(madhab.label)} · ${method.shortLabel}"
+    "${t(madhab.label)} · ${methodPill(method)}"
 
 /** Shared by every page in the hub: a way back, and a title. */
 @Composable

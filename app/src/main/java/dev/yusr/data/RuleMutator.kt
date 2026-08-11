@@ -79,68 +79,74 @@ class RuleMutator(
     }
 
     suspend fun setBaseDelay(seconds: Int): MutationResult {
+        val wanted = seconds.coerceIn(0, MAX_BASE_DELAY_SECONDS)
         val current = settingsStore.current().policy.baseDelaySeconds
-        return if (unlocked() || seconds >= current) {
-            settingsStore.setBaseDelay(seconds)
+        return if (unlocked() || wanted >= current) {
+            settingsStore.setBaseDelay(wanted)
             MutationResult.AppliedNow
         } else {
-            defer(PendingChangeKind.SET_BASE_DELAY, "", seconds.toString(), t("base wait → %s", t("%ss", seconds)))
+            defer(PendingChangeKind.SET_BASE_DELAY, "", wanted.toString(), t("base wait → %s", t("%ss", wanted)))
         }
     }
 
     suspend fun setEscalation(seconds: Int): MutationResult {
+        val wanted = seconds.coerceIn(0, MAX_ESCALATION_SECONDS)
         val current = settingsStore.current().policy.escalationSecondsPerOpen
-        return if (unlocked() || seconds >= current) {
-            settingsStore.setEscalation(seconds)
+        return if (unlocked() || wanted >= current) {
+            settingsStore.setEscalation(wanted)
             MutationResult.AppliedNow
         } else {
-            defer(PendingChangeKind.SET_ESCALATION, "", seconds.toString(), t("escalation → %s per open", t("%ss", seconds)))
+            defer(PendingChangeKind.SET_ESCALATION, "", wanted.toString(), t("escalation → %s per open", t("%ss", wanted)))
         }
     }
 
     suspend fun setMinReasonLength(chars: Int): MutationResult {
+        val wanted = chars.coerceIn(0, MAX_REASON_LENGTH)
         val current = settingsStore.current().policy.minReasonLength
-        return if (unlocked() || chars >= current) {
-            settingsStore.setMinReasonLength(chars)
+        return if (unlocked() || wanted >= current) {
+            settingsStore.setMinReasonLength(wanted)
             MutationResult.AppliedNow
         } else {
-            defer(PendingChangeKind.SET_MIN_REASON_LENGTH, "", chars.toString(), t("reason length → %s", chars))
+            defer(PendingChangeKind.SET_MIN_REASON_LENGTH, "", wanted.toString(), t("reason length → %s", wanted))
         }
     }
 
     suspend fun setDefaultSessionMinutes(minutes: Int): MutationResult {
+        val wanted = minutes.coerceIn(1, MAX_SESSION_MINUTES)
         val current = settingsStore.current().policy.defaultSessionMinutes
-        return if (unlocked() || minutes <= current) {
-            settingsStore.setDefaultSessionMinutes(minutes)
+        return if (unlocked() || wanted <= current) {
+            settingsStore.setDefaultSessionMinutes(wanted)
             MutationResult.AppliedNow
         } else {
             defer(
                 PendingChangeKind.SET_DEFAULT_SESSION_MINUTES,
                 "",
-                minutes.toString(),
-                t("session length → %s", DayClock.formatMinutes(minutes)),
+                wanted.toString(),
+                t("session length → %s", DayClock.formatMinutes(wanted)),
             )
         }
     }
 
     suspend fun setCooldownMinutes(minutes: Int): MutationResult {
+        val wanted = minutes.coerceIn(0, MAX_COOLDOWN_MINUTES)
         val current = settingsStore.current().cooldownMinutes
-        return if (unlocked() || minutes >= current) {
-            settingsStore.setCooldownMinutes(minutes)
+        return if (unlocked() || wanted >= current) {
+            settingsStore.setCooldownMinutes(wanted)
             MutationResult.AppliedNow
         } else {
             // Shortening the cooldown must itself serve the current, longer cooldown.
-            defer(PendingChangeKind.SET_COOLDOWN_MINUTES, "", minutes.toString(), t("cooldown → %s", DayClock.formatMinutes(minutes)))
+            defer(PendingChangeKind.SET_COOLDOWN_MINUTES, "", wanted.toString(), t("cooldown → %s", DayClock.formatMinutes(wanted)))
         }
     }
 
     suspend fun setBypassesPerWeek(count: Int): MutationResult {
+        val wanted = count.coerceIn(0, MAX_BYPASSES_PER_WEEK)
         val current = settingsStore.current().bypassesPerWeek
-        return if (unlocked() || count <= current) {
-            settingsStore.setBypassesPerWeek(count)
+        return if (unlocked() || wanted <= current) {
+            settingsStore.setBypassesPerWeek(wanted)
             MutationResult.AppliedNow
         } else {
-            defer(PendingChangeKind.SET_BYPASSES_PER_WEEK, "", count.toString(), t("bypasses → %s per week", count))
+            defer(PendingChangeKind.SET_BYPASSES_PER_WEEK, "", wanted.toString(), t("bypasses → %s per week", wanted))
         }
     }
 
@@ -253,8 +259,13 @@ class RuleMutator(
      * Queues the change and keeps a sentence saying what it was, which is the only thing the
      * pending-changes screen has to show. The sentence is written in the language in force when
      * the change was asked for: what is stored is prose, not a key and its arguments, and the
-     * cooldown is short enough that the alternative — a second table mapping every kind of change
-     * back to a format string — would be more machinery than the case is worth.
+     * alternative — a second table mapping every kind of change back to a format string — would
+     * be more machinery than the case is worth.
+     *
+     * What makes that trade safe is [MAX_COOLDOWN_MINUTES]: a queued change outlives its language
+     * only if you switch languages while it waits, and it cannot wait longer than a day. Without
+     * a ceiling on the cooldown that window would be unbounded, and the row would be as stale as
+     * someone's thumb had made it.
      */
     private suspend fun defer(
         kind: PendingChangeKind,
@@ -266,9 +277,33 @@ class RuleMutator(
         return MutationResult.Deferred(change.applyAtMillis)
     }
 
-    private companion object {
+    companion object {
+        /**
+         * Ceilings on the friction knobs, applied here rather than only on the screen that turns
+         * them, because this is the one place every change passes through.
+         *
+         * They are not there to second-guess a strict setting — every one of them is far past
+         * what anyone would choose on purpose. They are there because tightening is instant and
+         * loosening is not, so a knob held down by a thumb writes a rule that then has to be
+         * served out. [MAX_COOLDOWN_MINUTES] is the one that matters: the cooldown governs undoing
+         * every other rule *including itself*, so an unbounded one is a door that locks behind you
+         * — a stray press could put the whole settings screen out of reach for weeks. A day is
+         * already longer than the deliberation this app is trying to buy.
+         */
+        const val MAX_BASE_DELAY_SECONDS: Int = 10 * 60
+
+        const val MAX_ESCALATION_SECONDS: Int = 5 * 60
+
+        const val MAX_REASON_LENGTH: Int = 200
+
+        const val MAX_SESSION_MINUTES: Int = 4 * 60
+
+        const val MAX_COOLDOWN_MINUTES: Int = 24 * 60
+
+        const val MAX_BYPASSES_PER_WEEK: Int = 50
+
         /** Higher is stricter. */
-        fun severity(tier: AppTier): Int = when (tier) {
+        private fun severity(tier: AppTier): Int = when (tier) {
             AppTier.FAVORITE -> 0
             AppTier.ALLOWED -> 1
             AppTier.GATED -> 2
@@ -276,7 +311,7 @@ class RuleMutator(
         }
 
         /** A cap is tighter when it exists and is no larger than what it replaces. */
-        fun isTighterCap(next: Int?, current: Int?): Boolean = when {
+        private fun isTighterCap(next: Int?, current: Int?): Boolean = when {
             next == null -> false
             current == null -> true
             else -> next <= current

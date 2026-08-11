@@ -1,5 +1,7 @@
 package dev.yusr.ui.settings
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -19,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.yusr.container
 import dev.yusr.data.settings.NO_WIDGET
+import dev.yusr.ui.methodPill
 import dev.yusr.ui.t
 import dev.yusr.ui.YusrPage
 import dev.yusr.ui.YusrRow
@@ -33,22 +36,43 @@ private enum class SettingsRoute { Menu, Setup, Decide, Apps, Blackouts, Prayer,
 /**
  * Settings live behind a long press on the clock, which is deliberate: they are the one place
  * where the rules can be weakened, and they should not be a thumb's reach away.
+ *
+ * Setup is the exception, and [setupIntent] is it. A hidden door is right for the screen that
+ * loosens the rules and wrong for the screen that turns them on in the first place — someone who
+ * has just installed a launcher has no reason to know the gesture yet, and a checklist nobody
+ * finds is a set of permissions nobody grants.
  */
 class SettingsActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val start = if (intent?.getBooleanExtra(EXTRA_SETUP, false) == true) {
+            SettingsRoute.Setup
+        } else {
+            SettingsRoute.Menu
+        }
         setContent {
             YusrTheme {
-                SettingsHost(onExit = { finish() })
+                SettingsHost(start = start, onExit = { finish() })
             }
         }
+    }
+
+    companion object {
+        private const val EXTRA_SETUP = "open_setup"
+
+        /**
+         * Straight to the checklist. Back from there lands on the settings menu rather than out
+         * of the app, so arriving this way still shows what else is here.
+         */
+        fun setupIntent(context: Context): Intent =
+            Intent(context, SettingsActivity::class.java).putExtra(EXTRA_SETUP, true)
     }
 }
 
 @Composable
-private fun SettingsHost(onExit: () -> Unit) {
-    var route by rememberSaveable { mutableStateOf(SettingsRoute.Menu) }
+private fun SettingsHost(start: SettingsRoute, onExit: () -> Unit) {
+    var route by rememberSaveable { mutableStateOf(start) }
 
     BackHandler(enabled = true) {
         if (route == SettingsRoute.Menu) onExit() else route = SettingsRoute.Menu
@@ -113,7 +137,9 @@ private fun SettingsMenu(onNavigate: (SettingsRoute) -> Unit) {
             detail = with(settings?.prayer) {
                 when {
                     this == null || !configured -> t("set a location to work out the times")
-                    enabled -> t("the phone stops for salah · %s", method.name.lowercase())
+                    // The method by its name, not by its constant: the enum spells UMM_AL_QURA,
+                    // which lowercases to "umm_al_qura" and is that in Arabic too.
+                    enabled -> t("the phone stops for salah · %s", methodPill(method))
                     else -> t("times shown, nothing blocked yet")
                 }
             },

@@ -161,6 +161,7 @@ class HomeActivity : ComponentActivity() {
                     allowWidget = !widgetSuppressed,
                     onOpenDrawer = { startActivity(Intent(this, SearchActivity::class.java)) },
                     onOpenSettings = { startActivity(Intent(this, SettingsActivity::class.java)) },
+                    onOpenSetup = { startActivity(SettingsActivity.setupIntent(this)) },
                     onOpenHub = { startActivity(Intent(this, HubActivity::class.java)) },
                     onOpenTasbih = { startActivity(HubActivity.intent(this, HubScreen.TASBIH)) },
                 )
@@ -181,6 +182,7 @@ private fun HomeScreen(
     allowWidget: Boolean,
     onOpenDrawer: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenSetup: () -> Unit,
     onOpenHub: () -> Unit,
     onOpenTasbih: () -> Unit,
 ) {
@@ -196,6 +198,19 @@ private fun HomeScreen(
     val settings by repository.settings.collectAsState(initial = null)
     val beads by devotions.observeTodayCount().collectAsState(initial = 0)
     val now by rememberTicker()
+
+    // The one time this launcher opens a screen you did not ask for: the first launch after
+    // install. Everything the app needs — being the home screen, usage access, drawing over other
+    // apps — can only be granted by hand, on a checklist that otherwise lives behind a long press
+    // on the clock, and a first-time user has not been told that gesture. The flag is written
+    // before the screen opens, so this happens once whatever is done with it.
+    LaunchedEffect(settings?.setupPrompted) {
+        val current = settings ?: return@LaunchedEffect
+        if (!current.setupPrompted) {
+            store.setSetupPrompted(true)
+            if (!current.onboardingComplete) onOpenSetup()
+        }
+    }
 
     val prayerRepository = remember { context.container.prayerRepository }
     val prayerSettings = settings?.prayer
@@ -351,13 +366,22 @@ private fun HomeScreen(
 
         // Once setup is done the hint goes too. A finished home screen is the clock, the prayer,
         // the ayah and the names.
+        //
+        // It is the way back to the checklist as well as the notice that there is one. It used to
+        // name the gesture instead — "hold the clock" — which is a line of instructions where a
+        // door would do, and left the one screen a half-set-up launcher needs two steps and a
+        // piece of remembered trivia away. The gesture is still worth knowing, so the checklist
+        // itself says it, on the screen you are already on when you learn what it is for.
         if (settings?.onboardingComplete == false) {
             Text(
-                text = t("setup unfinished — hold the clock"),
+                text = t("setup unfinished — tap to finish"),
                 style = MaterialTheme.typography.labelSmall,
                 color = Gold,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .noRippleClickable(onClick = onOpenSetup)
+                    .padding(bottom = 8.dp),
             )
         }
     }
@@ -471,7 +495,7 @@ private fun PrayerStrip(today: PrayerToday, modifier: Modifier = Modifier) {
                         },
                     )
                     Text(
-                        text = clock(minute),
+                        text = DayClock.clock(minute),
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (isNext) Gold else Faint,
                     )
@@ -498,7 +522,7 @@ private fun PrayerStrip(today: PrayerToday, modifier: Modifier = Modifier) {
                 Text(
                     // Shorter than it was, because it is now sharing a line with the countdown:
                     // the prayer is named in the strip directly above, so it is not named twice.
-                    text = ends?.let { t("faḍīla %s · %s", DayClock.formatMinutes(left), clock(it)) }
+                    text = ends?.let { t("faḍīla %s · %s", DayClock.formatMinutes(left), DayClock.clock(it)) }
                         ?: t("faḍīla %s", DayClock.formatMinutes(left)),
                     style = MaterialTheme.typography.bodySmall,
                     color = Dim,
@@ -513,8 +537,8 @@ private fun PrayerStrip(today: PrayerToday, modifier: Modifier = Modifier) {
         Text(
             text = t(
                 "midnight %s · last third %s",
-                clock(today.night.midnightMinuteOfDay),
-                clock(today.night.lastThirdMinuteOfDay),
+                DayClock.clock(today.night.midnightMinuteOfDay),
+                DayClock.clock(today.night.lastThirdMinuteOfDay),
             ),
             style = MaterialTheme.typography.labelSmall,
             color = Fainter,
@@ -707,12 +731,6 @@ internal fun prayerName(prayer: Prayer): String = when (prayer) {
     Prayer.ASR -> t("ʿAsr")
     Prayer.MAGHRIB -> t("Maghrib")
     Prayer.ISHA -> t("ʿIshāʾ")
-}
-
-/** A minute of the day as a wall clock. */
-internal fun clock(minuteOfDay: Int): String {
-    val wrapped = ((minuteOfDay % 1440) + 1440) % 1440
-    return "%02d:%02d".format(wrapped / 60, wrapped % 60)
 }
 
 /**

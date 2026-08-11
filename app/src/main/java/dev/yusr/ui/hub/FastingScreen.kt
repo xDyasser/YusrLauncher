@@ -33,11 +33,11 @@ import dev.yusr.domain.Prayer
 import dev.yusr.ui.t
 import dev.yusr.ui.Hairline
 import dev.yusr.ui.SectionLabel
-import dev.yusr.ui.home.clock
 import dev.yusr.ui.noRippleClickable
 import dev.yusr.ui.theme.Dim
 import dev.yusr.ui.theme.Faint
 import dev.yusr.ui.theme.Gold
+import dev.yusr.util.DayClock
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -106,7 +106,7 @@ fun FastingScreen(onBack: () -> Unit) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         SectionLabel(label)
                         Text(
-                            text = clock(minute),
+                            text = DayClock.clock(minute),
                             style = MaterialTheme.typography.headlineMedium,
                             color = MaterialTheme.colorScheme.primary,
                         )

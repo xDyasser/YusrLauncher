@@ -5,6 +5,7 @@ import android.content.Context
 import android.os.LocaleList
 import dev.yusr.data.settings.Language
 import dev.yusr.domain.AppTier
+import dev.yusr.domain.CalculationMethod
 import java.util.Locale
 
 /**
@@ -38,9 +39,16 @@ fun t(english: String): String =
  * The same, with the values filled in. Positional, so a translation may put them in another order,
  * and forgiving: a format that does not match its arguments prints the English rather than
  * throwing, because a crash on a settings screen is worse than a sentence in the wrong language.
+ *
+ * Formatted against [Locale.ROOT] rather than the default. `%s` prints a number by its `toString`
+ * and so is the same digits everywhere, while `%d`, `%,d` and `%.3f` follow the locale and come
+ * out in Arabic-Indic under `ar` — which would mean the same sentence changing numeral system
+ * depending on which slot the value happened to be in. The interface settles on one set of digits;
+ * the home screen's clock and date, which are set in the language's own numerals, do it
+ * deliberately and elsewhere.
  */
 fun t(english: String, vararg args: Any?): String =
-    runCatching { String.format(t(english), *args) }.getOrDefault(english)
+    runCatching { String.format(Locale.ROOT, t(english), *args) }.getOrDefault(english)
 
 /**
  * Hands the choice to the system, which then owns it: it survives a restart, it shows up in
@@ -77,13 +85,56 @@ fun tierName(tier: AppTier): String = t(
     },
 )
 
-/** The same four, short enough that all of them fit across one row of pills. */
+/**
+ * The same four, short enough that all of them fit across one row of pills.
+ *
+ * Each one is [tierName]'s word cut short rather than a synonym for it. "open" for ALLOWED and
+ * "block" for BLOCKED read as a different vocabulary from "allowed" and "blocked" — and the pill
+ * and the word appear on the same screen, one in the row you tap and the other in the line
+ * underneath, so a reader has to work out that they name the same thing. Arabic has no such
+ * problem: its four are short already, and the pill is the word.
+ */
 fun tierPill(tier: AppTier): String = t(
     when (tier) {
         AppTier.FAVORITE -> "fav"
-        AppTier.ALLOWED -> "open"
+        AppTier.ALLOWED -> "allow"
         AppTier.GATED -> "gate"
         AppTier.BLOCKED -> "block"
+    },
+)
+
+/**
+ * What a calculation method is called, in the two registers the app actually needs: the full name
+ * where there is a line for it, and one word where it is a pill or a trailing detail.
+ *
+ * Both live here, and only here. The method used to be named four ways — the enum's own constant
+ * in the settings row, a lowercase set on the prayer screen, the pills, and a fourth keyed on the
+ * enum's *name as a string* on the madhab screen, which silently printed `UMM_AL_QURA` for
+ * anything the `when` had not been kept up to date with. Naming an enum is the same job as naming
+ * a tier, so it is done in the same place and typed on the enum.
+ */
+fun methodName(method: CalculationMethod): String = t(
+    when (method) {
+        CalculationMethod.MWL -> "Muslim World League"
+        CalculationMethod.ISNA -> "Islamic Society of North America"
+        CalculationMethod.EGYPTIAN -> "Egyptian General Authority"
+        CalculationMethod.UMM_AL_QURA -> "Umm al-Qurā"
+        CalculationMethod.KARACHI -> "University of Karachi"
+        CalculationMethod.JAFARI -> "Jaʿfarī · Leva, Qum"
+        CalculationMethod.TEHRAN -> "University of Tehran"
+    },
+)
+
+/** The same seven, short enough for a row of four pills. */
+fun methodPill(method: CalculationMethod): String = t(
+    when (method) {
+        CalculationMethod.MWL -> "mwl"
+        CalculationMethod.ISNA -> "isna"
+        CalculationMethod.EGYPTIAN -> "egypt"
+        CalculationMethod.UMM_AL_QURA -> "makkah"
+        CalculationMethod.KARACHI -> "karachi"
+        CalculationMethod.JAFARI -> "jafari"
+        CalculationMethod.TEHRAN -> "tehran"
     },
 )
 
@@ -206,7 +257,7 @@ private val HOME = mapOf(
     "done" to "تمّ",
     "no favourites yet" to "لا مفضّلات بعد",
     "tap for the next ayah →" to "← المس للآية التالية",
-    "setup unfinished — hold the clock" to "الإعداد لم يكتمل — المس الساعة مطوّلًا",
+    "setup unfinished — tap to finish" to "الإعداد لم يكتمل — المس لإتمامه",
     "%s in %s" to "%s بعد %s",
     "faḍīla %s" to "الفضيلة %s",
     "faḍīla %s · %s" to "الفضيلة %s · %s",
@@ -452,8 +503,10 @@ private val SETTINGS = mapOf(
         "%s تطبيقًا · كل ما ثبّتّه بنفسك يبدأ خلف البوّابة",
     "%s opens/day" to "%s فتحة/يوم",
     "%s still opens while a prayer window is in force." to "%s يظلّ يُفتح ووقت الصلاة قائم.",
-    "stricter takes effect at once; looser waits %s minutes" to
-        "التشديد يسري فورًا؛ والترخية تنتظر %s دقيقة",
+    // The duration arrives already formatted and already translated ("2 س 30 د"), so the unit is
+    // not repeated here.
+    "stricter takes effect at once; looser waits %s" to
+        "التشديد يسري فورًا؛ والترخية تنتظر %s",
     "%s chars" to "%s حرفًا",
     "the phone stops for salah · %s" to "الهاتف يقف للصلاة · %s",
     "nothing here waits while you are still setting up. %s" to
@@ -470,11 +523,12 @@ private val SETTINGS = mapOf(
     "applied." to "سرى.",
     "in force now." to "سارٍ الآن.",
     "TIER" to "الدرجة",
-    // The four tiers, twice: once as the word, once short enough for a row of four pills.
+    // The four tiers, twice: once as the word, once short enough for a row of four pills. The
+    // English pill is the word cut short; the Arabic one is the word, which is short already.
     "favourite" to "مفضّل",
     "allowed" to "مباح",
     "fav" to "مفضّل",
-    "open" to "مباح",
+    "allow" to "مباح",
     "gate" to "بوّابة",
     "block" to "محجوب",
     "daily minutes" to "دقائق اليوم",
@@ -593,6 +647,7 @@ private val SETUP = mapOf(
     "start enforcing" to "ابدأ الفرض",
     "you can come back here whenever something stops working." to
         "لك أن تعود إلى هنا كلما تعطّل شيء.",
+    "settings are a long press on the clock." to "والإعدادات خلف ضغطة مطوّلة على الساعة.",
     "DECIDE ONCE" to "قرّر مرّة واحدة",
     "yes, lock it in" to "نعم، أحكِمها",
     "not yet" to "ليس بعد",
@@ -620,6 +675,7 @@ private val PROSE = mapOf(
         "Add more to assets/supplications.json from an edition you trust and they will appear here." to
         "مختارات قصيرة من أشهر أدعية الكتاب، لا الكتاب كلّه. زِد عليها في " +
         "assets/supplications.json من طبعة تثق بها فتظهر هنا.",
+    "%.4f, %.4f · %s" to "%.4f، %.4f · %s",
     "%.3f, %.3f · typed" to "%.3f، %.3f · مكتوب",
     "%.3f, %.3f · from the phone" to "%.3f، %.3f · من الهاتف",
     "/day" to "/يوم",
@@ -703,12 +759,10 @@ private val PROSE = mapOf(
     "no fix — location may be off, or type the coordinates instead." to
         "لا تحديد — قد يكون الموقع مُعطّلًا، أو اكتب الإحداثيات.",
     "location set from the device." to "ضُبط الموقع من الجهاز.",
-    "muslim world league" to "رابطة العالم الإسلامي",
+    // The calculation methods as pills. Their full names are in HUB, with the rest of the words
+    // the madhab screen sets in title case.
     "isna" to "أمريكا الشمالية",
-    "egyptian authority" to "الهيئة المصرية",
-    "umm al-qura" to "أم القرى",
     "karachi" to "كراتشي",
-    "jafari (qum)" to "جعفري (قم)",
     "tehran" to "طهران",
     "mwl" to "الرابطة",
     "egypt" to "مصر",

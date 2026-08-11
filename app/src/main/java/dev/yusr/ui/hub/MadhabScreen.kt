@@ -17,6 +17,7 @@ import dev.yusr.data.settings.LocationSource
 import dev.yusr.domain.HighLatitudeRule
 import dev.yusr.domain.Madhab
 import dev.yusr.domain.Prayer
+import dev.yusr.ui.methodName
 import dev.yusr.ui.t
 import dev.yusr.ui.Hairline
 import dev.yusr.ui.SectionLabel
@@ -73,7 +74,7 @@ fun MadhabScreen(onBack: () -> Unit) {
         Column(modifier = Modifier.padding(top = 4.dp)) {
             DetailRow(
                 label = t("Method"),
-                value = prayer?.method?.let { methodLabel(it.name) } ?: "—",
+                value = prayer?.method?.let { methodName(it) } ?: "—",
             )
             Hairline()
             DetailRow(
@@ -135,17 +136,6 @@ fun MadhabScreen(onBack: () -> Unit) {
             modifier = Modifier.padding(top = 20.dp, bottom = 10.dp),
         )
     }
-}
-
-private fun methodLabel(name: String): String = when (name) {
-    "MWL" -> t("Muslim World League")
-    "ISNA" -> t("Islamic Society of North America")
-    "EGYPTIAN" -> t("Egyptian General Authority")
-    "UMM_AL_QURA" -> t("Umm al-Qurā")
-    "KARACHI" -> t("University of Karachi")
-    "JAFARI" -> t("Jaʿfarī · Leva, Qum")
-    "TEHRAN" -> t("University of Tehran")
-    else -> name
 }
 
 private fun highLatitudeLabel(rule: HighLatitudeRule?): String = when (rule) {

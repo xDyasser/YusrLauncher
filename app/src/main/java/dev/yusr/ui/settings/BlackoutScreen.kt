@@ -63,8 +63,8 @@ fun BlackoutScreen() {
                 // phone that changes language shows them in the new one rather than keeping the
                 // old. A window named by hand is shown as it was typed.
                 label = t(window.label) + if (!window.enabled) t(" · off") else "",
-                detail = "${BlackoutSchedule.formatMinuteOfDay(window.startMinuteOfDay)}–" +
-                    "${BlackoutSchedule.formatMinuteOfDay(window.endMinuteOfDay)} · ${describeDays(days)}",
+                detail = "${DayClock.clock(window.startMinuteOfDay)}–" +
+                    "${DayClock.clock(window.endMinuteOfDay)} · ${describeDays(days)}",
             ) {
                 scope.launch { report(mutator.deleteBlackout(window.id, window.label)) }
             }
