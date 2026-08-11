@@ -3,6 +3,7 @@ package dev.yusr.ui
 import android.app.LocaleManager
 import android.content.Context
 import android.os.LocaleList
+import dev.yusr.data.quran.Reciter
 import dev.yusr.data.settings.Language
 import dev.yusr.domain.AppTier
 import dev.yusr.domain.CalculationMethod
@@ -137,6 +138,17 @@ fun methodPill(method: CalculationMethod): String = t(
         CalculationMethod.TEHRAN -> "tehran"
     },
 )
+
+/**
+ * A reciter's name, in the script of whoever is reading it.
+ *
+ * This one does not go through the table, and it is the reason [Reciter] carries two spellings.
+ * Every other name in this file is a word the app chose for itself, a closed set that a
+ * translator can be handed; these are twelve people, and each of them already has an Arabic name
+ * that was theirs before any transliteration of it existed. So the picker asks here which of the
+ * two to print rather than keying "Maḥmūd Khalīl al-Ḥuṣarī" as though it were a sentence.
+ */
+fun reciterName(reciter: Reciter): String = if (isArabic()) reciter.arabicName else reciter.name
 
 private const val ARABIC = "ar"
 
@@ -610,6 +622,17 @@ private val SETUP = mapOf(
     "be the home screen" to "كُن الشاشة الرئيسة",
     "otherwise the old launcher is one press away." to "وإلا فالمشغّل القديم على بُعد ضغطة.",
     "open home settings" to "افتح إعدادات الشاشة الرئيسة",
+    "navigate by gestures" to "تنقّل بالإيماءات",
+    "swipe up for home, in from the edge for back. the launcher uses the phone's " to
+        "اسحب لأعلى للرئيسة، ومن الحافة للرجوع. يستعمل المشغّل إيماءات الهاتف ",
+    "own gestures and adds none of its own." to "نفسها ولا يضيف إليها شيئًا من عنده.",
+    "the phone is on the three buttons. gestures give that strip back to the " to
+        "الهاتف على الأزرار الثلاثة. والإيماءات تردّ ذلك الشريط إلى ",
+    "screen: swipe up for home, in from the edge for back. " to
+        "الشاشة: اسحب لأعلى للرئيسة، ومن الحافة للرجوع. ",
+    "Settings → System → Navigation mode, if the button below lands elsewhere." to
+        "الإعدادات ← النظام ← وضع التنقّل، إن أنزلك الزرّ أدناه في غير موضعه.",
+    "open navigation settings" to "افتح إعدادات التنقّل",
     "usage access" to "الوصول إلى الاستعمال",
     "lets the app see which app is in front, which is how limits are enforced." to
         "يتيح للتطبيق معرفة ما هو في المقدّمة، وبه تُفرَض الحدود.",
@@ -705,10 +728,13 @@ private val PROSE = mapOf(
         "الحافة للرجوع، والسحب لأعلى للرئيسة، وهو ما تعرفه أصلًا. ",
     "nothing here replaces it, and there is no bar of our own at the bottom." to
         "لا شيء هنا يحلّ محلّه، ولا شريط لنا في الأسفل.",
-    "if your phone is set to gesture navigation and it feels wrong here, it " to
-        "إن كان هاتفك على تنقّل الإيماءات ورأيته لا يستقيم هنا، فإعداد ",
-    "is the system setting that decides it: Settings → System → Navigation mode." to
-        "النظام هو الذي يقرّره: الإعدادات ← النظام ← وضع التنقّل.",
+    "your phone is on gesture navigation, which is what this was built for." to
+        "هاتفك على تنقّل الإيماءات، وعليه بُني هذا.",
+    "your phone is on the three buttons. gestures give that strip back " to
+        "هاتفك على الأزرار الثلاثة. والإيماءات تردّ ذلك الشريط ",
+    "to the screen — it is a system setting, not something set here: " to
+        "إلى الشاشة — وهو إعداد نظام لا يُضبط من هنا: ",
+    "Settings → System → Navigation mode." to "الإعدادات ← النظام ← وضع التنقّل.",
     "only for phones where the system navigation has been hidden or cannot be " to
         "للهواتف التي أُخفي فيها تنقّل النظام أو تعذّر ",
     "reached: a thin strip along the bottom edge — swipe up for home, tap or " to

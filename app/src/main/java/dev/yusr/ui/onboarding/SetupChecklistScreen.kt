@@ -60,6 +60,7 @@ fun SetupChecklistScreen(onReviewApps: () -> Unit = {}) {
     val rulesLocked = settings?.rulesLocked == true
 
     val isLauncher = remember(refresh) { Permissions.isDefaultLauncher(context) }
+    val gestures = remember(refresh) { Permissions.gestureNavigation(context) }
     val hasUsage = remember(refresh) { Permissions.hasUsageAccess(context) }
     val canOverlay = remember(refresh) { Permissions.canDrawOverlays(context) }
     val hasListener = remember(refresh) { Permissions.notificationListenerEnabled(context) }
@@ -112,6 +113,29 @@ fun SetupChecklistScreen(onReviewApps: () -> Unit = {}) {
             action = t("open home settings"),
         ) { open(Permissions.homeSettings()) }
 
+        // Directly under the home screen, because the two are one decision: this is the launcher
+        // now, and this is how you move around it. The three buttons are not broken here — back
+        // and home and recents all work — they simply cost a strip of every screen to a bar the
+        // launcher itself never draws in, on an app whose whole argument is the empty space.
+        //
+        // Nothing is enforced on the answer and a phone that will not say which mode it is in
+        // does not get told off: the item appears only where Android answered.
+        if (gestures != null) {
+            ChecklistItem(
+                done = gestures,
+                title = t("navigate by gestures"),
+                detail = if (gestures) {
+                    t("swipe up for home, in from the edge for back. the launcher uses the phone's ") +
+                        t("own gestures and adds none of its own.")
+                } else {
+                    t("the phone is on the three buttons. gestures give that strip back to the ") +
+                        t("screen: swipe up for home, in from the edge for back. ") +
+                        t("Settings → System → Navigation mode, if the button below lands elsewhere.")
+                },
+                action = t("open navigation settings"),
+            ) { open(Permissions.navigationModeSettings(context)) }
+        }
+
         ChecklistItem(
             done = hasUsage,
             title = t("usage access"),
@@ -140,9 +164,9 @@ fun SetupChecklistScreen(onReviewApps: () -> Unit = {}) {
             action = t("activate device admin"),
         ) { open(policyManager.addAdminIntent(t("Keeps Yusr Launcher from being removed on impulse."))) }
 
-        // Navigation is not on this list on purpose: the phone's own gestures work inside this
-        // launcher exactly as they do anywhere else. The optional strip lives in Appearance,
-        // for the phones where that navigation has been taken away.
+        // The strip of our own is not on this list and should not be: it is for the phones where
+        // the system navigation has been hidden or cannot be reached, it needs an accessibility
+        // service, and it lives in Appearance where someone goes looking for it.
 
         ChecklistItem(
             done = batteryFree,

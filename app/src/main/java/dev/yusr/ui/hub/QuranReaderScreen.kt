@@ -50,6 +50,7 @@ import dev.yusr.data.quran.SurahNames
 import dev.yusr.data.settings.AyahLanguage
 import dev.yusr.domain.Hijri
 import dev.yusr.ui.isArabic
+import dev.yusr.ui.reciterName
 import dev.yusr.ui.t
 import dev.yusr.ui.Hairline
 import dev.yusr.ui.SectionLabel
@@ -479,7 +480,7 @@ private fun ReaderFooter(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = reciter?.let { t("Ḥafṣ · %s", it.name) } ?: t("choose a reciter"),
+                text = reciter?.let { t("Ḥafṣ · %s", reciterName(it)) } ?: t("choose a reciter"),
                 style = MaterialTheme.typography.bodySmall,
                 color = if (reciter == null) Gold else Dim,
                 modifier = Modifier.noRippleClickable(onClick = onOpenReciters).weight(1f),
@@ -670,13 +671,18 @@ private fun ReciterList(onBack: () -> Unit) {
             }
 
             val available = reachable[reciter.id]
+            val state = when (available) {
+                null -> t("checking…")
+                true -> t("%s kbps", reciter.kbps)
+                false -> t("not reachable")
+            }
             ChoiceRow(
-                title = reciter.name,
-                subtitle = reciter.arabicName + " · " + when (available) {
-                    null -> t("checking…")
-                    true -> t("%s kbps", reciter.kbps)
-                    false -> t("not reachable")
-                },
+                title = reciterName(reciter),
+                // Under an English name the Arabic one is worth having: it is the spelling the
+                // recordings are catalogued under everywhere else. Under the Arabic name the
+                // transliteration is nothing — the same name a second time, in letters the reader
+                // did not ask for — so in Arabic the line is the bitrate alone.
+                subtitle = if (isArabic()) state else reciter.arabicName + " · " + state,
                 selected = reciter.id == chosen,
                 // A reciter the host does not have cannot be chosen, because choosing them would
                 // only produce a download that fails.

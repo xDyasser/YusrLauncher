@@ -68,6 +68,44 @@ object Permissions {
             .getOrDefault(false)
     }
 
+    /**
+     * Whether the phone is driven by gestures or by the three buttons along the bottom.
+     *
+     * Not a permission, and nothing here can set it — but it belongs with these because it is the
+     * same shape of thing: a system setting the launcher depends on and can only point at. Every
+     * screen in this app is a list you swipe through, and the three buttons take a strip of that
+     * list and put it under a bar the launcher never uses.
+     *
+     * `navigation_mode` is 0 for the buttons, 1 for the two-button arrangement Android 9 shipped,
+     * and 2 for gestures. It is not in the public API and an OEM is free never to write it, so
+     * anything absent or unrecognised comes back null — "cannot tell" — and the checklist stays
+     * quiet rather than telling someone their phone is set up wrong on a guess.
+     */
+    fun gestureNavigation(context: Context): Boolean? {
+        val mode = runCatching {
+            Settings.Secure.getInt(context.contentResolver, NAVIGATION_MODE)
+        }.getOrNull()
+        return when (mode) {
+            GESTURES -> true
+            THREE_BUTTON, TWO_BUTTON -> false
+            else -> null
+        }
+    }
+
+    /**
+     * Where that is changed. AOSP has a screen for it, but the action is not public API and an OEM
+     * may have moved it — so an unresolved intent falls back to the top of Settings, and the line
+     * that opens it names the path in words for exactly that case.
+     */
+    fun navigationModeSettings(context: Context): Intent {
+        val direct = Intent(GESTURE_NAVIGATION_SETTINGS)
+        return if (direct.resolveActivity(context.packageManager) != null) {
+            direct
+        } else {
+            Intent(Settings.ACTION_SETTINGS)
+        }
+    }
+
     fun accessibilitySettings(): Intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
 
     fun isDefaultLauncher(context: Context): Boolean {
@@ -104,4 +142,10 @@ object Permissions {
 
     fun appDetailsSettings(context: Context): Intent =
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}"))
+
+    private const val NAVIGATION_MODE = "navigation_mode"
+    private const val THREE_BUTTON = 0
+    private const val TWO_BUTTON = 1
+    private const val GESTURES = 2
+    private const val GESTURE_NAVIGATION_SETTINGS = "com.android.settings.GESTURE_NAVIGATION_SETTINGS"
 }
