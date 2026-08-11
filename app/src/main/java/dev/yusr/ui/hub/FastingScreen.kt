@@ -82,7 +82,7 @@ fun FastingScreen(onBack: () -> Unit) {
 
     HubPageFrame(
         title = t("Fasting"),
-        subtitle = if (classification.isFast) classification.label else t("nothing due today"),
+        subtitle = if (classification.isFast) t(classification.label) else t("nothing due today"),
         onBack = onBack,
         footer = {
             Text(
@@ -159,7 +159,7 @@ fun FastingScreen(onBack: () -> Unit) {
                         )
                         if (day.label.isNotBlank()) {
                             Text(
-                                text = day.label,
+                                text = t(day.label),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (day.kind == FastingCalendar.Kind.FORBIDDEN) Faint else Dim,
                             )

@@ -54,7 +54,7 @@ fun PendingChangesScreen() {
                 detail = if (secondsLeft <= 0) {
                     t("due — applies at the next check")
                 } else {
-                    "in ${format(secondsLeft)}"
+                    t("in %s", format(secondsLeft))
                 },
             ) {
                 scope.launch { repository.cancelPendingChange(change.id) }
@@ -73,8 +73,8 @@ fun PendingChangesScreen() {
 private fun format(seconds: Long): String {
     val minutes = seconds / 60
     return when {
-        minutes >= 60 -> "${minutes / 60}h ${minutes % 60}m"
-        minutes > 0 -> "${minutes}m ${seconds % 60}s"
-        else -> "${seconds}s"
+        minutes >= 60 -> t("%sh %sm", minutes / 60, minutes % 60)
+        minutes > 0 -> t("%sm %ss", minutes, seconds % 60)
+        else -> t("%ss", seconds)
     }
 }

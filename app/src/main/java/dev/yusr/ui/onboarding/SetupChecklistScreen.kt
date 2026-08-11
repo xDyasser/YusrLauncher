@@ -93,7 +93,7 @@ fun SetupChecklistScreen(onReviewApps: () -> Unit = {}) {
                 )
                 Madhab.entries.forEach { madhab ->
                     Text(
-                        text = "${madhab.label}  ·  ${madhab.note} · ${madhab.branch.label}",
+                        text = "${t(madhab.label)}  ·  ${t(madhab.note)} · ${t(madhab.branch.label)}",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier
@@ -184,8 +184,8 @@ fun SetupChecklistScreen(onReviewApps: () -> Unit = {}) {
 
                 if (showOwnerHelp) {
                     Text(
-                        text = "with the phone connected over USB and no other accounts on the device:\n\n" +
-                            "adb shell dpm set-device-owner dev.yusr/.admin.YusrAdminReceiver\n\n" +
+                        text = t("with the phone connected over USB and no other accounts on the device:") +
+                            "\n\nadb shell dpm set-device-owner dev.yusr/.admin.YusrAdminReceiver\n\n" +
                             t("removing it later needs adb, or a factory reset. read docs/SETUP.md first."),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onBackground,

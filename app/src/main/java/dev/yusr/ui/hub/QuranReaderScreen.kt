@@ -663,7 +663,7 @@ private fun ReciterList(onBack: () -> Unit) {
         ordered.forEach { reciter ->
             if (reciter.tradition != lastTradition) {
                 SectionLabel(
-                    text = reciter.tradition.label,
+                    text = t(reciter.tradition.label),
                     modifier = Modifier.padding(top = if (lastTradition == null) 0.dp else 20.dp, bottom = 4.dp),
                 )
                 lastTradition = reciter.tradition

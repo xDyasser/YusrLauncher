@@ -43,7 +43,7 @@ fun FrictionScreen() {
         notice = when (result) {
             is MutationResult.AppliedNow -> t("applied.")
             is MutationResult.Deferred ->
-                "queued — takes effect at ${DayClock.localDateTime(result.applyAtMillis).toLocalTime().withSecond(0).withNano(0)}."
+                t("queued — it takes effect at %s.", DayClock.clockAt(result.applyAtMillis))
         }
     }
 
@@ -52,14 +52,14 @@ fun FrictionScreen() {
     YusrPage(title = t("Friction"), subtitle = t("stricter takes effect at once; looser waits %s minutes", current.cooldownMinutes)) {
         Knob(
             caption = t("base wait"),
-            value = "${current.policy.baseDelaySeconds}s",
+            value = t("%ss", current.policy.baseDelaySeconds),
             onDown = { scope.launch { report(mutator.setBaseDelay((current.policy.baseDelaySeconds - 5).coerceAtLeast(0))) } },
             onUp = { scope.launch { report(mutator.setBaseDelay(current.policy.baseDelaySeconds + 5)) } },
         )
 
         Knob(
             caption = t("added per open today"),
-            value = "${current.policy.escalationSecondsPerOpen}s",
+            value = t("%ss", current.policy.escalationSecondsPerOpen),
             onDown = { scope.launch { report(mutator.setEscalation((current.policy.escalationSecondsPerOpen - 5).coerceAtLeast(0))) } },
             onUp = { scope.launch { report(mutator.setEscalation(current.policy.escalationSecondsPerOpen + 5)) } },
         )

@@ -1,5 +1,7 @@
 package dev.yusr.ui
 
+import dev.yusr.domain.AppTier
+import dev.yusr.util.DayClock
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -52,6 +54,40 @@ class LocalizationTest {
                 assertTrue("no Arabic in: $english → $arabic", translated.any { it in '\u0600'..'\u06FF' })
             }
         }
+    }
+
+    /**
+     * The four tiers reach a screen three ways — the pills, the line under an app's name, and the
+     * description of a queued change — and none of them may fall back on the enum's own spelling,
+     * which is English wherever it is printed.
+     */
+    @Test
+    fun `every tier has a word and a pill in both languages`() {
+        Locale.setDefault(Locale.forLanguageTag("ar"))
+        AppTier.entries.forEach { tier ->
+            assertTrue("tier name: $tier", tierName(tier).any { it in '\u0600'..'\u06FF' })
+            assertTrue("tier pill: $tier", tierPill(tier).any { it in '\u0600'..'\u06FF' })
+        }
+        Locale.setDefault(Locale.ENGLISH)
+        assertEquals("favourite", tierName(AppTier.FAVORITE))
+        assertEquals("fav", tierPill(AppTier.FAVORITE))
+    }
+
+    /**
+     * The h and the m in "2h 30m" are the first letters of English words, and a duration is the
+     * most widely printed thing in the app — the gate, the budgets, the friction knobs, the
+     * pending changes all say one.
+     */
+    @Test
+    fun `durations carry their unit into Arabic`() {
+        Locale.setDefault(Locale.ENGLISH)
+        assertEquals("45m", DayClock.formatMinutes(45))
+        assertEquals("2h", DayClock.formatMinutes(120))
+        assertEquals("2h 30m", DayClock.formatMinutes(150))
+        Locale.setDefault(Locale.forLanguageTag("ar"))
+        assertEquals("45 د", DayClock.formatMinutes(45))
+        assertEquals("2 س", DayClock.formatMinutes(120))
+        assertEquals("2 س 30 د", DayClock.formatMinutes(150))
     }
 
     @Test

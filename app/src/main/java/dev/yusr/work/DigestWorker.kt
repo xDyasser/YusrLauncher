@@ -9,6 +9,7 @@ import dev.yusr.YusrApp
 import dev.yusr.R
 import dev.yusr.container
 import dev.yusr.domain.DigestSchedule
+import dev.yusr.ui.t
 import dev.yusr.util.DayClock
 
 /**
@@ -47,7 +48,7 @@ class DigestWorker(
 
         val notification = Notification.Builder(applicationContext, YusrApp.CHANNEL_DIGEST)
             .setSmallIcon(R.drawable.ic_stat_minimal)
-            .setContentTitle("${held.size} notifications held back")
+            .setContentTitle(t("%s notifications held back", held.size))
             .setStyle(Notification.BigTextStyle().bigText(byApp.joinToString("\n")))
             .setAutoCancel(true)
             .build()

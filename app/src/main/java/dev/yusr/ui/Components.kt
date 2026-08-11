@@ -128,19 +128,6 @@ fun SectionLabel(
     )
 }
 
-/** The way back up, as a word rather than an arrow in a bar: t("‹ Hub"). */
-@Composable
-fun BackLine(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Text(
-        text = "‹ $label",
-        style = MaterialTheme.typography.bodyMedium,
-        color = Dim,
-        modifier = modifier
-            .noRippleClickable(onClick = onClick)
-            .padding(vertical = 4.dp, horizontal = 2.dp),
-    )
-}
-
 /**
  * A progress bar that is one pixel tall.
  *
@@ -228,7 +215,7 @@ fun TierPicker(
             val active = tier == selected
             val pill = RoundedCornerShape(12.dp)
             Text(
-                text = tier.name.lowercase(Locale.getDefault()).take(4),
+                text = tierPill(tier),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
                 color = if (active) MaterialTheme.colorScheme.onBackground else Faint,

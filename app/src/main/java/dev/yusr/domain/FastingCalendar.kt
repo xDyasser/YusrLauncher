@@ -1,5 +1,7 @@
 package dev.yusr.domain
 
+import dev.yusr.ui.isArabic
+import dev.yusr.ui.t
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -68,7 +70,11 @@ object FastingCalendar {
         if (hijri.month == 12 && hijri.day == 9) return Day(date, Kind.ARAFAH, "ʿArafah")
 
         if (hijri.day in 13..15) {
-            return Day(date, Kind.AYYAM_AL_BID, "White days · ${hijri.day} ${hijri.monthName}")
+            // The one label here that is not a fixed phrase, so it is the one that cannot be a
+            // key on its own — the day and the month have to go in from outside.
+            val day = if (isArabic()) Hijri.arabicDigits(hijri.day) else hijri.day.toString()
+            val month = if (isArabic()) hijri.monthNameArabic else hijri.monthNameTransliterated
+            return Day(date, Kind.AYYAM_AL_BID, t("White days · %s %s", day, month))
         }
 
         return Day(date, weekdayKind(date), weekdayLabel(date))

@@ -45,7 +45,9 @@ import dev.yusr.container
 import dev.yusr.data.prayer.PrayerToday
 import dev.yusr.data.quran.SurahNames
 import dev.yusr.data.settings.LocationSource
+import dev.yusr.domain.CalculationMethod
 import dev.yusr.domain.FastingCalendar
+import dev.yusr.domain.Madhab
 import dev.yusr.domain.Qibla
 import dev.yusr.ui.isArabic
 import dev.yusr.ui.t
@@ -53,6 +55,7 @@ import dev.yusr.ui.Hairline
 import dev.yusr.ui.SectionLabel
 import dev.yusr.ui.noRippleClickable
 import dev.yusr.ui.settings.SettingsActivity
+import dev.yusr.ui.settings.shortLabel
 import dev.yusr.ui.theme.Backdrop
 import dev.yusr.ui.theme.Dim
 import dev.yusr.ui.theme.Faint
@@ -169,7 +172,7 @@ private fun HubPage(onOpen: (HubScreen) -> Unit, onOpenSettings: () -> Unit) {
             verticalAlignment = Alignment.Bottom,
         ) {
             Text(
-                text = t("Hub"),
+                text = t("Devotions"),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -240,7 +243,7 @@ private fun HubPage(onOpen: (HubScreen) -> Unit, onOpenSettings: () -> Unit) {
                     color = MaterialTheme.colorScheme.onBackground,
                 )
                 Text(
-                    text = prayer?.let { settingsMadhabLine(it.effectiveMadhab.label, it.method.name) }
+                    text = prayer?.let { settingsMadhabLine(it.effectiveMadhab, it.method) }
                         ?: t("not set"),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Dim,
@@ -358,7 +361,7 @@ private fun QiblaBlock(
         ) {
             SectionLabel(t("Qibla"))
             Text(
-                text = "${bearing.roundToInt()}° ${Qibla.compassPoint(bearing)}",
+                text = "${bearing.roundToInt()}° ${t(Qibla.compassPoint(bearing))}",
                 style = MaterialTheme.typography.displaySmall,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -386,8 +389,13 @@ private fun prayerSubtitle(today: PrayerToday?, fadila: Boolean): String = when 
     else -> t("5 today")
 }
 
-private fun settingsMadhabLine(madhab: String, method: String): String =
-    "$madhab · ${method.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() }}"
+/**
+ * "Ḥanafī · mwl", "حنفي · الرابطة". The method used to be its enum constant with the underscores
+ * knocked out and the first letter raised — "Umm al qura" — which is neither the app's own name
+ * for it nor anything at all in Arabic.
+ */
+private fun settingsMadhabLine(madhab: Madhab, method: CalculationMethod): String =
+    "${t(madhab.label)} · ${method.shortLabel}"
 
 /** Shared by every page in the hub: a way back, and a title. */
 @Composable
@@ -401,7 +409,7 @@ internal fun HubPageFrame(
      */
     scrollKey: Any? = null,
     /** What the way out is called. A page inside a page goes back one step, not all the way. */
-    backLabel: String = t("‹ Hub"),
+    backLabel: String = t("‹ Devotions"),
     trailing: @Composable (() -> Unit)? = null,
     footer: @Composable (() -> Unit)? = null,
     content: @Composable () -> Unit,
@@ -434,7 +442,7 @@ internal fun HubPageListFrame(
     onBack: () -> Unit,
     subtitle: String? = null,
     scrollKey: Any? = null,
-    backLabel: String = t("‹ Hub"),
+    backLabel: String = t("‹ Devotions"),
     trailing: @Composable (() -> Unit)? = null,
     footer: @Composable (() -> Unit)? = null,
     content: LazyListScope.() -> Unit,
@@ -468,7 +476,7 @@ internal fun HubPageChrome(
     title: String,
     onBack: () -> Unit,
     subtitle: String? = null,
-    backLabel: String = t("‹ Hub"),
+    backLabel: String = t("‹ Devotions"),
     trailing: @Composable (() -> Unit)? = null,
     footer: @Composable (() -> Unit)? = null,
     body: @Composable (Modifier) -> Unit,

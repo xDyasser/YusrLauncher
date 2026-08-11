@@ -31,6 +31,7 @@ import dev.yusr.domain.AsrMethod
 import dev.yusr.domain.CalculationMethod
 import dev.yusr.domain.Prayer
 import dev.yusr.domain.PrayerTimetable
+import dev.yusr.ui.home.prayerName
 import dev.yusr.ui.t
 import dev.yusr.ui.YusrButton
 import dev.yusr.ui.YusrPage
@@ -41,7 +42,6 @@ import dev.yusr.util.DayClock
 import dev.yusr.util.LocationFetcher
 import dev.yusr.work.WorkScheduler
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 /**
  * Everything about salah in one place.
@@ -229,7 +229,7 @@ fun PrayerScreen() {
         Section(t("THE AYAH AT THE GATE")) {
             Text(
                 text = if (ayatDownloaded > 0) {
-                    "$ayatDownloaded ayat on the phone. shown at random when you try to open " +
+                    t("%s āyāt on the phone. shown at random when you try to open ", ayatDownloaded) +
                         t("something gated.")
                 } else {
                     t("a bundled handful is in use. downloading the qur'an replaces it with all ") +
@@ -339,7 +339,7 @@ private fun TodaysTimes(timetable: PrayerTimetable?, prayer: PrayerSettings) {
             val minute = timetable.minuteOfDay(which)
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
                 Text(
-                    text = which.name.lowercase(Locale.getDefault()),
+                    text = prayerName(which),
                     style = MaterialTheme.typography.bodyLarge,
                     color = if (which.isPrayer) {
                         MaterialTheme.colorScheme.onBackground
@@ -438,7 +438,7 @@ private fun WindowStepper(
             modifier = Modifier.noRippleClickable { onChange((value - 5).coerceAtLeast(0)) },
         )
         Text(
-            text = "${value}m",
+            text = t("%sm", value),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onBackground,
         )
@@ -459,7 +459,9 @@ private fun OffsetRow(prayer: Prayer, minutes: Int, at: Int?, onChange: (Int) ->
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
-            text = prayer.name.lowercase(Locale.getDefault()) +
+            // The prayer as it is said, not as the enum spells it: "ʿAsr", "العصر" — never
+            // "asr", which is what the constant's own name lowercased comes to in any language.
+            text = prayerName(prayer) +
                 (at?.let { "  %02d:%02d".format(it / 60, it % 60) } ?: ""),
             style = MaterialTheme.typography.bodyMedium,
             color = Faint,
@@ -488,8 +490,7 @@ private fun OffsetRow(prayer: Prayer, minutes: Int, at: Int?, onChange: (Int) ->
 private fun report(result: MutationResult): String = when (result) {
     is MutationResult.AppliedNow -> t("done.")
     is MutationResult.Deferred ->
-        t("queued — it takes effect at ") +
-            DayClock.localDateTime(result.applyAtMillis).toLocalTime().withSecond(0).withNano(0) + "."
+        t("queued — it takes effect at %s.", DayClock.clockAt(result.applyAtMillis))
 }
 
 private suspend fun useDeviceLocation(
@@ -516,7 +517,7 @@ private val CalculationMethod.label: String
         CalculationMethod.TEHRAN -> t("tehran")
     }
 
-private val CalculationMethod.shortLabel: String
+internal val CalculationMethod.shortLabel: String
     get() = when (this) {
         CalculationMethod.MWL -> t("mwl")
         CalculationMethod.ISNA -> t("isna")

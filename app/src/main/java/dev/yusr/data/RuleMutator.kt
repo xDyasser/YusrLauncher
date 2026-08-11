@@ -4,6 +4,8 @@ import dev.yusr.data.db.BlackoutWindowEntity
 import dev.yusr.data.db.PendingChangeKind
 import dev.yusr.data.settings.SettingsStore
 import dev.yusr.domain.AppTier
+import dev.yusr.ui.t
+import dev.yusr.ui.tierName
 import dev.yusr.util.DayClock
 
 /** What happened when the user asked for a change. */
@@ -41,7 +43,7 @@ class RuleMutator(
                 PendingChangeKind.SET_TIER,
                 packageName,
                 tier.name,
-                "${existing.label} → ${tier.name.lowercase()}",
+                t("%s → %s", existing.label, tierName(tier)),
             )
         }
     }
@@ -56,7 +58,7 @@ class RuleMutator(
                 PendingChangeKind.SET_DAILY_MINUTES,
                 packageName,
                 minutes?.toString().orEmpty(),
-                "${existing.label} daily limit → ${minutes?.let { DayClock.formatMinutes(it) } ?: "none"}",
+                t("%s daily limit → %s", existing.label, minutes?.let { DayClock.formatMinutes(it) } ?: t("none")),
             )
         }
     }
@@ -71,7 +73,7 @@ class RuleMutator(
                 PendingChangeKind.SET_DAILY_OPENS,
                 packageName,
                 opens?.toString().orEmpty(),
-                "${existing.label} daily opens → ${opens ?: "unlimited"}",
+                t("%s daily opens → %s", existing.label, opens ?: t("unlimited")),
             )
         }
     }
@@ -82,7 +84,7 @@ class RuleMutator(
             settingsStore.setBaseDelay(seconds)
             MutationResult.AppliedNow
         } else {
-            defer(PendingChangeKind.SET_BASE_DELAY, "", seconds.toString(), "base wait → ${seconds}s")
+            defer(PendingChangeKind.SET_BASE_DELAY, "", seconds.toString(), t("base wait → %s", t("%ss", seconds)))
         }
     }
 
@@ -92,7 +94,7 @@ class RuleMutator(
             settingsStore.setEscalation(seconds)
             MutationResult.AppliedNow
         } else {
-            defer(PendingChangeKind.SET_ESCALATION, "", seconds.toString(), "escalation → ${seconds}s per open")
+            defer(PendingChangeKind.SET_ESCALATION, "", seconds.toString(), t("escalation → %s per open", t("%ss", seconds)))
         }
     }
 
@@ -102,7 +104,7 @@ class RuleMutator(
             settingsStore.setMinReasonLength(chars)
             MutationResult.AppliedNow
         } else {
-            defer(PendingChangeKind.SET_MIN_REASON_LENGTH, "", chars.toString(), "reason length → $chars")
+            defer(PendingChangeKind.SET_MIN_REASON_LENGTH, "", chars.toString(), t("reason length → %s", chars))
         }
     }
 
@@ -116,7 +118,7 @@ class RuleMutator(
                 PendingChangeKind.SET_DEFAULT_SESSION_MINUTES,
                 "",
                 minutes.toString(),
-                "session length → ${DayClock.formatMinutes(minutes)}",
+                t("session length → %s", DayClock.formatMinutes(minutes)),
             )
         }
     }
@@ -128,7 +130,7 @@ class RuleMutator(
             MutationResult.AppliedNow
         } else {
             // Shortening the cooldown must itself serve the current, longer cooldown.
-            defer(PendingChangeKind.SET_COOLDOWN_MINUTES, "", minutes.toString(), "cooldown → ${minutes}m")
+            defer(PendingChangeKind.SET_COOLDOWN_MINUTES, "", minutes.toString(), t("cooldown → %s", DayClock.formatMinutes(minutes)))
         }
     }
 
@@ -138,7 +140,7 @@ class RuleMutator(
             settingsStore.setBypassesPerWeek(count)
             MutationResult.AppliedNow
         } else {
-            defer(PendingChangeKind.SET_BYPASSES_PER_WEEK, "", count.toString(), "bypasses → $count per week")
+            defer(PendingChangeKind.SET_BYPASSES_PER_WEEK, "", count.toString(), t("bypasses → %s per week", count))
         }
     }
 
@@ -164,7 +166,7 @@ class RuleMutator(
             }
             MutationResult.AppliedNow
         } else {
-            defer(PendingChangeKind.SET_BLACKOUT_ENABLED, id.toString(), "false", "turn off “$label”")
+            defer(PendingChangeKind.SET_BLACKOUT_ENABLED, id.toString(), "false", t("turn off “%s”", label))
         }
     }
 
@@ -173,7 +175,7 @@ class RuleMutator(
             repository.deleteBlackout(id)
             return MutationResult.AppliedNow
         }
-        return defer(PendingChangeKind.DELETE_BLACKOUT, id.toString(), "", "delete “$label”")
+        return defer(PendingChangeKind.DELETE_BLACKOUT, id.toString(), "", t("delete “%s”", label))
     }
 
     // ---- salah -------------------------------------------------------------------------
@@ -184,7 +186,7 @@ class RuleMutator(
             settingsStore.setPrayerEnabled(enabled)
             MutationResult.AppliedNow
         } else {
-            defer(PendingChangeKind.SET_PRAYER_ENABLED, "", "false", "stop pausing for salah")
+            defer(PendingChangeKind.SET_PRAYER_ENABLED, "", "false", t("stop pausing for salah"))
         }
     }
 
@@ -200,7 +202,11 @@ class RuleMutator(
                 PendingChangeKind.SET_PRAYER_WINDOW_MINUTES,
                 "",
                 "$before,$after",
-                "salah pause → ${before}m before, ${after}m after",
+                t(
+                    "salah pause → %s before, %s after",
+                    DayClock.formatMinutes(before),
+                    DayClock.formatMinutes(after),
+                ),
             )
         }
     }
@@ -219,7 +225,7 @@ class RuleMutator(
                 PendingChangeKind.SET_PRAYER_EXEMPT,
                 packageName,
                 "true",
-                "${existing.label} opens during salah",
+                t("%s opens during salah", existing.label),
             )
         }
     }
@@ -238,11 +244,18 @@ class RuleMutator(
                 PendingChangeKind.SET_OPENABLE_BY_HANDOFF,
                 packageName,
                 "true",
-                "${existing.label} opens when another app sends you to it",
+                t("%s opens when another app sends you to it", existing.label),
             )
         }
     }
 
+    /**
+     * Queues the change and keeps a sentence saying what it was, which is the only thing the
+     * pending-changes screen has to show. The sentence is written in the language in force when
+     * the change was asked for: what is stored is prose, not a key and its arguments, and the
+     * cooldown is short enough that the alternative — a second table mapping every kind of change
+     * back to a format string — would be more machinery than the case is worth.
+     */
     private suspend fun defer(
         kind: PendingChangeKind,
         targetKey: String,
