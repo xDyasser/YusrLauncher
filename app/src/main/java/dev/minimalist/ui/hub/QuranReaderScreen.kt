@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,11 +22,11 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,8 +56,10 @@ import dev.minimalist.ui.theme.Dim
 import dev.minimalist.ui.theme.Faint
 import dev.minimalist.ui.theme.Gold
 import dev.minimalist.ui.theme.QuranStyle
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * The mushaf.
@@ -82,15 +85,45 @@ fun QuranReaderScreen(onBack: () -> Unit) {
     var page by remember { mutableStateOf(ReaderPage.READER) }
     BackHandler(enabled = page != ReaderPage.READER) { page = ReaderPage.READER }
 
+    // Where the reader is, held above all three pages.
+    //
+    // The bookmark on disk is the record of this rather than the thing that drives it. Moving by
+    // writing to DataStore and waiting to read the write back meant a page turn did not land on
+    // the frame it was asked for: the sūrah you were leaving stayed on the screen — title, text
+    // and all — until the store came back, which is the pause that made turning a page feel like
+    // the app had stopped to think about it. The move happens here, at once; the write follows.
+    val stored by store.bookmark.collectAsState(initial = 1 to 1)
+    var place by remember { mutableStateOf(stored) }
+    // What the store still owes us: the last move made here, until it comes back around. A
+    // bookmark set anywhere else — at the gate, most of the time — is news and is followed, but
+    // an echo of a move we have already moved past would turn the page back under the reader.
+    var awaiting by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    LaunchedEffect(stored) {
+        when (awaiting) {
+            null -> place = stored
+            stored -> awaiting = null
+            else -> Unit
+        }
+    }
+
+    fun goTo(surah: Int, ayah: Int) {
+        place = surah to ayah
+        awaiting = place
+        scope.launch { store.setBookmark(surah, ayah) }
+    }
+
     when (page) {
         ReaderPage.READER -> Reader(
+            place = place,
+            onGoTo = { surah, ayah -> goTo(surah, ayah) },
             onBack = onBack,
             onOpenIndex = { page = ReaderPage.INDEX },
             onOpenReciters = { page = ReaderPage.RECITERS },
         )
         ReaderPage.INDEX -> SurahIndex(
+            current = place.first,
             onPick = { number ->
-                scope.launch { store.setBookmark(number, 1) }
+                goTo(number, 1)
                 page = ReaderPage.READER
             },
             onBack = { page = ReaderPage.READER },
@@ -103,6 +136,8 @@ private enum class ReaderPage { READER, INDEX, RECITERS }
 
 @Composable
 private fun Reader(
+    place: Pair<Int, Int>,
+    onGoTo: (Int, Int) -> Unit,
     onBack: () -> Unit,
     onOpenIndex: () -> Unit,
     onOpenReciters: () -> Unit,
@@ -114,19 +149,25 @@ private fun Reader(
     val recitation = remember { context.container.recitation }
 
     val settings by store.settings.collectAsState(initial = null)
-    val bookmark by store.bookmark.collectAsState(initial = 1 to 1)
     val reciterId by store.reciterId.collectAsState(initial = null)
     val reciter = remember(reciterId) { Reciters.byId(reciterId) }
 
-    val surah = bookmark.first
-    val ayat by produceState(initialValue = emptyList<Ayah>(), surah) { value = quran.surah(surah) }
+    val surah = place.first
+    val reciting = place.second
+
+    // Held with the number it was loaded for, and read back only when the two agree. `produceState`
+    // keeps its last value across a key change, which meant the frame that put the new sūrah's name
+    // in the title still had the old sūrah's text under it — the reader appearing to hang on the
+    // page you had just left. Nothing is better than the wrong sūrah for the ayah it takes to load.
+    var loaded by remember { mutableStateOf<Pair<Int, List<Ayah>>?>(null) }
+    LaunchedEffect(surah) { loaded = surah to quran.surah(surah) }
+    val ayat = loaded?.takeIf { it.first == surah }?.second
 
     // Downloading and playing are both about a sūrah rather than an ayah, so they live here and
     // the rows below only report what they are told.
     var download by remember(surah, reciter) { mutableStateOf<RecitationStore.Progress>(RecitationStore.Progress.Idle) }
     var downloadJob by remember { mutableStateOf<Job?>(null) }
     var playing by remember { mutableStateOf(false) }
-    var reciting by remember(surah) { mutableIntStateOf(bookmark.second) }
 
     PlayCurrentAyah(
         reciter = reciter,
@@ -138,33 +179,34 @@ private fun Reader(
             // Runs on to the end of the sūrah, and stops rather than wrapping to the next one:
             // where to go after al-Kahf is a decision, not a default.
             if (reciting < SurahNames.ayahCount(surah)) {
-                reciting += 1
-                scope.launch { store.setBookmark(surah, reciting) }
+                onGoTo(surah, reciting + 1)
             } else {
                 playing = false
             }
         },
     )
 
-    val downloaded = remember(surah, reciter, download) {
-        reciter?.let { recitation.downloadedAyat(it, surah) } ?: 0
+    // Counting a partial download is one `stat` per ayah — nearly three hundred of them for
+    // al-Baqara — so it is done off the main thread, and only once a download has settled rather
+    // than on every ayah it fetches. Composed straight, it was disk I/O on the frame that turned
+    // the page, and it showed.
+    val settled = download !is RecitationStore.Progress.Running
+    val downloaded by produceState(initialValue = 0, surah, reciter, settled) {
+        val chosen = reciter
+        value = if (chosen == null) 0 else withContext(Dispatchers.IO) {
+            recitation.downloadedAyat(chosen, surah)
+        }
     }
     val total = SurahNames.ayahCount(surah)
 
     /**
-     * Moves the bookmark, and with it the screen. Landing in another sūrah stops recitation:
+     * Moves the screen, and the bookmark with it. Landing in another sūrah stops recitation:
      * the next sūrah's audio is a separate download and may not be on the phone at all, and a
      * player that is silently playing nothing is worse than one that has plainly stopped.
      */
     fun goTo(toSurah: Int, toAyah: Int) {
-        if (toSurah == surah) {
-            reciting = toAyah
-        } else {
-            playing = false
-        }
-        // Within a sūrah the line above has already moved the screen; across one, the bookmark is
-        // what moves it, and `reciting` is re-read from the bookmark as the new sūrah loads.
-        scope.launch { store.setBookmark(toSurah, toAyah) }
+        if (toSurah != surah) playing = false
+        onGoTo(toSurah, toAyah)
     }
 
     /** One sūrah forward or back, from its beginning — which is what a page turn means here. */
@@ -173,7 +215,9 @@ private fun Reader(
         goTo(next, 1)
     }
 
-    HubPageFrame(
+    val language = settings?.prayer?.ayahLanguage ?: AyahLanguage.BOTH
+
+    HubPageListFrame(
         // Named in whichever script the interface is in; the index below shows both, side by
         // side, whatever happens up here.
         title = (if (isArabic()) SurahNames.arabic(surah) else SurahNames.transliterated(surah))
@@ -227,26 +271,34 @@ private fun Reader(
                 },
             )
         },
+        // Drawn across the whole text rather than around a single ayah, because a page turn is
+        // about the page. It sits outside the list's own scrolling, so reading up and down the
+        // sūrah and moving between sūrahs never contend for the same drag.
+        bodyModifier = swipeBetweenSurahs(key = surah, onTurn = { step -> turnSurah(step) }),
     ) {
+        // Null is "not read yet" and empty is "not on the phone" — the two look nothing alike to
+        // whoever is holding it, and telling them apart is what keeps the download notice from
+        // flashing up in the moment between one sūrah and the next.
+        if (ayat == null) return@HubPageListFrame
+
         if (ayat.isEmpty()) {
-            Text(
-                text = t("The Qur'an has not been downloaded yet. Settings → Prayer times and salah ") +
-                    t("→ download the Qur'an fetches all 6,236 āyāt once, and then never again."),
-                style = MaterialTheme.typography.bodyMedium,
-                color = Dim,
-            )
-            return@HubPageFrame
+            item {
+                Text(
+                    text = t("The Qur'an has not been downloaded yet. Settings → Prayer times and salah ") +
+                        t("→ download the Qur'an fetches all 6,236 āyāt once, and then never again."),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Dim,
+                )
+            }
+            return@HubPageListFrame
         }
 
-        // Drawn across the whole text rather than around a single ayah, because a page turn is
-        // about the page. It sits outside the vertical scroll's own gesture, so reading up and
-        // down the sūrah and moving between sūrahs never contend for the same drag.
-        SwipeBetweenSurahs(key = surah, onTurn = { step -> turnSurah(step) }) {
-            // The basmala heads every sūrah but al-Tawba, and is counted as an ayah in none of
-            // them except al-Fātiḥa — where it is the first, and so already in the list below.
-            // Everywhere else it is printed here, once; the stored text of ayah 1 no longer
-            // carries it, so there is no chance of reading it twice.
-            if (Basmala.headingBelongsAbove(surah, ayah = 1)) {
+        // The basmala heads every sūrah but al-Tawba, and is counted as an ayah in none of
+        // them except al-Fātiḥa — where it is the first, and so already in the list below.
+        // Everywhere else it is printed here, once; the stored text of ayah 1 no longer
+        // carries it, so there is no chance of reading it twice.
+        if (Basmala.headingBelongsAbove(surah, ayah = 1)) {
+            item(key = "basmala") {
                 Text(
                     text = Basmala.ARABIC,
                     style = QuranStyle,
@@ -255,16 +307,15 @@ private fun Reader(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 18.dp),
                 )
             }
+        }
 
-            val language = settings?.prayer?.ayahLanguage ?: AyahLanguage.BOTH
-            ayat.forEach { ayah ->
-                AyahRow(
-                    ayah = ayah,
-                    language = language,
-                    marked = ayah.ayah == reciting,
-                    onMark = { goTo(surah, ayah.ayah) },
-                )
-            }
+        items(ayat, key = { it.ayah }) { ayah ->
+            AyahRow(
+                ayah = ayah,
+                language = language,
+                marked = ayah.ayah == reciting,
+                onMark = { goTo(surah, ayah.ayah) },
+            )
         }
     }
 }
@@ -277,31 +328,22 @@ private fun Reader(
  * mirrored, and where the mushaf itself is bound the other way round — from the left.
  */
 @Composable
-private fun SwipeBetweenSurahs(
-    key: Any?,
-    onTurn: (Int) -> Unit,
-    content: @Composable () -> Unit,
-) {
+private fun swipeBetweenSurahs(key: Any?, onTurn: (Int) -> Unit): Modifier {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .pointerInput(key, rtl) {
-                var dragged = 0f
-                val threshold = SWIPE_THRESHOLD.toPx()
-                detectHorizontalDragGestures(
-                    onDragEnd = {
-                        val forward = if (rtl) dragged > threshold else dragged < -threshold
-                        val back = if (rtl) dragged < -threshold else dragged > threshold
-                        if (forward) onTurn(1) else if (back) onTurn(-1)
-                        dragged = 0f
-                    },
-                    onDragCancel = { dragged = 0f },
-                    onHorizontalDrag = { _, amount -> dragged += amount },
-                )
+    val turn by rememberUpdatedState(onTurn)
+    return Modifier.pointerInput(key, rtl) {
+        var dragged = 0f
+        val threshold = SWIPE_THRESHOLD.toPx()
+        detectHorizontalDragGestures(
+            onDragEnd = {
+                val forward = if (rtl) dragged > threshold else dragged < -threshold
+                val back = if (rtl) dragged < -threshold else dragged > threshold
+                if (forward) turn(1) else if (back) turn(-1)
+                dragged = 0f
             },
-    ) {
-        content()
+            onDragCancel = { dragged = 0f },
+            onHorizontalDrag = { _, amount -> dragged += amount },
+        )
     }
 }
 
@@ -483,46 +525,48 @@ private fun PlayCurrentAyah(
     }
 }
 
-/** All hundred and fourteen, with the ones whose recitation is already on the phone marked. */
+/** All hundred and fourteen, with the one being read marked. */
 @Composable
-private fun SurahIndex(onPick: (Int) -> Unit, onBack: () -> Unit) {
-    val context = LocalContext.current
-    val store = remember { context.container.settingsStore }
-    val bookmark by store.bookmark.collectAsState(initial = 1 to 1)
-
-    HubPageFrame(title = t("Sūras"), subtitle = "114", onBack = onBack) {
-        SurahNames.all().forEach { number ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .noRippleClickable { onPick(number) }
-                    .padding(vertical = 10.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+private fun SurahIndex(current: Int, onPick: (Int) -> Unit, onBack: () -> Unit) {
+    // A hundred and fourteen rows are laid out as they are scrolled to rather than all at once,
+    // for the same reason the reader's āyāt are: the whole of it measured on the frame that opens
+    // the index is a stall on the way in and another on the way back out.
+    val numbers = remember { SurahNames.all() }
+    HubPageListFrame(title = t("Sūras"), subtitle = "114", onBack = onBack) {
+        items(numbers, key = { it }) { number ->
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .noRippleClickable { onPick(number) }
+                        .padding(vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Text(
+                            text = number.toString(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Dim,
+                        )
+                        Text(
+                            text = SurahNames.transliterated(number).orEmpty(),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = if (number == current) {
+                                Gold
+                            } else {
+                                MaterialTheme.colorScheme.onBackground
+                            },
+                        )
+                    }
                     Text(
-                        text = number.toString(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Dim,
-                    )
-                    Text(
-                        text = SurahNames.transliterated(number).orEmpty(),
+                        text = SurahNames.arabic(number).orEmpty(),
                         style = MaterialTheme.typography.bodyLarge,
-                        color = if (number == bookmark.first) {
-                            Gold
-                        } else {
-                            MaterialTheme.colorScheme.onBackground
-                        },
+                        color = Faint,
                     )
                 }
-                Text(
-                    text = SurahNames.arabic(number).orEmpty(),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Faint,
-                )
+                Hairline()
             }
-            Hairline()
         }
     }
 }
