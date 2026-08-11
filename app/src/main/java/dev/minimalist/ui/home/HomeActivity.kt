@@ -214,9 +214,21 @@ private fun HomeScreen(
     //
     // It changes only when it is tapped. A verse that changed itself would be scenery; one that
     // waits is something you finished reading.
-    val bookmark by store.bookmark.collectAsState(initial = null)
-    val ayah by produceState<Ayah?>(null, bookmark) {
-        value = bookmark?.let { quran.at(it.first, it.second) }
+    //
+    // Before anything has been read there is no bookmark to be at, and the ayah is the one the
+    // launcher is named for — or the opening of the book itself, once the book is on the device.
+    // Either way the first tap writes a bookmark and it is the ordinary logic from then on.
+    val bookmark by store.storedBookmark.collectAsState(initial = null)
+    // Only the never-read case reads this, and only to pick which opening it is; it is here so
+    // that a download finishing while the home screen is up turns the ayah over with it.
+    val quranDownloaded by quran.downloaded.collectAsState(initial = null)
+    val ayah by produceState<Ayah?>(null, bookmark, quranDownloaded) {
+        val place = bookmark?.place
+        value = when {
+            bookmark == null -> null // Not read off disk yet; nothing to show rather than a guess.
+            place == null -> quran.opening()
+            else -> quran.at(place.first, place.second)
+        }
     }
 
     // Rearranging the names is a mode, entered by hand and left the same way. Nothing moves

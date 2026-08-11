@@ -1,15 +1,15 @@
 <resources>
-    <string name="app_name">Minimalist</string>
-    <string name="notification_listener_label">Minimalist notification filter</string>
-    <string name="admin_label">Minimalist</string>
-    <string name="admin_description">Keeps Minimalist installed so its limits cannot be removed on impulse.</string>
-    <string name="admin_disable_warning">Turning this off removes the only thing stopping you from uninstalling Minimalist in a weak moment. Are you sure?</string>
+    <string name="app_name">Yusr Launcher</string>
+    <string name="notification_listener_label">Yusr Launcher notification filter</string>
+    <string name="admin_label">Yusr Launcher</string>
+    <string name="admin_description">Keeps Yusr Launcher installed so its limits cannot be removed on impulse.</string>
+    <string name="admin_disable_warning">Turning this off removes the only thing stopping you from uninstalling Yusr Launcher in a weak moment. Are you sure?</string>
     <string name="guard_channel_name">Enforcement</string>
     <string name="guard_channel_description">Keeps the limit enforcement running.</string>
     <string name="digest_channel_name">Notification digest</string>
     <string name="digest_channel_description">A once-or-twice daily summary of notifications that were held back.</string>
-    <string name="guard_notification_title">Minimalist is on</string>
-    <string name="nav_service_label">Minimalist navigation</string>
+    <string name="guard_notification_title">Yusr Launcher is on</string>
+    <string name="nav_service_label">Yusr Launcher navigation</string>
     <string name="nav_service_summary">Home, back and recent apps from a strip along the bottom edge.</string>
     <string name="nav_service_description">Draws a thin strip along the bottom of the screen. Swipe up for home, tap or swipe right for back, hold or swipe left for recent apps. It reads nothing from the screen.</string>
 </resources>

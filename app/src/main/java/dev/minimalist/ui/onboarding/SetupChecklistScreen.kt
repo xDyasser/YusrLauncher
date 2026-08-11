@@ -138,7 +138,7 @@ fun SetupChecklistScreen(onReviewApps: () -> Unit = {}) {
             title = t("device admin"),
             detail = t("makes uninstalling take deliberate steps rather than a long press."),
             action = t("activate device admin"),
-        ) { open(policyManager.addAdminIntent(t("Keeps Minimalist from being removed on impulse."))) }
+        ) { open(policyManager.addAdminIntent(t("Keeps Yusr Launcher from being removed on impulse."))) }
 
         // Navigation is not on this list on purpose: the phone's own gestures work inside this
         // launcher exactly as they do anywhere else. The optional strip lives in Appearance,

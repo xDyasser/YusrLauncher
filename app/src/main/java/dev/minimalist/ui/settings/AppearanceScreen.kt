@@ -177,7 +177,7 @@ fun AppearanceScreen() {
 
             if (settings?.navOverlayEnabled == true && !navServiceOn) {
                 Text(
-                    text = t("the strip needs the Minimalist navigation accessibility service ") +
+                    text = t("the strip needs the Yusr Launcher navigation accessibility service ") +
                         t("switched on before it can appear."),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onBackground,

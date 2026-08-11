@@ -52,6 +52,15 @@ enum class AyahLanguage { ARABIC, ENGLISH, BOTH }
 /** Where the coordinates came from, which is worth showing so a wrong timetable is explicable. */
 enum class LocationSource { UNSET, MANUAL, DEVICE }
 
+/**
+ * The bookmark as it is actually on disk: [place] is null when nothing has ever been written.
+ *
+ * The wrapper exists so that a screen collecting the flow can tell "not read from disk yet" (no
+ * value at all) from "read, and there is nothing there" ([place] null) — a bare nullable pair
+ * collapses the two, and on a fresh install they call for different ayat.
+ */
+data class StoredBookmark(val place: Pair<Int, Int>?)
+
 /** No widget chosen. Matches [android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID]. */
 const val NO_WIDGET: Int = 0
 
@@ -415,10 +424,21 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setReciterId(id: String) = putString(Keys.RECITER, id)
 
-    /** Where the reader was left, as sūra and ayah. Defaults to the opening of al-Fātiḥa. */
-    val bookmark: Flow<Pair<Int, Int>> = context.dataStore.data.map {
-        (it[Keys.BOOKMARK_SURAH] ?: 1) to (it[Keys.BOOKMARK_AYAH] ?: 1)
+    /**
+     * Where the reader was left, or [StoredBookmark.place] null on a device that has never been
+     * anywhere in the book.
+     *
+     * Never having read is not the same as being at the opening, and the home screen shows a
+     * different ayah for each, so the two have to stay tellable apart this far down.
+     */
+    val storedBookmark: Flow<StoredBookmark> = context.dataStore.data.map { prefs ->
+        val surah = prefs[Keys.BOOKMARK_SURAH]
+        val ayah = prefs[Keys.BOOKMARK_AYAH]
+        StoredBookmark(if (surah != null && ayah != null) surah to ayah else null)
     }
+
+    /** Where the reader was left, as sūra and ayah. Defaults to the opening of al-Fātiḥa. */
+    val bookmark: Flow<Pair<Int, Int>> = storedBookmark.map { it.place ?: (1 to 1) }
 
     suspend fun setBookmark(surah: Int, ayah: Int) {
         context.dataStore.edit {
