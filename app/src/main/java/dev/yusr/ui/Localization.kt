@@ -4,6 +4,7 @@ import android.app.LocaleManager
 import android.content.Context
 import android.os.LocaleList
 import dev.yusr.data.settings.Language
+import dev.yusr.domain.AppTier
 import java.util.Locale
 
 /**
@@ -59,6 +60,33 @@ fun applyLanguage(context: Context, language: Language) {
 /** What the app is speaking right now, whoever decided it. */
 fun isArabic(): Boolean = Locale.getDefault().language == ARABIC
 
+/**
+ * What a tier is called where there is room for the word — the line under an app's name, the
+ * description of a change waiting out its cooldown.
+ *
+ * The enum's own spelling is not it. `AppTier.FAVORITE.name.lowercase()` is "favorite" in every
+ * language on earth, and the four pills used to be that string cut to four letters, which gives
+ * "favo" and "allo" in English and four letters of nothing in Arabic.
+ */
+fun tierName(tier: AppTier): String = t(
+    when (tier) {
+        AppTier.FAVORITE -> "favourite"
+        AppTier.ALLOWED -> "allowed"
+        AppTier.GATED -> "gated"
+        AppTier.BLOCKED -> "blocked"
+    },
+)
+
+/** The same four, short enough that all of them fit across one row of pills. */
+fun tierPill(tier: AppTier): String = t(
+    when (tier) {
+        AppTier.FAVORITE -> "fav"
+        AppTier.ALLOWED -> "open"
+        AppTier.GATED -> "gate"
+        AppTier.BLOCKED -> "block"
+    },
+)
+
 private const val ARABIC = "ar"
 
 /** The Arabic of the interface, in the language the app was written in as the key. */
@@ -70,9 +98,56 @@ internal object ArabicStrings {
         putAll(SETTINGS)
         putAll(SETUP)
         putAll(DOMAIN)
+        putAll(UNITS)
+        putAll(PENDING)
         putAll(PROSE)
     }
 }
+
+/**
+ * Durations, which are text too.
+ *
+ * "45m" is not a number with a symbol after it, it is English — the m is the first letter of
+ * "minutes", and on an Arabic screen it is a Latin letter sitting in the middle of a right-to-left
+ * line saying nothing. The digits stay as they are, because the rest of the app sets numbers that
+ * way; only the letter changes.
+ */
+private val UNITS = mapOf(
+    "%sh" to "%s س",
+    "%sm" to "%s د",
+    "%ss" to "%s ث",
+    "%sh %sm" to "%s س %s د",
+    "%sm %ss" to "%s د %s ث",
+)
+
+/**
+ * What a change waiting out its cooldown is called on the pending-changes screen.
+ *
+ * These are written when the change is queued rather than when it is shown, because that is when
+ * the words exist — the row in the database keeps a sentence, not a sentence and its arguments.
+ * A cooldown is minutes, so the only way to see one of these in the wrong language is to change
+ * language while a change is waiting, and then it says what it said when you asked for it.
+ *
+ * The arrow points the way the language runs: → in English, ← in Arabic, the same as everywhere
+ * else in the app that names a path through the settings.
+ */
+private val PENDING = mapOf(
+    "%s → %s" to "%s ← %s",
+    "%s daily limit → %s" to "حدّ %s اليومي ← %s",
+    "%s daily opens → %s" to "فتحات %s اليومية ← %s",
+    "base wait → %s" to "الانتظار الأساسي ← %s",
+    "escalation → %s per open" to "التصاعد ← %s لكل فتحة",
+    "reason length → %s" to "طول السبب ← %s",
+    "session length → %s" to "طول الجلسة ← %s",
+    "cooldown → %s" to "مهلة الترخية ← %s",
+    "bypasses → %s per week" to "الاستثناءات ← %s أسبوعيًّا",
+    "salah pause → %s before, %s after" to "وقفة الصلاة ← %s قبلها و%s بعدها",
+    "turn off “%s”" to "إيقاف ”%s“",
+    "delete “%s”" to "حذف ”%s“",
+    "%s opens during salah" to "%s يُفتح أثناء الصلاة",
+    "%s opens when another app sends you to it" to "%s يُفتح حين يرسلك إليه تطبيق آخر",
+    "unlimited" to "بلا حدّ",
+)
 
 /**
  * Words that come out of the domain rather than off a screen — the school you follow, the day the
@@ -96,6 +171,7 @@ private val DOMAIN = mapOf(
     "ʿArafah" to "عرفة",
     "Monday" to "الإثنين",
     "Thursday" to "الخميس",
+    "White days · %s %s" to "الأيام البيض · %s %s",
     "ʿĪd al-Fiṭr · no fasting" to "عيد الفطر · لا صوم",
     "ʿĪd al-Aḍḥā · no fasting" to "عيد الأضحى · لا صوم",
     "Days of tashrīq · no fasting" to "أيام التشريق · لا صوم",
@@ -118,7 +194,12 @@ private val DOMAIN = mapOf(
 )
 
 private val HOME = mapOf(
-    "Hub" to "المفاتيح",
+    // Not "المفاتيح". That is the plural of "key", which is not what a hub is in either language,
+    // and in an app that ships Mafātīḥ al-Jinān it is the name of one of the books on the shelf.
+    // "الأوراد" is the word for the portions of worship a person keeps to daily — the Qur'an read,
+    // the dhikr counted, the duʿāʾ said, the fast marked — which is exactly what is behind this
+    // door and nothing that is not.
+    "Devotions" to "الأوراد",
     "All apps" to "كل التطبيقات",
     "All apps · %s" to "كل التطبيقات · %s",
     "Dhikr" to "ذِكر",
@@ -175,7 +256,7 @@ private val HUB = mapOf(
     "Going out" to "الخروج",
     "Leaving, travelling, returning" to "الخروج والسفر والعودة",
     "%s texts" to "%s نصًّا",
-    "‹ Hub" to "المفاتيح ›",
+    "‹ Devotions" to "الأوراد ›",
     "‹ %s" to "%s ›",
     "Selected" to "المختار",
     "Qibla" to "القبلة",
@@ -389,6 +470,13 @@ private val SETTINGS = mapOf(
     "applied." to "سرى.",
     "in force now." to "سارٍ الآن.",
     "TIER" to "الدرجة",
+    // The four tiers, twice: once as the word, once short enough for a row of four pills.
+    "favourite" to "مفضّل",
+    "allowed" to "مباح",
+    "fav" to "مفضّل",
+    "open" to "مباح",
+    "gate" to "بوّابة",
+    "block" to "محجوب",
     "daily minutes" to "دقائق اليوم",
     "daily opens" to "فتحات اليوم",
     "DURING SALAH" to "أثناء الصلاة",
@@ -452,6 +540,7 @@ private val SETTINGS = mapOf(
     "remove it" to "احذفها",
     "never mind" to "دَعْ ذلك",
     "no app on this phone publishes a widget." to "لا تطبيق في هذا الهاتف ينشر أداة.",
+    "A STRIP OF OUR OWN · OFF" to "شريط من عندنا · مُعطّل",
     "hide the strip" to "أخفِ الشريط",
     "show the strip" to "أظهر الشريط",
     "open accessibility settings" to "افتح إعدادات إمكانية الوصول",
@@ -518,11 +607,14 @@ private val SETUP = mapOf(
  */
 private val PROSE = mapOf(
     "%,d km to Makkah · %s" to "%,d كم إلى مكة · %s",
+    // The digest notification, which is built in a worker rather than on a screen and is none the
+    // less the app talking to the person holding the phone.
+    "%s notifications held back" to "%s إشعارًا مُحتجزًا",
     "The supplications as printed. The titles are written here, not the book's own." to
         "الأدعية كما هي مطبوعة. والعناوين مكتوبة هنا، لا من الكتاب.",
     "The Arabic edition, its own headings and its own notes. Footnotes are not here." to
         "من الطبعة العربية، بعناوين الكتاب نفسه وتعليقاته. والحواشي ليست هنا.",
-    "Shaykh ʿAbbās al-Qummī · complete" to "الشيخ عبّاس القمّي · كاملًا",
+    "Shaykh ʿAbbās al-Qummī · a selection" to "الشيخ عبّاس القمّي · مختارات",
     "Saʿīd b. ʿAlī al-Qaḥṭānī · a selection" to "سعيد بن علي القحطاني · مختارات",
     "A short selection of the best known of the book's supplications, not the whole of it. " +
         "Add more to assets/supplications.json from an edition you trust and they will appear here." to
@@ -543,8 +635,9 @@ private val PROSE = mapOf(
         "← تنزيل القرآن يجلب الآيات الستة آلاف ومئتين وستًّا والثلاثين مرّةً واحدة، ثم لا يعود.",
     "closed during a prayer window, like everything else." to
         "مغلق وقت الصلاة، كسائر التطبيقات.",
-    "a link, a sign-in page or a web app opens straight into " to
-        "الرابط وصفحة الدخول وتطبيق الوِب تفتح مباشرةً في ",
+    "a link, a sign-in page or a web app opens straight into %s. " to
+        "الرابط وصفحة الدخول وتطبيق الوِب تفتح %s مباشرةً. ",
+    "going to it yourself still " to "والذهاب إليه بنفسك يظلّ ",
     "costs the gate." to "يكلّفك البوّابة.",
     "the gate stands whichever way you arrive. on a browser that means every " to
         "البوّابة قائمة من أيّ طريق أتيت. وفي المتصفّح يعني ذلك أن كل ",
@@ -590,6 +683,8 @@ private val PROSE = mapOf(
         "وقت واحد للظهر والعصر، وآخر للمغرب والعشاء — وقفتان في ",
     "day rather than four." to "اليوم بدل أربع.",
     "something gated." to "شيئًا خلف البوّابة.",
+    "%s āyāt on the phone. shown at random when you try to open " to
+        "%s آية في الهاتف. تُعرض واحدة منها حين تحاول فتح ",
     "a bundled handful is in use. downloading the qur'an replaces it with all " to
         "يُستعمل الآن نزر مُضمَّن. وتنزيل القرآن يستبدل به الآيات ",
     "6,236, and then the network is never needed again." to
@@ -604,7 +699,7 @@ private val PROSE = mapOf(
     "fetched. everything still works." to "شيء أبدًا. ويبقى كل شيء عاملًا.",
     "shown only — nothing is being blocked for salah yet." to
         "تُعرض فحسب — ولا حجب للصلاة بعد.",
-    "queued — it takes effect at " to "في الانتظار — ويسري عند ",
+    "queued — it takes effect at %s." to "في الانتظار — ويسري عند %s.",
     "no fix — location may be off, or type the coordinates instead." to
         "لا تحديد — قد يكون الموقع مُعطّلًا، أو اكتب الإحداثيات.",
     "location set from the device." to "ضُبط الموقع من الجهاز.",
@@ -647,6 +742,8 @@ private val PROSE = mapOf(
         "غير مضبوط. وهذه أقوى الدرجات: يرفض النظام فتح المحجوب، ",
     "and the app cannot be uninstalled without ADB or a factory reset." to
         "ولا يُحذف التطبيق إلا بـ ADB أو إعادة ضبط المصنع.",
+    "with the phone connected over USB and no other accounts on the device:" to
+        "والهاتف موصول عبر USB ولا حسابات أخرى على الجهاز:",
     "removing it later needs adb, or a factory reset. read docs/SETUP.md first." to
         "وإزالته بعدُ تحتاج adb أو إعادة ضبط المصنع. اقرأ docs/SETUP.md أوّلًا.",
     "go through the app list and decide each one. while the rules are unlocked " to

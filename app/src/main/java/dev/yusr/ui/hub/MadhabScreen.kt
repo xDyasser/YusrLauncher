@@ -58,8 +58,8 @@ fun MadhabScreen(onBack: () -> Unit) {
         Column(modifier = Modifier.padding(top = 6.dp)) {
             Madhab.entries.forEach { madhab ->
                 ChoiceRow(
-                    title = madhab.label,
-                    subtitle = "${madhab.note} · ${madhab.branch.label}",
+                    title = t(madhab.label),
+                    subtitle = "${t(madhab.note)} · ${t(madhab.branch.label)}",
                     selected = prayer?.madhab == madhab,
                     onSelect = { scope.launch { store.setMadhab(madhab) } },
                 )
@@ -162,6 +162,6 @@ private fun offsetSummary(offsets: Map<Prayer, Int>): String {
     if (set.isEmpty()) return t("None")
     return set.entries.joinToString(", ") { (prayer, minutes) ->
         val sign = if (minutes > 0) "+" else "−"
-        "${dev.yusr.ui.home.prayerName(prayer)} $sign${kotlin.math.abs(minutes)} m"
+        "${dev.yusr.ui.home.prayerName(prayer)} $sign${t("%sm", kotlin.math.abs(minutes))}"
     }
 }

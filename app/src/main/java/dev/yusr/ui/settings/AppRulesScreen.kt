@@ -26,6 +26,7 @@ import dev.yusr.container
 import dev.yusr.data.MutationResult
 import dev.yusr.data.db.AppRuleEntity
 import dev.yusr.ui.t
+import dev.yusr.ui.tierName
 import dev.yusr.ui.YusrPage
 import dev.yusr.ui.YusrRow
 import dev.yusr.ui.PillPicker
@@ -79,7 +80,7 @@ fun AppRulesScreen() {
 }
 
 private fun describe(rule: AppRuleEntity): String {
-    val tier = rule.tier.name.lowercase(Locale.getDefault())
+    val tier = tierName(rule.tier)
     val caps = buildList {
         rule.dailyMinutes?.let { add(DayClock.formatMinutes(it) + t("/day")) }
         rule.dailyOpens?.let { add(t("%s opens/day", it)) }
@@ -98,7 +99,7 @@ private fun AppRuleDetail(rule: AppRuleEntity, onDone: () -> Unit) {
         notice = when (result) {
             is MutationResult.AppliedNow -> t("done.")
             is MutationResult.Deferred ->
-                "queued — it takes effect at ${DayClock.localDateTime(result.applyAtMillis).toLocalTime().withSecond(0).withNano(0)}."
+                t("queued — it takes effect at %s.", DayClock.clockAt(result.applyAtMillis))
         }
     }
 
@@ -158,8 +159,8 @@ private fun AppRuleDetail(rule: AppRuleEntity, onDone: () -> Unit) {
         )
         Text(
             text = if (rule.openableByHandoff) {
-                t("a link, a sign-in page or a web app opens straight into ") +
-                    "${rule.label.lowercase(Locale.getDefault())}. going to it yourself still " +
+                t("a link, a sign-in page or a web app opens straight into %s. ", rule.label.lowercase(Locale.getDefault())) +
+                    t("going to it yourself still ") +
                     t("costs the gate.")
             } else {
                 t("the gate stands whichever way you arrive. on a browser that means every ") +

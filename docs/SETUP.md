@@ -26,7 +26,7 @@ links straight to the right system screen.
 The first thing the checklist asks is **which school you follow** — Ḥanafī, Shāfiʿī, Mālikī,
 Ḥanbalī, Jaʿfarī or Zaydī. Nothing is chosen for you. Answering it sets the ʿasr rule, the
 calculation method, whether dhuhr and ʿaṣr (and maghrib and ʿishāʾ) are combined, and which book
-the hub's adhkār and duʿāʾ come from; all of those stay editable afterwards under **Hub →
+the hub's adhkār and duʿāʾ come from; all of those stay editable afterwards under **Devotions →
 Madhab & calculation**. The question disappears once answered, and an install made before it
 existed keeps its current settings rather than being asked again.
 
@@ -95,9 +95,9 @@ phone publishes, by app. The first one you pick raises a system dialog asking wh
 launcher may hold widgets — say yes once and later picks are immediate. Choose the height, or
 remove it and the next-prayer line comes back.
 
-## 2d. The hub
+## 2d. The devotions
 
-**Hub**, at the bottom left of the home screen. Everything the phone does that is not an app.
+**Devotions** — *الأوراد* — at the bottom left of the home screen. Everything the phone does that is not an app.
 
 The **qibla** is at the centre of it, drawn from the coordinates you already set for the prayer
 times. On a phone with a compass the dial turns as you turn and the gold needle points at the
@@ -123,7 +123,7 @@ one-shadow point for dhuhr, the red *shafaq* leaving the sky for maghrib, *shar'
 ʿishāʾ — and shows it under the home screen's prayer strip. Two of those are descriptions of the
 sky rather than angles, so they are approximations and are worth checking against your masjid.
 Nothing in the enforcement layer reads any of it: it is a nudge on a screen, not a rule. Turn it
-off under **Hub → Madhab & calculation → Show faḍīla windows**.
+off under **Devotions → Madhab & calculation → Show faḍīla windows**.
 
 **The mushaf.** The reader needs the full Qur'an, which is the one-shot download under
 **Settings → Prayer times and salah**; the two dozen āyāt bundled in the APK are enough for the

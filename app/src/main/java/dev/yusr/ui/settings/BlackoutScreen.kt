@@ -43,7 +43,7 @@ fun BlackoutScreen() {
         notice = when (result) {
             is MutationResult.AppliedNow -> t("in force now.")
             is MutationResult.Deferred ->
-                "queued — takes effect at ${DayClock.localDateTime(result.applyAtMillis).toLocalTime().withSecond(0).withNano(0)}."
+                t("queued — it takes effect at %s.", DayClock.clockAt(result.applyAtMillis))
         }
     }
 

@@ -151,7 +151,7 @@ fun AppearanceScreen() {
             )
 
             Text(
-                text = "A STRIP OF OUR OWN · OFF",
+                text = t("A STRIP OF OUR OWN · OFF"),
                 style = MaterialTheme.typography.labelSmall,
                 color = Faint,
                 modifier = Modifier.padding(top = 28.dp),

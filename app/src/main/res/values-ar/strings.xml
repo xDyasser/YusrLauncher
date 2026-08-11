@@ -1,0 +1,29 @@
+<resources>
+    <!--
+      The strings the app does not print itself.
+
+      Everything on a screen the app draws goes through Localization.kt, which is keyed on the
+      English sentence and looked up at the moment of drawing. These fourteen cannot: they are
+      read by the system, on screens the app never sees — the app list, the accessibility list,
+      the device-admin confirmation, the notification-channel settings — and the system reads
+      them out of resources or not at all. So they are here, in the one place Android will look
+      when the phone, or the per-app language, is Arabic.
+
+      The name is set as يُسر rather than transliterated. "Yusr" is the Arabic word for ease
+      spelled in Latin letters for people who cannot read it; on an Arabic phone that reason is
+      gone, and the whole of the rest of the app already declines to name itself in Latin.
+    -->
+    <string name="app_name">يُسر</string>
+    <string name="notification_listener_label">مرشّح إشعارات يُسر</string>
+    <string name="admin_label">يُسر</string>
+    <string name="admin_description">يُبقي التطبيق مثبّتًا كي لا تُرفع حدوده في لحظة اندفاع.</string>
+    <string name="admin_disable_warning">إيقاف هذا يرفع الشيء الوحيد الذي يمنعك من حذف التطبيق في لحظة ضعف. أمتأكّد؟</string>
+    <string name="guard_channel_name">الفرض</string>
+    <string name="guard_channel_description">يُبقي فرض الحدود عاملًا.</string>
+    <string name="digest_channel_name">مُلخّص الإشعارات</string>
+    <string name="digest_channel_description">مُلخّص مرّة أو مرّتين في اليوم للإشعارات التي حُبست.</string>
+    <string name="guard_notification_title">يُسر يعمل</string>
+    <string name="nav_service_label">تنقّل يُسر</string>
+    <string name="nav_service_summary">الرئيسة والرجوع والتطبيقات الأخيرة من شريط على الحافة السفلى.</string>
+    <string name="nav_service_description">يرسم شريطًا رفيعًا على أسفل الشاشة. اسحب لأعلى للرئيسة، والمس أو اسحب يمينًا للرجوع، واضغط مطوّلًا أو اسحب يسارًا للتطبيقات الأخيرة. ولا يقرأ شيئًا من الشاشة.</string>
+</resources>

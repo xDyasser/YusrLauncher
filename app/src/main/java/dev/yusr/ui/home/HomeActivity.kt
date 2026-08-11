@@ -604,7 +604,7 @@ private fun HomeBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = t("Hub"),
+                text = t("Devotions"),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Faint,
                 modifier = Modifier.noRippleClickable(onClick = onOpenHub).padding(end = 12.dp),

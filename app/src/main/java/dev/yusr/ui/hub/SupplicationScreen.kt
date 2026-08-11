@@ -105,7 +105,7 @@ fun SupplicationScreen(dua: Boolean, onBack: () -> Unit) {
         backLabel = when {
             entryId != null -> t("‹ %s", section?.title?.let(::t) ?: t("back"))
             openSection != null -> t("‹ %s", current?.let(::bookTitle) ?: t("back"))
-            else -> t("‹ Hub")
+            else -> t("‹ Devotions")
         },
         onBack = {
             when {

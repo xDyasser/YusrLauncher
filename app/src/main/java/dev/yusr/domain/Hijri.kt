@@ -68,6 +68,11 @@ object Hijri {
         /** "12 Ramaḍān 1447" — the form the home screen sets under the clock. */
         val display: String get() = "$day ${MONTHS_TRANSLITERATED[month - 1]} $year"
 
+        /** "Rajab", "رجب" — the month on its own, for a label that names one. */
+        val monthNameTransliterated: String get() = MONTHS_TRANSLITERATED[month - 1]
+
+        val monthNameArabic: String get() = MONTHS_ARABIC[month - 1]
+
         /** "١٢ رمضان ١٤٤٧" — the same date for a screen already set in Arabic. */
         val arabic: String
             get() = "${arabicDigits(day)} ${MONTHS_ARABIC[month - 1]} ${arabicDigits(year)}"

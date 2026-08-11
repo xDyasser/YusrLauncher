@@ -43,7 +43,7 @@ can equally type. Nothing is ever uploaded; there is no account and no analytics
   preferred time has left. Under that the ayah the mushaf is bookmarked at — tap it when you have
   read it and both it and the reader move on one ayah — then the favourites —
   names, nothing else. No icons, no wallpaper, no swipe into a grid. The list scrolls if you name
-  more favourites than fit, and the bar at the foot — **Hub**, **All apps**, **Dhikr** — stays put
+  more favourites than fit, and the bar at the foot — **Devotions**, **All apps**, **Dhikr** — stays put
   whatever the list does. A faint mark beside the clock gives every name a handle to drag it into
   the order you want; held against either edge the list walks past under your finger, the rest of
   the row still scrolls, and *done* puts it back. The drawer is that word or a long press, and
