@@ -40,9 +40,10 @@ class GuardService : LifecycleService() {
     private var lastForeground: String? = null
 
     /**
-     * Whatever was in front before [lastForeground]. This is what tells a browser opened from a
-     * message apart from a browser opened on purpose, and there is no other signal that does:
-     * a custom tab, a web app and the browser itself all surface as the same package.
+     * Whatever the usage events say was in front before [lastForeground]. This is what tells a
+     * browser opened from a message apart from a browser opened on purpose, and there is no other
+     * signal that does: a custom tab, a web app and the browser itself all surface as the same
+     * package.
      */
     private var previousForeground: String? = null
     private var lastInterventionAt: Long = 0L
@@ -105,6 +106,15 @@ class GuardService : LifecycleService() {
             beginTracking(packageName, SessionGovernor.grant?.wasBypass == true, now)
             return true
         }
+
+        // A grant that has already run out belongs to a visit that is over. The app is coming
+        // forward again and is about to be decided on afresh, so the spent grant has no say in
+        // what happens next — and left lying about it has the last word anyway: the expiry check
+        // in [onSameAppStillOpen] would fire on the very next tick and shut the app this decision
+        // is about to allow. That is what closed a browser a second after a link had opened it,
+        // on a handoff that had cost nothing and granted nothing: the session that ended it had
+        // ended before the link was ever tapped.
+        if (SessionGovernor.isExpiredFor(packageName, now)) SessionGovernor.clear()
 
         val snapshot = repository.snapshot(packageName)
         return when (val decision = repository.decide(packageName, now)) {
@@ -230,14 +240,23 @@ class GuardService : LifecycleService() {
         val events: UsageEvents = usage.queryEvents(now - LOOKBACK_MILLIS, now + 1_000)
         val event = UsageEvents.Event()
         var latest: String? = null
+        var behindLatest: String? = null
         while (events.hasNextEvent()) {
             events.getNextEvent(event)
-            if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
-                latest = event.packageName
-            }
+            if (event.eventType != UsageEvents.Event.ACTIVITY_RESUMED) continue
+            if (event.packageName == latest) continue
+            behindLatest = latest
+            latest = event.packageName
         }
         if (latest != null && latest != lastForeground) {
-            previousForeground = lastForeground
+            // What came before it is read out of the events themselves rather than out of the
+            // last poll. Two apps can come and go between two ticks — five seconds pass between
+            // them while nothing is being policed — and the poll before could easily have caught
+            // the home screen rather than the app that did the handing over. Sampling it that way
+            // gated a browser opened from a message whenever the message app had been reached
+            // quickly enough, and gated one every time the service had just started and had no
+            // previous poll to remember.
+            previousForeground = behindLatest ?: lastForeground
             lastForeground = latest
         }
         return lastForeground
