@@ -340,17 +340,25 @@ private fun HomeScreen(
                 // of names that all refuse is worse than no list. What there is instead is the
                 // name of the prayer and how much of the stop is left, which is the one question
                 // a closed phone in your hand raises.
-                Column(modifier = Modifier.padding(top = 16.dp)) {
+                // Centred, unlike everything else on this screen. The names below are a list and
+                // a list is read down its left edge; this is one thing on an otherwise empty
+                // screen, and a thing on its own sitting against the margin looks like the top of
+                // a list that failed to load.
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
                     Text(
                         text = prayerName(window),
                         style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = TextAlign.Center,
                     )
                     PauseRing(
                         window = window,
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .padding(top = 24.dp),
+                        modifier = Modifier.padding(top = 24.dp),
                     )
                 }
             } else {

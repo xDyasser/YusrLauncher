@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.yusr.container
 import dev.yusr.domain.PrayerWindow
@@ -164,16 +165,28 @@ private fun BlockScreen(
             .padding(top = 40.dp, bottom = 28.dp)
             .verticalScroll(rememberScrollState()),
     ) {
+        // The salah refusal is the one that is not a paragraph about an app. It is a name and a
+        // countdown, and the ring in the middle of them pulls the whole thing to the centre — a
+        // heading against the left margin above a centred ring reads as two screens overlapping.
+        // Every other refusal stays where it was, ranged left with the text it explains itself in.
+        val salah = reason == RefusalReason.PRAYER
+        val align = if (salah) TextAlign.Center else null
+
         Text(
             text = headline,
             style = MaterialTheme.typography.displayLarge,
             color = MaterialTheme.colorScheme.onBackground,
+            textAlign = align,
+            modifier = Modifier.fillMaxWidth(),
         )
         Text(
             text = explanation,
             style = MaterialTheme.typography.bodyLarge,
             color = Faint,
-            modifier = Modifier.padding(top = 16.dp),
+            textAlign = align,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
         )
 
         prayerWindow?.let { window ->
@@ -186,14 +199,17 @@ private fun BlockScreen(
         }
 
         Text(
-            text = if (reason == RefusalReason.PRAYER) {
+            text = if (salah) {
                 t("go and pray. that is the whole idea.")
             } else {
                 t("it resets tomorrow. that is the whole idea.")
             },
             style = MaterialTheme.typography.bodyMedium,
             color = Faint,
-            modifier = Modifier.padding(top = 24.dp),
+            textAlign = align,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 24.dp),
         )
 
         YusrButton(
