@@ -45,6 +45,14 @@ data class UsageSessionEntity(
     val startMillis: Long,
     val endMillis: Long? = null,
     val wasBypass: Boolean = false,
+    /**
+     * Another app opened this one, and it was marked as an app that may be opened that way. The
+     * time is still recorded — the dashboard counts every minute the phone was awake in front of
+     * someone — but it is not charged to the app's daily budget, which is a budget for going to
+     * the app rather than for being sent to it.
+     */
+    @ColumnInfo(defaultValue = "0")
+    val wasHandoff: Boolean = false,
 )
 
 enum class OverrideKind { GATE_PASSED, EMERGENCY_BYPASS }

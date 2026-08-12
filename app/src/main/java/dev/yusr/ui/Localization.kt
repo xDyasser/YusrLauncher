@@ -715,6 +715,7 @@ private val PROSE = mapOf(
         "مغلق وقت الصلاة، كسائر التطبيقات.",
     "a link, a sign-in page or a web app opens straight into %s. " to
         "الرابط وصفحة الدخول وتطبيق الوِب تفتح %s مباشرةً. ",
+    "the day's allowance is not spent on it. " to "ولا يُنفق عليه رصيد اليوم. ",
     "going to it yourself still " to "والذهاب إليه بنفسك يظلّ ",
     "costs the gate." to "يكلّفك البوّابة.",
     "the gate stands whichever way you arrive. on a browser that means every " to

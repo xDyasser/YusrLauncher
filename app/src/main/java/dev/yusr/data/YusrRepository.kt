@@ -149,7 +149,12 @@ class YusrRepository(
     // ---- the decision ------------------------------------------------------------------
 
     /** The question this whole app exists to answer. */
-    suspend fun decide(packageName: String, now: Long = System.currentTimeMillis()): GateDecision {
+    suspend fun decide(
+        packageName: String,
+        now: Long = System.currentTimeMillis(),
+        /** Only the guard service knows this, and only it passes it. Every other door is a tap. */
+        handedOff: Boolean = false,
+    ): GateDecision {
         val settings = settingsStore.current()
         val rule = snapshot(packageName)
         val usage = usageToday(packageName, now)
@@ -161,6 +166,7 @@ class YusrRepository(
             inBlackout = inBlackout,
             bypassesRemaining = bypassesRemaining(settings, now),
             inPrayerWindow = prayer.activeWindow(now) != null,
+            handedOff = handedOff,
         )
     }
 
@@ -186,7 +192,9 @@ class YusrRepository(
     }
 
     suspend fun sessionRecords(since: Long): List<SessionRecord> =
-        sessions.since(since).map { SessionRecord(it.packageName, it.startMillis, it.endMillis, it.wasBypass) }
+        sessions.since(since).map {
+            SessionRecord(it.packageName, it.startMillis, it.endMillis, it.wasBypass, it.wasHandoff)
+        }
 
     fun observeSessionsSince(since: Long): Flow<List<UsageSessionEntity>> = sessions.observeSince(since)
 
@@ -197,9 +205,21 @@ class YusrRepository(
 
     // ---- sessions ----------------------------------------------------------------------
 
-    suspend fun openSession(packageName: String, wasBypass: Boolean, now: Long = System.currentTimeMillis()): Long {
+    suspend fun openSession(
+        packageName: String,
+        wasBypass: Boolean,
+        wasHandoff: Boolean = false,
+        now: Long = System.currentTimeMillis(),
+    ): Long {
         sessions.closeAllOpen(now)
-        return sessions.insert(UsageSessionEntity(packageName = packageName, startMillis = now, wasBypass = wasBypass))
+        return sessions.insert(
+            UsageSessionEntity(
+                packageName = packageName,
+                startMillis = now,
+                wasBypass = wasBypass,
+                wasHandoff = wasHandoff,
+            ),
+        )
     }
 
     suspend fun closeOpenSessions(now: Long = System.currentTimeMillis()) = sessions.closeAllOpen(now)

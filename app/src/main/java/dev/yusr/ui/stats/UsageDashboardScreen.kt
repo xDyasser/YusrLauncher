@@ -40,7 +40,9 @@ fun UsageDashboardScreen() {
     }
 
     val records = remember(sessions) {
-        sessions.map { SessionRecord(it.packageName, it.startMillis, it.endMillis, it.wasBypass) }
+        sessions.map {
+            SessionRecord(it.packageName, it.startMillis, it.endMillis, it.wasBypass, it.wasHandoff)
+        }
     }
     val liveNow = System.currentTimeMillis()
 

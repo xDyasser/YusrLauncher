@@ -36,6 +36,9 @@ class GuardService : LifecycleService() {
     private val protectedPackages: Set<String> by lazy { container.catalog.protectedPackages() }
 
     private var trackedPackage: String? = null
+
+    /** Whether [trackedPackage] was handed the phone by another app, for as long as it is in front. */
+    private var trackedByHandoff: Boolean = false
     private var openSessionId: Long? = null
     private var lastForeground: String? = null
 
@@ -103,7 +106,7 @@ class GuardService : LifecycleService() {
 
     private suspend fun onNewForegroundApp(packageName: String, now: Long): Boolean {
         if (SessionGovernor.isGrantedFor(packageName, now)) {
-            beginTracking(packageName, SessionGovernor.grant?.wasBypass == true, now)
+            beginTracking(packageName, SessionGovernor.grant?.wasBypass == true, handedOff = false, now = now)
             return true
         }
 
@@ -116,22 +119,23 @@ class GuardService : LifecycleService() {
         // ended before the link was ever tapped.
         if (SessionGovernor.isExpiredFor(packageName, now)) SessionGovernor.clear()
 
+        // A link, a sign-in page, a web app that is really a browser tab. Whether that is worth
+        // anything is the evaluator's business — it is the one place that decides — so it is told
+        // how the app arrived and answers with the whole rule, gate and budget together.
         val snapshot = repository.snapshot(packageName)
-        return when (val decision = repository.decide(packageName, now)) {
+        val arrivedByHandoff = snapshot.openableByHandoff && handedOff(packageName)
+
+        return when (val decision = repository.decide(packageName, now, arrivedByHandoff)) {
             is GateDecision.Allow -> {
-                // Favourites and utilities still get their time recorded, just not policed.
-                beginTracking(packageName, wasBypass = false, now = now)
+                // Favourites and utilities still get their time recorded, just not policed, and
+                // so does a handoff — recorded as the handoff it was, so that the minutes show up
+                // on the dashboard without the browser's own allowance being what paid for them.
+                beginTracking(packageName, wasBypass = false, handedOff = arrivedByHandoff, now = now)
                 snapshot.tier != AppTier.FAVORITE && snapshot.tier != AppTier.ALLOWED
             }
 
             is GateDecision.RequireFriction -> {
-                if (snapshot.openableByHandoff && handedOff(packageName)) {
-                    // A link, a sign-in page, a web app that is really a browser tab. The time
-                    // still counts against the app's budget; only the toll is waived.
-                    beginTracking(packageName, wasBypass = false, now = now)
-                } else {
-                    intervene(packageName, now) { GateActivity.newIntent(this, packageName) }
-                }
+                intervene(packageName, now) { GateActivity.newIntent(this, packageName) }
                 true
             }
 
@@ -183,7 +187,10 @@ class GuardService : LifecycleService() {
         // other limits it closes favourites too — being already inside one is exactly the case
         // that matters when the adhan arrives.
         if (SessionGovernor.grant?.packageName == packageName || repository.activePrayerWindow(now) != null) {
-            val decision = repository.decide(packageName, now)
+            // Asked the way it was asked when the app opened. Nothing about how it arrived has
+            // changed since — it has been in front the whole time — and a visit that was waived
+            // at the door must not be refused halfway through for a rule that was already waived.
+            val decision = repository.decide(packageName, now, trackedByHandoff)
             if (decision is GateDecision.Refuse && decision.reason != RefusalReason.PERMANENTLY_BLOCKED) {
                 closeTracking(now)
                 SessionGovernor.clear()
@@ -196,9 +203,15 @@ class GuardService : LifecycleService() {
         return true
     }
 
-    private suspend fun beginTracking(packageName: String, wasBypass: Boolean, now: Long) {
+    private suspend fun beginTracking(
+        packageName: String,
+        wasBypass: Boolean,
+        handedOff: Boolean,
+        now: Long,
+    ) {
         trackedPackage = packageName
-        openSessionId = repository.openSession(packageName, wasBypass, now)
+        trackedByHandoff = handedOff
+        openSessionId = repository.openSession(packageName, wasBypass, handedOff, now)
     }
 
     private suspend fun closeTracking(now: Long) {
@@ -206,6 +219,7 @@ class GuardService : LifecycleService() {
             repository.closeOpenSessions(now)
         }
         trackedPackage = null
+        trackedByHandoff = false
         openSessionId = null
     }
 

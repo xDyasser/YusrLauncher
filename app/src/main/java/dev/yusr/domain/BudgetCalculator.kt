@@ -6,6 +6,8 @@ data class SessionRecord(
     val startMillis: Long,
     val endMillis: Long? = null,
     val wasBypass: Boolean = false,
+    /** Another app opened this one. Counted on the dashboard, not against the daily budget. */
+    val wasHandoff: Boolean = false,
 )
 
 object BudgetCalculator {
@@ -16,6 +18,12 @@ object BudgetCalculator {
      * Sessions are clamped to the window, so an app left open across midnight is charged to
      * both days for the part that actually falls in each — the previous day's overrun does not
      * eat today's budget, and today's does not get a free pass.
+     *
+     * Handed-off sessions are left out altogether. A cap on a browser is a cap on browsing, and
+     * the links, sign-in pages and web apps that pass through it were never that: charging them
+     * spent the day's opens on apps the user had not opened, and then refused the browser for
+     * having been busy on someone else's behalf. [totalMinutes] still counts them, because the
+     * dashboard is about where the day went and the day did go there.
      */
     fun usageFor(
         sessions: List<SessionRecord>,
@@ -28,6 +36,7 @@ object BudgetCalculator {
 
         for (session in sessions) {
             if (session.packageName != packageName) continue
+            if (session.wasHandoff) continue
 
             val end = session.endMillis ?: nowMillis
             val overlapStart = maxOf(session.startMillis, dayStartMillis)
