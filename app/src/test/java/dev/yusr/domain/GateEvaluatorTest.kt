@@ -20,6 +20,7 @@ class GateEvaluatorTest {
         opens: Int? = null,
         sessionMinutes: Int? = null,
         prayerExempt: Boolean = false,
+        openableByHandoff: Boolean = false,
     ) = AppRuleSnapshot(
         packageName = "com.example.app",
         label = "Example",
@@ -27,6 +28,7 @@ class GateEvaluatorTest {
         budget = AppBudget(dailyMinutes = minutes, dailyOpens = opens),
         sessionMinutes = sessionMinutes,
         prayerExempt = prayerExempt,
+        openableByHandoff = openableByHandoff,
     )
 
     private fun evaluate(
@@ -35,7 +37,8 @@ class GateEvaluatorTest {
         inBlackout: Boolean = false,
         bypasses: Int = 3,
         inPrayerWindow: Boolean = false,
-    ) = GateEvaluator.evaluate(rule, usage, policy, inBlackout, bypasses, inPrayerWindow)
+        handedOff: Boolean = false,
+    ) = GateEvaluator.evaluate(rule, usage, policy, inBlackout, bypasses, inPrayerWindow, handedOff)
 
     @Test
     fun `favourites open without friction`() {
@@ -156,5 +159,61 @@ class GateEvaluatorTest {
     fun `a refusal reports how many bypasses are left`() {
         val decision = evaluate(rule(opens = 1), AppUsageToday(opens = 1), bypasses = 2)
         assertEquals(2, (decision as GateDecision.Refuse).bypassesRemaining)
+    }
+
+    // ---- the handoff ---------------------------------------------------------------------
+
+    private val browser = rule(opens = 3, minutes = 20, openableByHandoff = true)
+
+    @Test
+    fun `a handed-off app skips the countdown`() {
+        assertTrue(evaluate(browser, handedOff = true) is GateDecision.Allow)
+    }
+
+    /**
+     * The bug this is here for: every web app on the phone is the browser wearing a coat, and
+     * charging their opens to it spent a three-open budget by lunchtime. What the cap was for was
+     * browsing, and the browser had not been opened once.
+     */
+    @Test
+    fun `a spent budget does not refuse a link, a sign-in page or a web app`() {
+        assertTrue(evaluate(browser, AppUsageToday(opens = 3), handedOff = true) is GateDecision.Allow)
+        assertTrue(
+            evaluate(browser, AppUsageToday(opens = 1, minutesUsed = 40), handedOff = true)
+                is GateDecision.Allow,
+        )
+    }
+
+    /** Going to it yourself costs everything it costs. Only the handoff is free. */
+    @Test
+    fun `the same app opened from the launcher still meets its spent budget`() {
+        val decision = evaluate(browser, AppUsageToday(opens = 3), handedOff = false)
+        assertEquals(RefusalReason.DAILY_OPENS_SPENT, (decision as GateDecision.Refuse).reason)
+    }
+
+    @Test
+    fun `an app that was never marked for it is handed off to no effect`() {
+        val decision = evaluate(rule(opens = 1), AppUsageToday(opens = 1), handedOff = true)
+        assertEquals(RefusalReason.DAILY_OPENS_SPENT, (decision as GateDecision.Refuse).reason)
+    }
+
+    /** Salah and a blackout are about the clock, not about the app, and a link is not exempt. */
+    @Test
+    fun `a handoff does not open anything during salah, a blackout, or an outright block`() {
+        assertEquals(
+            RefusalReason.PRAYER,
+            (evaluate(browser, inPrayerWindow = true, handedOff = true) as GateDecision.Refuse).reason,
+        )
+        assertEquals(
+            RefusalReason.BLACKOUT,
+            (evaluate(browser, inBlackout = true, handedOff = true) as GateDecision.Refuse).reason,
+        )
+        assertEquals(
+            RefusalReason.PERMANENTLY_BLOCKED,
+            (
+                evaluate(rule(tier = AppTier.BLOCKED, openableByHandoff = true), handedOff = true)
+                    as GateDecision.Refuse
+                ).reason,
+        )
     }
 }

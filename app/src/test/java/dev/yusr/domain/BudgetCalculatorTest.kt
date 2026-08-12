@@ -81,6 +81,31 @@ class BudgetCalculatorTest {
         assertEquals(0, usage.minutesUsed)
     }
 
+    /**
+     * A cap on a browser is a cap on browsing. The links and web apps that pass through it were
+     * never that, and charging them spent the day's opens on apps the user had not opened.
+     */
+    @Test
+    fun `handed-off sessions are not charged to the budget`() {
+        val sessions = listOf(
+            SessionRecord(app, at(10), at(25), wasHandoff = true),
+            SessionRecord(app, at(60), at(70)),
+        )
+        val usage = BudgetCalculator.usageFor(sessions, app, dayStart, at(120))
+
+        assertEquals(10, usage.minutesUsed)
+        assertEquals(1, usage.opens)
+    }
+
+    /** The time was still spent, and the dashboard is the one place that says where the day went. */
+    @Test
+    fun `handed-off minutes still show up in the day's total`() {
+        val sessions = listOf(SessionRecord(app, at(10), at(25), wasHandoff = true))
+
+        assertEquals(15, BudgetCalculator.totalMinutes(sessions, dayStart, at(120)))
+        assertEquals(listOf(app to 15), BudgetCalculator.minutesByPackage(sessions, dayStart, at(120)))
+    }
+
     @Test
     fun `the total spans every app`() {
         val sessions = listOf(

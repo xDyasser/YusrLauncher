@@ -160,6 +160,7 @@ private fun AppRuleDetail(rule: AppRuleEntity, onDone: () -> Unit) {
         Text(
             text = if (rule.openableByHandoff) {
                 t("a link, a sign-in page or a web app opens straight into %s. ", rule.label.lowercase(Locale.getDefault())) +
+                    t("the day's allowance is not spent on it. ") +
                     t("going to it yourself still ") +
                     t("costs the gate.")
             } else {

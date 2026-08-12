@@ -57,8 +57,8 @@ data class AppRuleSnapshot(
      */
     val prayerExempt: Boolean = false,
     /**
-     * Opens without the gate when another app handed off to it, rather than when you went
-     * looking for it.
+     * Opens without the gate — and without spending the day's allowance — when another app
+     * handed off to it, rather than when you went looking for it.
      *
      * This is what a browser needs to stay usable while it is gated. Half the apps on a phone
      * are a web view in a coat: a link from a message, a sign-in page, a "web app" that is a
@@ -66,8 +66,14 @@ data class AppRuleSnapshot(
      * demanding a typed dhikr and a countdown before a login form is friction with nothing on
      * the other side of it.
      *
-     * Opening the browser *from the launcher* still costs what it costs. Only the handoff is
-     * free, and only for apps marked this way.
+     * The budget goes with the gate, because it was never a budget for these. Waiving the toll
+     * and then charging the visit meant a phone whose installed web apps quietly ate the
+     * browser's three opens between them, and then refused a link at lunchtime with "you have
+     * used every open you allowed yourself" for a browser the user had not opened once. What the
+     * user capped was browsing, and browsing is what still costs.
+     *
+     * Opening the browser *from the launcher* still costs what it costs, budget and all. Only
+     * the handoff is free, and only for apps marked this way.
      */
     val openableByHandoff: Boolean = false,
 )
@@ -112,6 +118,11 @@ object GateEvaluator {
      *
      * Order matters: a permanent block beats everything, then the prayer window, then blackout
      * windows, then hard budgets, and only what survives all of them gets the countdown.
+     *
+     * [handedOff] says the app is coming forward because another app opened it. It only means
+     * anything for a rule that asked for it, and it is spent below the two refusals that are
+     * about the clock rather than about the app: salah and a blackout close a link like anything
+     * else.
      */
     fun evaluate(
         rule: AppRuleSnapshot,
@@ -120,6 +131,7 @@ object GateEvaluator {
         inBlackout: Boolean,
         bypassesRemaining: Int,
         inPrayerWindow: Boolean = false,
+        handedOff: Boolean = false,
     ): GateDecision {
         if (rule.tier == AppTier.BLOCKED) {
             return GateDecision.Refuse(RefusalReason.PERMANENTLY_BLOCKED, bypassesRemaining)
@@ -136,6 +148,13 @@ object GateEvaluator {
         }
         if (inBlackout) {
             return GateDecision.Refuse(RefusalReason.BLACKOUT, bypassesRemaining)
+        }
+        // A link, a sign-in page, a web app. Above the caps, because a handoff is not a visit to
+        // this app: refusing one for a spent budget is refusing the app that handed over, which
+        // the user never gated. Nothing is granted either — the session is bounded by how long
+        // the page is looked at, and by the caps the moment the browser is opened on purpose.
+        if (handedOff && rule.openableByHandoff) {
+            return GateDecision.Allow(sessionMinutes = null)
         }
 
         val openCap = rule.budget.dailyOpens
