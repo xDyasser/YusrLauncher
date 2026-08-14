@@ -32,7 +32,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -77,6 +76,7 @@ import dev.yusr.service.GuardService
 import dev.yusr.ui.AppLauncher
 import dev.yusr.ui.Hairline
 import dev.yusr.ui.PauseRing
+import dev.yusr.ui.rememberTicker
 import dev.yusr.ui.hub.HubActivity
 import dev.yusr.ui.hub.HubScreen
 import dev.yusr.ui.noRippleClickable
@@ -1044,13 +1044,5 @@ private fun FavoriteList(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun rememberTicker(): State<Long> = produceState(initialValue = System.currentTimeMillis()) {
-    while (true) {
-        value = System.currentTimeMillis()
-        delay(10_000)
     }
 }

@@ -525,8 +525,15 @@ private val SETTINGS = mapOf(
     "%s on the home screen · %s open freely · %s gated · %s blocked." to
         "%s على الشاشة الرئيسة · %s تُفتح بحرّية · %s خلف البوّابة · %s محجوبة.",
     "nothing recorded yet." to "لا شيء مسجّل بعد.",
-    "only time recorded while the enforcement service was running is counted." to
-        "لا يُحتسب إلا ما سُجّل والخدمة تعمل.",
+    // The launcher no longer keeps its own count of the day; it reads the phone's, which is the
+    // same number the phone's own screen-time page shows.
+    "counted the way the phone counts it: from the moment an app comes to the front " to
+        "محسوب كما يحسبه الهاتف: من لحظة ظهور التطبيق في المقدّمة ",
+    "until it leaves or the screen goes off. time asleep is nobody's." to
+        "إلى أن ينصرف أو تنطفئ الشاشة. ووقت النوم لا يُحتسب على أحد.",
+    "without usage access the phone's own figures cannot be read, so this is only " to
+        "بغير إذن الاستخدام لا تُقرأ أرقام الهاتف نفسه، فليس هذا إلا ",
+    "what the launcher managed to record itself." to "ما تمكّن المشغّل من تسجيله بنفسه.",
     "filter" to "تصفية",
     "back" to "رجوع",
     "none" to "بلا",

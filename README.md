@@ -113,7 +113,8 @@ can equally type. Nothing is ever uploaded; there is no account and no analytics
 - **A cooldown on going soft.** Once the rules are locked, tightening happens the moment you ask;
   loosening waits out a cooldown (30 minutes by default) and can be cancelled in the meantime.
 - **Emergency bypass.** Three a week, each logged with a written reason.
-- **Usage dashboard.** Plain numbers: minutes today, opens, and where they went.
+- **Usage dashboard.** Plain numbers: minutes today, opens, and where they went — read from the
+  phone's own usage records, so they agree with what the phone itself reports.
 
 ## How the enforcement works
 
@@ -128,6 +129,10 @@ Three layers, strongest available first:
 The guard service is what catches the routes the launcher UI cannot: recents, notifications, and
 links from other apps. It needs Usage Access to see the foreground app and "display over other
 apps" to put the block screen on top of one.
+
+It watches only while the phone is being used. The screen going off or the lock screen coming up
+stops the loop until the phone is unlocked again, because nothing can be opened in between —
+which is also why the launcher costs nothing in standby.
 
 See [docs/SETUP.md](docs/SETUP.md) for installing, granting the permissions, the HyperOS/Xiaomi
 settings that keep it alive, and how to remove it.
@@ -153,7 +158,8 @@ Locally:
 ## Layout
 
 ```
-domain/     pure logic, no Android imports — GateEvaluator, BudgetCalculator, BlackoutSchedule,
+domain/     pure logic, no Android imports — GateEvaluator, BudgetCalculator, ForegroundTally,
+            BlackoutSchedule,
             NotificationPolicy, PrayerTimes, PrayerWindows, Fadila, Madhab, Qibla, Hijri,
             FastingCalendar, Tasbih, Dhikr, FavoriteOrder
 data/       Room rules and history, DataStore settings, RuleMutator (the tighten/loosen asymmetry),
