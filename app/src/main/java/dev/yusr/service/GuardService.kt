@@ -1,11 +1,15 @@
 package dev.yusr.service
 
+import android.app.KeyguardManager
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.PowerManager
 import android.util.Log
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
@@ -19,9 +23,13 @@ import dev.yusr.ui.block.BlockActivity
 import dev.yusr.ui.gate.GateActivity
 import dev.yusr.ui.home.HomeActivity
 import dev.yusr.util.Permissions
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * The part that actually holds the line.
@@ -52,10 +60,37 @@ class GuardService : LifecycleService() {
     private var lastInterventionAt: Long = 0L
     private var lastInterventionPackage: String? = null
 
+    /** How far back the last poll read the event stream. See [foregroundPackage]. */
+    private var lastQueryAt: Long = 0L
+
+    /**
+     * Whether the phone is being used, kept as state rather than as an event so that a broadcast
+     * arriving in the moment between the check and the wait cannot be missed.
+     */
+    private val inUse = MutableStateFlow(true)
+
+    private val screenReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            inUse.value = phoneInUse()
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         startForeground(NOTIFICATION_ID, buildNotification())
-        lifecycleScope.launch { watchLoop() }
+        // Both of these are system broadcasts and nothing else may send them, so the receiver is
+        // registered closed.
+        registerReceiver(
+            screenReceiver,
+            IntentFilter().apply {
+                addAction(Intent.ACTION_SCREEN_ON)
+                addAction(Intent.ACTION_USER_PRESENT)
+            },
+            Context.RECEIVER_NOT_EXPORTED,
+        )
+        // Off the main thread: the poll reads the system's event stream, and a launcher that
+        // stutters once a second is a launcher nobody keeps.
+        lifecycleScope.launch(Dispatchers.Default) { watchLoop() }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -64,6 +99,7 @@ class GuardService : LifecycleService() {
     }
 
     override fun onDestroy() {
+        runCatching { unregisterReceiver(screenReceiver) }
         // A killed service must not leave a session open and silently accruing minutes.
         lifecycleScope.launch { repository.closeOpenSessions() }
         super.onDestroy()
@@ -71,11 +107,53 @@ class GuardService : LifecycleService() {
 
     private suspend fun watchLoop() {
         while (lifecycleScope.coroutineContext.isActive) {
+            // Nothing can be opened on a phone nobody is holding, so there is nothing to watch.
+            // This is the whole of the service's standby cost: a poll every second or five, all
+            // night, kept the CPU awake for a question whose answer could not change. Now the loop
+            // stops at the lock screen and starts again when the phone is unlocked.
+            if (!phoneInUse()) {
+                inUse.value = false
+                closeTracking(System.currentTimeMillis())
+                awaitUse()
+                continue
+            }
             val monitoring = runCatching { tick() }
                 .onFailure { Log.w(TAG, "Guard tick failed", it) }
                 .getOrDefault(false)
             delay(if (monitoring) FAST_POLL_MILLIS else SLOW_POLL_MILLIS)
         }
+    }
+
+    /**
+     * Whether anyone is actually looking at the phone: the screen is on and the lock screen is
+     * out of the way.
+     *
+     * The lock screen half matters as much as the screen half. Waking to a notification puts the
+     * display on with the last app still nominally in front, and a guard that acted on that would
+     * send you home and stack a block screen behind the lock for an app nobody had opened.
+     */
+    private fun phoneInUse(): Boolean {
+        val power = getSystemService(PowerManager::class.java) ?: return true
+        if (!power.isInteractive) return false
+        val keyguard = getSystemService(KeyguardManager::class.java) ?: return true
+        return !keyguard.isKeyguardLocked
+    }
+
+    /**
+     * Sleeps until the phone is picked up again.
+     *
+     * The broadcast does the waking; the timeout is only a safety net, for the phones that deliver
+     * one of these late or not at all. A minute of sleeping costs nothing — the system coalesces
+     * it with everything else that wakes up while dozing — and it is a minute in which nothing can
+     * be opened anyway.
+     */
+    private suspend fun awaitUse() {
+        while (lifecycleScope.coroutineContext.isActive && !phoneInUse()) {
+            withTimeoutOrNull(ASLEEP_RECHECK_MILLIS) { inUse.first { it } }
+        }
+        inUse.value = true
+        // The event stream has moved on without us; do not judge the screen on stale events.
+        lastQueryAt = 0L
     }
 
     /** Returns true when something worth watching closely is in the foreground. */
@@ -245,13 +323,23 @@ class GuardService : LifecycleService() {
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
 
     /**
-     * The most recent app to come to the foreground. The lookback is generous because a quiet
-     * minute produces no events at all, and we would rather keep the last known answer than
-     * decide the screen is empty.
+     * The most recent app to come to the foreground.
+     *
+     * A quiet minute produces no events at all, so a poll that finds none keeps the last known
+     * answer rather than deciding the screen is empty. That is also what makes it safe to ask only
+     * for what has happened since the last poll: silence and "nothing new" are the same thing here.
      */
     private fun foregroundPackage(now: Long): String? {
         val usage = getSystemService(UsageStatsManager::class.java) ?: return null
-        val events: UsageEvents = usage.queryEvents(now - LOOKBACK_MILLIS, now + 1_000)
+        // Only the events since the last poll, with an overlap so nothing falls between two
+        // windows. Re-reading a whole minute of events every second was the same answer parsed
+        // sixty times over, and the parsing is what the poll actually costs.
+        val since = if (lastQueryAt == 0L) now - LOOKBACK_MILLIS else maxOf(
+            lastQueryAt - QUERY_OVERLAP_MILLIS,
+            now - LOOKBACK_MILLIS,
+        )
+        lastQueryAt = now
+        val events: UsageEvents = usage.queryEvents(since, now + 1_000)
         val event = UsageEvents.Event()
         var latest: String? = null
         var behindLatest: String? = null
@@ -303,6 +391,12 @@ class GuardService : LifecycleService() {
         private const val SLOW_POLL_MILLIS = 5_000L
 
         private const val LOOKBACK_MILLIS = 60_000L
+
+        /** Overlap between two polls' windows, so an event on the boundary is not missed. */
+        private const val QUERY_OVERLAP_MILLIS = 2_000L
+
+        /** How long the loop sleeps before checking again whether the phone has been picked up. */
+        private const val ASLEEP_RECHECK_MILLIS = 60_000L
 
         /** Stops a stubborn app from producing a stack of block screens. */
         private const val INTERVENTION_DEBOUNCE_MILLIS = 3_000L

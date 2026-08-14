@@ -106,6 +106,41 @@ class BudgetCalculatorTest {
         assertEquals(listOf(app to 15), BudgetCalculator.minutesByPackage(sessions, dayStart, at(120)))
     }
 
+    /**
+     * The phone counts a link as time in the browser, because it is. The budget never did, so
+     * this is what comes off the phone's number before a cap is held against it.
+     */
+    @Test
+    fun `the handoff credit is only the handed-off part of the day`() {
+        val sessions = listOf(
+            SessionRecord(app, at(10), at(25), wasHandoff = true),
+            SessionRecord(app, at(60), at(70)),
+            SessionRecord(other, at(80), at(90), wasHandoff = true),
+        )
+        val credit = BudgetCalculator.handedOffUsage(sessions, app, dayStart, at(120))
+
+        assertEquals(15 * minute, credit.millis)
+        assertEquals(1, credit.opens)
+    }
+
+    @Test
+    fun `nothing handed off is nothing to credit`() {
+        val sessions = listOf(SessionRecord(app, at(10), at(25)))
+        val credit = BudgetCalculator.handedOffUsage(sessions, app, dayStart, at(120))
+
+        assertEquals(0L, credit.millis)
+        assertEquals(0, credit.opens)
+    }
+
+    @Test
+    fun `a handoff carried over midnight credits only today's share`() {
+        val sessions = listOf(SessionRecord(app, dayStart - hour, at(30), wasHandoff = true))
+        val credit = BudgetCalculator.handedOffUsage(sessions, app, dayStart, at(60))
+
+        assertEquals(30 * minute, credit.millis)
+        assertEquals(0, credit.opens)
+    }
+
     @Test
     fun `the total spans every app`() {
         val sessions = listOf(

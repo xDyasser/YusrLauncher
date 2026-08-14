@@ -8,11 +8,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -25,7 +21,6 @@ import dev.yusr.domain.PrayerWindows
 import dev.yusr.ui.theme.Faint
 import dev.yusr.ui.theme.Fainter
 import dev.yusr.util.DayClock
-import kotlinx.coroutines.delay
 
 /**
  * The pause, drawn as what it is: a thing with an end.
@@ -41,14 +36,9 @@ import kotlinx.coroutines.delay
 @Composable
 fun PauseRing(window: PrayerWindow, modifier: Modifier = Modifier) {
     // Read off the clock rather than counted down: a loop subtracting a second at a time drifts,
-    // and this one can be on screen for the length of a prayer.
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(window) {
-        while (true) {
-            delay(1_000)
-            now = System.currentTimeMillis()
-        }
-    }
+    // and this one can be on screen for the length of a prayer. It stops with the screen — the
+    // ring is only ever looked at, so a second's tick against a dark display is pure cost.
+    val now by rememberTicker(periodMillis = 1_000L)
 
     val local = DayClock.localDateTime(now)
     val minutesLeft = PrayerWindows.minutesUntilEnd(window, local.hour * 60 + local.minute) ?: return

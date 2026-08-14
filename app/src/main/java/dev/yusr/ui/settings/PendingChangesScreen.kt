@@ -6,7 +6,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -16,8 +15,8 @@ import dev.yusr.container
 import dev.yusr.ui.t
 import dev.yusr.ui.YusrPage
 import dev.yusr.ui.YusrRow
+import dev.yusr.ui.rememberTicker
 import dev.yusr.ui.theme.Faint
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -31,12 +30,7 @@ fun PendingChangesScreen() {
     val repository = remember { context.container.repository }
     val pending by repository.pendingChanges.collectAsState(initial = emptyList())
 
-    val now by produceState(initialValue = System.currentTimeMillis()) {
-        while (true) {
-            value = System.currentTimeMillis()
-            delay(1_000)
-        }
-    }
+    val now by rememberTicker(periodMillis = 1_000L)
 
     YusrPage(title = t("Pending changes"), subtitle = t("tap one to cancel it")) {
         if (pending.isEmpty()) {

@@ -13,18 +13,22 @@ import dev.yusr.data.db.UsageSessionEntity
 import dev.yusr.data.prayer.PrayerRepository
 import dev.yusr.data.settings.AppSettings
 import dev.yusr.data.settings.SettingsStore
+import dev.yusr.data.usage.PhoneUsage
 import dev.yusr.domain.AppRuleSnapshot
 import dev.yusr.domain.AppTier
 import dev.yusr.domain.AppUsageToday
 import dev.yusr.domain.BlackoutSchedule
 import dev.yusr.domain.BlackoutWindowSpec
 import dev.yusr.domain.BudgetCalculator
+import dev.yusr.domain.ForegroundSnapshot
 import dev.yusr.domain.GateDecision
 import dev.yusr.domain.GateEvaluator
 import dev.yusr.domain.PrayerWindow
 import dev.yusr.domain.SessionRecord
 import dev.yusr.util.DayClock
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 
 /**
  * The one door between the UI/services and the stored rules. Every "can I open this?" question
@@ -36,6 +40,7 @@ class YusrRepository(
     private val catalog: AppCatalog,
     private val prayer: PrayerRepository,
 ) {
+    private val phoneUsage = PhoneUsage(context)
     private val db = YusrDatabase.get(context)
     private val rules = db.appRuleDao()
     private val sessions = db.usageSessionDao()
@@ -186,10 +191,39 @@ class YusrRepository(
         rules.upsert(existing.copy(prayerExempt = exempt))
     }
 
+    /**
+     * What has been spent on an app today, as the phone counts it.
+     *
+     * The launcher used to count this itself, by holding a stretch of time open from the moment an
+     * app came forward until another one did. That over-charged in the one case that happens every
+     * night — an app still in front when the screen goes off is not being used — and under-charged
+     * whenever the guard service had been killed. Both are gone: the numbers now come from the
+     * system's own usage events, which is where the phone's screen-time screen gets them, minus
+     * the handoffs the budget was never meant to charge for.
+     *
+     * With usage access refused there is nothing to read, and the launcher's own record — all it
+     * ever had — is used instead.
+     */
     suspend fun usageToday(packageName: String, now: Long = System.currentTimeMillis()): AppUsageToday {
         val dayStart = DayClock.dayStart(now)
-        return BudgetCalculator.usageFor(sessionRecords(dayStart), packageName, dayStart, now)
+        val phone = withContext(Dispatchers.IO) { phoneUsage.snapshot(dayStart, now) }
+            ?: return BudgetCalculator.usageFor(sessionRecords(dayStart), packageName, dayStart, now)
+
+        val counted = phone.usageFor(packageName, now)
+        val waived = BudgetCalculator.handedOffUsage(sessionRecords(dayStart), packageName, dayStart, now)
+        return AppUsageToday(
+            opens = (counted.opens - waived.opens).coerceAtLeast(0),
+            minutesUsed = ((counted.millis - waived.millis).coerceAtLeast(0L) / 60_000L).toInt(),
+        )
     }
+
+    /** The whole day as the phone has it, for the dashboard. Null when usage access is refused. */
+    suspend fun phoneUsageToday(now: Long = System.currentTimeMillis()): ForegroundSnapshot? =
+        withContext(Dispatchers.IO) { phoneUsage.today(now) }
+
+    /** Total foreground time over a longer span, off the system's daily buckets. */
+    suspend fun phoneMillisSince(since: Long, now: Long = System.currentTimeMillis()): Long? =
+        withContext(Dispatchers.IO) { phoneUsage.totalMillisSince(since, now) }
 
     suspend fun sessionRecords(since: Long): List<SessionRecord> =
         sessions.since(since).map {

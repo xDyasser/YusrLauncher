@@ -20,9 +20,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.delay
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -313,6 +319,32 @@ fun AyahBlock(
             textAlign = if (arabicOnly) TextAlign.Right else TextAlign.Left,
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
         )
+    }
+}
+
+/**
+ * The current time, refreshed every [periodMillis] for as long as the screen is actually in front
+ * of someone.
+ *
+ * The lifecycle half is the point. A launcher's home screen is never finished — it stays composed
+ * behind every app you open and behind the lock screen — so a plain `while (true) { delay(…) }`
+ * inside it never stops: the clock went on ticking, the prayer times went on being recomputed and
+ * the countdown ring went on redrawing every second of every night, on a screen nobody could see.
+ * That is battery spent on nothing, and it is spent in standby, where it is most noticed.
+ *
+ * Tied to STARTED rather than RESUMED so that the value is already current when the screen comes
+ * back, rather than a frame behind.
+ */
+@Composable
+fun rememberTicker(periodMillis: Long = 10_000L): State<Long> {
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    return produceState(initialValue = System.currentTimeMillis(), lifecycle, periodMillis) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                value = System.currentTimeMillis()
+                delay(periodMillis)
+            }
+        }
     }
 }
 

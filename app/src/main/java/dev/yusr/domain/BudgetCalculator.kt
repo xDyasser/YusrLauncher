@@ -55,6 +55,33 @@ object BudgetCalculator {
         )
     }
 
+    /**
+     * The part of [packageName]'s day that another app is responsible for.
+     *
+     * The phone counts a link, a sign-in page and a web app as time in the browser, because that
+     * is what they are — but the launcher's budget never charged them, for the reasons set out in
+     * [dev.yusr.domain.AppRuleSnapshot.openableByHandoff]. So the phone's number is the truth
+     * about the day, and this is what comes off it before the number is held against a cap.
+     */
+    fun handedOffUsage(
+        sessions: List<SessionRecord>,
+        packageName: String,
+        dayStartMillis: Long,
+        nowMillis: Long,
+    ): ForegroundUsage {
+        var millis = 0L
+        var opens = 0
+        for (session in sessions) {
+            if (session.packageName != packageName || !session.wasHandoff) continue
+            val end = session.endMillis ?: nowMillis
+            val overlapStart = maxOf(session.startMillis, dayStartMillis)
+            val overlapEnd = minOf(end, nowMillis)
+            if (overlapEnd > overlapStart) millis += overlapEnd - overlapStart
+            if (session.startMillis in dayStartMillis..nowMillis) opens++
+        }
+        return ForegroundUsage(millis = millis, opens = opens)
+    }
+
     /** Same window, but totalled over every app — the shame counter on the dashboard. */
     fun totalMinutes(
         sessions: List<SessionRecord>,
