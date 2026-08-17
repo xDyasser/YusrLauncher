@@ -19,13 +19,22 @@ class MushafPageTest {
     private fun ayah(surah: Int, number: Int, text: String) =
         Ayah(surah = surah, ayah = number, surahName = "", arabic = text, english = null)
 
-    /** A layout of one page, written in the asset's own notation. */
-    private fun layoutOf(vararg lines: String, start: String = "1:1:1"): MushafLayout {
+    /**
+     * A layout of one page, written in the asset's own notation.
+     *
+     * [rub] is somewhere none of these pages go unless a test asks for it, so that the ۞ turns up
+     * in the one test about it and nowhere else.
+     */
+    private fun layoutOf(
+        vararg lines: String,
+        start: String = "1:1:1",
+        rub: String = "50:1",
+    ): MushafLayout {
         val body = lines.joinToString(",") { "\"$it\"" }
         return MushafLayout.parse(
             """
             {"version":1,"pages":1,"linesPerPage":${lines.size},"words":0,
-             "rub":["1:1"],"juz":["1:1"],"sajda":["1:1"],
+             "rub":["$rub"],"juz":["1:1"],"sajda":["1:1"],
              "page":[{"p":1,"s":"$start","l":[$body]}]}
             """.trimIndent(),
         )
@@ -87,7 +96,11 @@ class MushafPageTest {
 
         assertEquals(listOf("falaq"), words(page.lines[0]))
         assertEquals(listOf("nas"), words(page.lines[1]))
-        assertEquals(114, (page.lines[1] as MushafPage.Line.Text).words.last().ayah)
+        // The second line's closing marker belongs to al-Nās 114:1, not to the sūrah above it.
+        val closing = (page.lines[1] as MushafPage.Line.Text).words.last()
+        assertEquals(MushafPage.Word.Kind.END, closing.kind)
+        assertEquals(114, closing.surah)
+        assertEquals(1, closing.ayah)
     }
 
     @Test
@@ -112,13 +125,15 @@ class MushafPageTest {
 
     @Test
     fun `a rub opens with its mark`() {
-        val layout = layoutOf("1:1:e")
+        val layout = layoutOf("1:1:e", rub = "1:1")
         val page = compose(layout, listOf(ayah(1, 1, "one")))!!
 
-        // The layout above puts a rubʿ at 1:1, so the ۞ stands before the first word.
+        // A rubʿ opens at 1:1 here, so the ۞ stands before the first word of it.
         val set = (page.lines[0] as MushafPage.Line.Text).words
         assertEquals(MushafPage.Word.Kind.RUB, set.first().kind)
         assertEquals("۞", set.first().text)
+        // The mark is an addition to the line, not a replacement for anything on it.
+        assertEquals(listOf("one"), words(page.lines[0]))
     }
 
     @Test
