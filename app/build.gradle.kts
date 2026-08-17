@@ -93,4 +93,7 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    // android.jar on the unit-test classpath is stubs: every org.json call throws "Stub!". The
+    // mushaf layout is parsed with org.json, so the tests that read it need the real one.
+    testImplementation(libs.json)
 }
