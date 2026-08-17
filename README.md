@@ -50,10 +50,12 @@ can equally type. Nothing is ever uploaded; there is no account and no analytics
   shows nothing until you have typed two letters.
 - **A hub for what is not an app.** The qibla as a dial that turns with the phone, computed from
   the coordinates already set for the prayer times and needing no network. Six things behind it:
-  the day's timetable with its preferred windows, a Qur'an reader — read it straight through, the
-  chevrons running on from the end of one sūrah into the next and a sideways drag turning a whole
-  one, with the basmala set above each sūrah as a heading rather than swallowed into its first
-  ayah — al-Tawba, which opens without one, gets none, and al-Fātiḥa keeps it as the ayah it is.
+  the day's timetable with its preferred windows, a Qur'an reader that is a mushaf rather than a
+  scroll — the six hundred and four pages of the Madani print, fifteen lines to the page, the same
+  words breaking on the same lines, turning right to left the way the binding opens, with the juz
+  at the head of each page and the ḥizb and its quarter at the foot. The basmala is set above each
+  sūrah as a heading rather than swallowed into its first ayah — al-Tawba, which opens without one,
+  gets none, and al-Fātiḥa keeps it as the ayah it is.
   Nothing is cut to make that true: the text is taken from an edition that numbers the book the
   way the mushaf does, so al-Baqara 2:1 arrives as *alif lām mīm* — a tasbīḥ, the adhkār, the duʿāʾ,
   and a fasting calendar that knows the white days, Mondays and Thursdays, ʿĀshūrāʾ and ʿArafah
