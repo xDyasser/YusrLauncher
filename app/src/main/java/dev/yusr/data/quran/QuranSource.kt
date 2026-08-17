@@ -108,6 +108,19 @@ class QuranSource(private val context: Context) {
     suspend fun surah(surah: Int): List<Ayah> =
         runCatching { dao.surah(surah).map { it.toAyah() } }.getOrDefault(emptyList())
 
+    /**
+     * Every ayah from one reference through another, in mushaf order — a page's worth of book.
+     *
+     * Empty when the Qur'an has not been downloaded, for the same reason [surah] is: a page set
+     * from whatever happened to be bundled would be a page of the wrong text.
+     */
+    suspend fun between(from: Pair<Int, Int>, to: Pair<Int, Int>): List<Ayah> {
+        val first = SurahNames.globalId(from.first, from.second)
+        val last = SurahNames.globalId(to.first, to.second)
+        if (first == 0 || last == 0 || last < first) return emptyList()
+        return runCatching { dao.range(first, last).map { it.toAyah() } }.getOrDefault(emptyList())
+    }
+
     suspend fun replaceAll(ayat: List<QuranAyahEntity>) {
         dao.clear()
         // Room takes the lot in one statement badly; chunks keep the transaction sane.

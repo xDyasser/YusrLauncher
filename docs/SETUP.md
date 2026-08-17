@@ -111,7 +111,7 @@ Six things sit under it:
 | tile | what it is |
 | --- | --- |
 | Prayer times | today's five, when each was or will be, and when each preferred window closes |
-| Qur'an | the reader, the sūrah index, and the reciter |
+| Qur'an | the mushaf, the index of sūrahs, juzʾ and ḥizb, and the reciter |
 | Tasbīḥ | a counter; the whole screen is the button, and it buzzes at the end of each set |
 | Adhkār | morning and evening, out of your school's book |
 | Duʿāʾ | the same book, read for what you need rather than for the hour |
@@ -125,10 +125,21 @@ sky rather than angles, so they are approximations and are worth checking agains
 Nothing in the enforcement layer reads any of it: it is a nudge on a screen, not a rule. Turn it
 off under **Devotions → Madhab & calculation → Show faḍīla windows**.
 
-**The mushaf.** The reader needs the full Qur'an, which is the one-shot download under
-**Settings → Prayer times and salah**; the two dozen āyāt bundled in the APK are enough for the
-gate and nowhere near enough to read a sūrah from, so the reader says so rather than showing three
-of al-Kahf's hundred and ten. Tap an ayah to move the bookmark there.
+**The mushaf.** The reader is the printed book: six hundred and four pages, fifteen lines each,
+breaking where the Madani mushaf breaks them — the same āyāt on the same page, ending on the same
+words, so a page you know the shape of is the page you get. Drag right to left to turn a leaf, or
+use the chevrons at the foot. The sūrah and the juz are at the head of the page, the page number
+and the ḥizb with its quarter at the foot, the ۞ stands where a rubʿ opens, and the page is fitted
+to the screen rather than scrolled. **Index** opens the three ways in: the 114 sūrahs, the 30 juzʾ
+and the 60 ḥizb.
+
+The layout is bundled in the APK — 604 pages of line breaks, about a hundred kilobytes, taken from
+the King Fahd Complex's own 15-line layout and rebuilt by `tools/build_mushaf_layout.py`, which
+checks it word for word against the text before writing it out. The text itself is the one-shot
+download under **Settings → Prayer times and salah**; the two dozen āyāt bundled in the APK are
+enough for the gate and nowhere near enough to set a page from, so the reader says so rather than
+showing a page with holes in it. Tap an ayah to move the bookmark there — its words are tinted
+across the lines they run over, and it is named at the foot of the page.
 
 The bookmark is also what the home screen shows. Tapping the ayah there moves it on by one — into
 the next sūrah at the end of one, and back to al-Fātiḥa after al-Nās — so the two screens are never

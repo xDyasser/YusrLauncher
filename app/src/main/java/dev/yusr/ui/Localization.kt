@@ -372,6 +372,16 @@ private val HUB = mapOf(
     // ---- Qur'an
     "All sūras" to "كل السور",
     "Sūras" to "السور",
+    // ---- the mushaf: the page, its divisions, and the three ways into it
+    "Index" to "الفهرس",
+    "Juzʾ" to "الجزء",
+    "Ḥizb" to "الحزب",
+    "Juzʾ %s" to "الجزء %s",
+    "Ḥizb %s" to "الحزب %s",
+    "Ḥizb %s%s" to "الحزب %s%s",
+    "Sūrat %s" to "سورة %s",
+    "Play %s" to "تشغيل %s",
+    "114 sūras · 30 juzʾ · 60 ḥizb" to "١١٤ سورة · ٣٠ جزءًا · ٦٠ حزبًا",
     "Reciter" to "القارئ",
     "Bookmarked" to "علامة",
     "choose a reciter" to "اختر قارئًا",

@@ -10,6 +10,7 @@ import dev.yusr.data.YusrRepository
 import dev.yusr.data.RuleMutator
 import dev.yusr.data.DevotionRepository
 import dev.yusr.data.prayer.PrayerRepository
+import dev.yusr.data.quran.Mushaf
 import dev.yusr.data.quran.QuranSource
 import dev.yusr.data.quran.RecitationStore
 import dev.yusr.data.quran.Supplications
@@ -86,6 +87,7 @@ class AppContainer(context: Context) {
     val catalog: AppCatalog = AppCatalog(context)
     val prayerRepository: PrayerRepository = PrayerRepository(context, settingsStore)
     val quran: QuranSource = QuranSource(context)
+    val mushaf: Mushaf = Mushaf(context, quran)
     val recitation: RecitationStore = RecitationStore(context)
     val supplications: Supplications = Supplications(context)
     val devotions: DevotionRepository = DevotionRepository(context)

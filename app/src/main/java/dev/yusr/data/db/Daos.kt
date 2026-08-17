@@ -161,6 +161,17 @@ interface QuranAyahDao {
     @Query("SELECT * FROM quran_ayat WHERE surah = :surah AND ayah = :ayah")
     suspend fun at(surah: Int, ayah: Int): QuranAyahEntity?
 
+    /**
+     * A run of āyāt in mushaf order, which is what a page of the mushaf is.
+     *
+     * By id rather than by sūrah, because a page is a stretch of the book and not a stretch of a
+     * sūrah: page 604 holds the last three sūrahs whole, and page 3 holds eleven āyāt out of the
+     * middle of al-Baqara's two hundred and eighty-six. Fetching by sūrah would read all of
+     * al-Baqara to set fifteen lines of it, three times over for the pages either side.
+     */
+    @Query("SELECT * FROM quran_ayat WHERE id BETWEEN :from AND :to ORDER BY id")
+    suspend fun range(from: Int, to: Int): List<QuranAyahEntity>
+
     @Upsert
     suspend fun upsertAll(ayat: List<QuranAyahEntity>)
 

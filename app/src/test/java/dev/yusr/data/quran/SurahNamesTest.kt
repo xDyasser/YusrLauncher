@@ -33,6 +33,31 @@ class SurahNamesTest {
     }
 
     @Test
+    fun `an ayah's number in the whole book`() {
+        // The id the downloaded text is stored under, and what turns a page of the mushaf into
+        // one range to read rather than a question about sūrahs.
+        assertEquals(1, SurahNames.globalId(1, 1))
+        assertEquals(8, SurahNames.globalId(2, 1))
+        assertEquals(262, SurahNames.globalId(2, 255))
+        assertEquals(6236, SurahNames.globalId(114, 6))
+
+        // Every ayah of the book, once each, in order and with no gaps.
+        val ids = (1..SurahNames.COUNT).flatMap { surah ->
+            (1..SurahNames.ayahCount(surah)).map { SurahNames.globalId(surah, it) }
+        }
+        assertEquals((1..6236).toList(), ids)
+    }
+
+    @Test
+    fun `a reference that is not an ayah has no number in the book`() {
+        assertEquals(0, SurahNames.globalId(0, 1))
+        assertEquals(0, SurahNames.globalId(115, 1))
+        assertEquals(0, SurahNames.globalId(1, 0))
+        // Al-Fātiḥa has seven āyāt and no eighth.
+        assertEquals(0, SurahNames.globalId(1, 8))
+    }
+
+    @Test
     fun `nothing is a surah outside one to a hundred and fourteen`() {
         assertNull(SurahNames.arabic(0))
         assertNull(SurahNames.arabic(115))

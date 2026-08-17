@@ -46,6 +46,34 @@ object SurahNames {
         else -> COUNT to ayahCount(COUNT)
     }
 
+    /**
+     * The ayah's number in the whole book, 1 for al-Fātiḥa 1:1 through 6,236 for al-Nās 114:6.
+     *
+     * This is the number the downloaded text is stored under, so it is what turns "the āyāt on
+     * page 293" into a single range to read rather than a question about sūrahs. Zero for a
+     * reference that is not an ayah.
+     */
+    fun globalId(surah: Int, ayah: Int): Int {
+        if (surah !in 1..COUNT || ayah !in 1..ayahCount(surah)) return 0
+        return FIRST_IDS[surah - 1] + ayah - 1
+    }
+
+    /**
+     * The id of each sūrah's first ayah, worked out once from the counts below.
+     *
+     * Lazily, because the counts are written out further down this file and a property cannot be
+     * built from one that has not been initialised yet.
+     */
+    private val FIRST_IDS: IntArray by lazy {
+        IntArray(COUNT).also { ids ->
+            var running = 1
+            for (index in 0 until COUNT) {
+                ids[index] = running
+                running += AYAH_COUNTS[index]
+            }
+        }
+    }
+
     /** Whether [surah] was revealed at Makkah rather than Madīnah. */
     fun isMakki(surah: Int): Boolean = surah in MAKKI
 
