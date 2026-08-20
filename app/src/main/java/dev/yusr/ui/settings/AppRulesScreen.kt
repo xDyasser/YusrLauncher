@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -46,6 +47,10 @@ fun AppRulesScreen() {
     val context = LocalContext.current
     val repository = remember { context.container.repository }
     val rules by repository.allRules.collectAsState(initial = emptyList())
+
+    // A broadcast can be missed — the launcher may have been force-stopped when the install
+    // happened — so the page that lists the apps checks for itself every time it is opened.
+    LaunchedEffect(Unit) { repository.syncCatalog() }
 
     var selected by remember { mutableStateOf<String?>(null) }
     var filter by remember { mutableStateOf("") }

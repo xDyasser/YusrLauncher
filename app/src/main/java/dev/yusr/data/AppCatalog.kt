@@ -42,6 +42,9 @@ class AppCatalog(private val context: Context) {
         packageManager.getApplicationLabel(packageManager.getApplicationInfo(packageName, 0)).toString()
     }.getOrDefault(packageName)
 
+    /** Whether the package manager can still see this package at all. */
+    fun isInstalled(packageName: String): Boolean = infoFor(packageName) != null
+
     fun launchIntentFor(packageName: String): Intent? =
         packageManager.getLaunchIntentForPackage(packageName)
 

@@ -83,7 +83,27 @@ class YusrRepository(
                 )
             }
         if (fresh.isNotEmpty()) rules.insertIfAbsent(fresh)
+        forgetUninstalled()
         backfillHandoff(browsers)
+    }
+
+    /**
+     * Drops the rules of apps that are no longer on the phone.
+     *
+     * Only for packages the package manager cannot find at all — an app that is installed but has
+     * stopped being launchable (a launcher-less service, a disabled app) keeps its rule, because
+     * it is still there and can still be brought forward.
+     */
+    private suspend fun forgetUninstalled() {
+        rules.getAll()
+            .filterNot { catalog.isInstalled(it.packageName) }
+            .forEach { rules.delete(it.packageName) }
+    }
+
+    /** An app has been uninstalled: its rule is about nothing now. */
+    suspend fun forgetPackage(packageName: String) {
+        if (catalog.isInstalled(packageName)) return
+        rules.delete(packageName)
     }
 
     /**
