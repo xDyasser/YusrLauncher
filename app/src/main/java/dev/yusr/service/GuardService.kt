@@ -112,8 +112,13 @@ class GuardService : LifecycleService() {
             // night, kept the CPU awake for a question whose answer could not change. Now the loop
             // stops at the lock screen and starts again when the phone is unlocked.
             if (!phoneInUse()) {
+                val now = System.currentTimeMillis()
                 inUse.value = false
-                closeTracking(System.currentTimeMillis())
+                closeTracking(now)
+                // A session is time you spend in an app, not time that passes. Holding the grant
+                // where it is means a phone put down mid-session is picked up mid-session, rather
+                // than picked up to a block screen for minutes nobody used.
+                SessionGovernor.pause(now)
                 awaitUse()
                 continue
             }
@@ -152,6 +157,7 @@ class GuardService : LifecycleService() {
             withTimeoutOrNull(ASLEEP_RECHECK_MILLIS) { inUse.first { it } }
         }
         inUse.value = true
+        SessionGovernor.resume()
         // The event stream has moved on without us; do not judge the screen on stale events.
         lastQueryAt = 0L
     }
@@ -269,7 +275,7 @@ class GuardService : LifecycleService() {
             // changed since — it has been in front the whole time — and a visit that was waived
             // at the door must not be refused halfway through for a rule that was already waived.
             val decision = repository.decide(packageName, now, trackedByHandoff)
-            if (decision is GateDecision.Refuse && decision.reason != RefusalReason.PERMANENTLY_BLOCKED) {
+            if (decision is GateDecision.Refuse && endsThisSession(decision.reason, packageName, now)) {
                 closeTracking(now)
                 SessionGovernor.clear()
                 intervene(packageName, now) {
@@ -280,6 +286,27 @@ class GuardService : LifecycleService() {
         }
         return true
     }
+
+    /**
+     * Whether a mid-session refusal is one that should close the app you are already inside.
+     *
+     * A permanent block never is: it is written down as a rule change and takes effect the next
+     * time the app is opened, not by yanking the phone out from under a session that was granted
+     * before it existed.
+     *
+     * Neither is a spent open cap, while the grant that spent it is still running. The open the
+     * gate just charged for is *this* visit — the phone counts it the moment the app comes
+     * forward — so re-asking the question a second later found the day's last open already gone
+     * and refused the visit it had been spent on. That is the whole of "the last open of the day
+     * lasts a few seconds": it was refused for its own cost. The visit is paid for and runs to
+     * the end of its session; the cap bites on the next open, which is what a cap on opens means.
+     */
+    private fun endsThisSession(reason: RefusalReason, packageName: String, now: Long): Boolean =
+        when (reason) {
+            RefusalReason.PERMANENTLY_BLOCKED -> false
+            RefusalReason.DAILY_OPENS_SPENT -> !SessionGovernor.isGrantedFor(packageName, now)
+            else -> true
+        }
 
     private suspend fun beginTracking(
         packageName: String,

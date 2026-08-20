@@ -146,6 +146,20 @@
             </intent-filter>
         </receiver>
 
+        <!-- Installs and uninstalls, so the rule book keeps up with the phone without
+             waiting for the launcher to be recreated. -->
+        <receiver
+            android:name=".receiver.PackageChangeReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.PACKAGE_ADDED" />
+                <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.PACKAGE_REMOVED" />
+                <action android:name="android.intent.action.PACKAGE_FULLY_REMOVED" />
+                <data android:scheme="package" />
+            </intent-filter>
+        </receiver>
+
         <receiver
             android:name=".receiver.BootReceiver"
             android:exported="true"
