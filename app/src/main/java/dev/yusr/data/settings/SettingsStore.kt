@@ -190,6 +190,15 @@ data class AppSettings(
     val homeWidgetId: Int = NO_WIDGET,
     /** How tall that widget is allowed to be, in dp. */
     val homeWidgetHeightDp: Int = 132,
+    /**
+     * Whether the ayah is kept off the home screen.
+     *
+     * Shown by default, and hidden only by hand — a long press on the ayah itself. A launcher
+     * that puts the Qur'an in front of you is the point of this one, but a home screen is
+     * somebody's own, and the line is easier to hide from where it sits than from a settings
+     * screen they would have to go looking for.
+     */
+    val homeAyahHidden: Boolean = false,
     val prayer: PrayerSettings = PrayerSettings(),
 )
 
@@ -232,6 +241,7 @@ class SettingsStore(private val context: Context) {
         val WINDOW_AFTER = intPreferencesKey("prayer_window_after")
         val HIJRI_OFFSET = intPreferencesKey("hijri_offset_days")
         val AYAH_LANGUAGE = stringPreferencesKey("ayah_language")
+        val HOME_AYAH_HIDDEN = booleanPreferencesKey("home_ayah_hidden")
         val PRAYER_SYNC = booleanPreferencesKey("prayer_sync_over_network")
         val QURAN_SYNCED_AT = longPreferencesKey("quran_synced_at")
         val MADHAB = stringPreferencesKey("madhab")
@@ -280,6 +290,7 @@ class SettingsStore(private val context: Context) {
             navOverlayEnabled = prefs[Keys.NAV_OVERLAY] ?: defaults.navOverlayEnabled,
             homeWidgetId = prefs[Keys.HOME_WIDGET_ID] ?: defaults.homeWidgetId,
             homeWidgetHeightDp = prefs[Keys.HOME_WIDGET_HEIGHT] ?: defaults.homeWidgetHeightDp,
+            homeAyahHidden = prefs[Keys.HOME_AYAH_HIDDEN] ?: defaults.homeAyahHidden,
             prayer = readPrayer(prefs, defaults.prayer),
         )
     }
@@ -409,6 +420,9 @@ class SettingsStore(private val context: Context) {
     suspend fun setHijriOffsetDays(days: Int) = putInt(Keys.HIJRI_OFFSET, days.coerceIn(-2, 2))
 
     suspend fun setAyahLanguage(language: AyahLanguage) = putString(Keys.AYAH_LANGUAGE, language.name)
+
+    /** Hiding the ayah takes nothing away and loosens no rule, so it applies at once. */
+    suspend fun setHomeAyahHidden(hidden: Boolean) = putBoolean(Keys.HOME_AYAH_HIDDEN, hidden)
 
     suspend fun setPrayerSyncOverNetwork(enabled: Boolean) = putBoolean(Keys.PRAYER_SYNC, enabled)
 
