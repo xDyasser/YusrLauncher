@@ -270,6 +270,7 @@ private val HOME = mapOf(
     "no favourites yet" to "لا مفضّلات بعد",
     "tap for the next ayah →" to "← المس للآية التالية",
     "hide the ayah" to "إخفاء الآية",
+    "ayah hidden — long press to bring it back" to "الآية مخفيّة — اضغط مطوّلًا لإعادتها",
     "keep it" to "إبقاؤها",
     "setup unfinished — tap to finish" to "الإعداد لم يكتمل — المس لإتمامه",
     "%s in %s" to "%s بعد %s",
@@ -489,8 +490,8 @@ private val SETTINGS = mapOf(
     "arabic" to "العربية",
     "shown on the home screen" to "ظاهرة في الشاشة الرئيسية",
     "hidden" to "مخفيّة",
-    "the home screen shows the ayah you are bookmarked at instead, and a " to "الشاشة الرئيسية تعرض الآية الموقوف عندها بدل ذلك، و",
-    "long press on it there hides it. this is the way back." to "الضغط المطوّل عليها هناك يخفيها. وهذا طريق الرجوع.",
+    "the home screen shows the ayah you are bookmarked at instead. a long " to "الشاشة الرئيسية تعرض الآية الموقوف عندها بدل ذلك. الضغط ",
+    "press hides it there, and another brings it back; this is the same switch." to "المطوّل يخفيها هناك، وضغطة أخرى تعيدها؛ وهذا المفتاح نفسه.",
     "dark" to "داكنة",
     "light" to "فاتحة",
     "the app follows the phone unless you tell it otherwise. arabic brings the " to

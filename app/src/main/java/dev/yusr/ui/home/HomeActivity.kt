@@ -309,7 +309,18 @@ private fun HomeScreen(
             today?.let { PrayerStrip(it, modifier = Modifier.padding(top = 22.dp)) }
         }
 
-        val shown = if (settings?.homeAyahHidden == true) null else ayah
+        val ayahHidden = settings?.homeAyahHidden == true
+        val shown = if (ayahHidden) null else ayah
+        // Hiding leaves one faint word where the ayah was, on the same long press that hid it.
+        // Not a second setting to go and find: the gesture that put it away is the gesture that
+        // brings it back, in the place it was put away from. It is the quietest mark on the
+        // screen, and a tap does nothing to it — there is nothing here to read by accident.
+        if (ayahHidden) {
+            HiddenAyahLine(
+                onRestore = { scope.launch { store.setHomeAyahHidden(false) } },
+                modifier = Modifier.padding(top = 14.dp),
+            )
+        }
         if (shown != null) {
             AyahCard(
                 ayah = shown,
@@ -564,6 +575,40 @@ private fun PrayerStrip(today: PrayerToday, modifier: Modifier = Modifier) {
             maxLines = 1,
             modifier = Modifier.padding(top = 5.dp),
         )
+    }
+}
+
+/**
+ * What is left of the ayah once it has been hidden: a word, and the way back.
+ *
+ * A long press restores it, matching the press that hid it. Faint enough to be scenery for
+ * anybody who meant to be rid of it, and findable by anybody who changes their mind — which is
+ * the whole of what this line has to do.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun HiddenAyahLine(
+    onRestore: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = { },
+                onLongClick = onRestore,
+            )
+            .padding(vertical = 7.dp),
+    ) {
+        Text(
+            text = t("ayah hidden — long press to bring it back"),
+            style = MaterialTheme.typography.labelSmall,
+            color = Fainter,
+            maxLines = 1,
+        )
+        Hairline(modifier = Modifier.padding(top = 7.dp))
     }
 }
 

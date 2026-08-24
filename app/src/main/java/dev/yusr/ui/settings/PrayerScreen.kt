@@ -247,8 +247,8 @@ fun PrayerScreen() {
             ) { index -> scope.launch { store.setAyahLanguage(AyahLanguage.entries[index]) } }
 
             Text(
-                text = t("the home screen shows the ayah you are bookmarked at instead, and a ") +
-                    t("long press on it there hides it. this is the way back."),
+                text = t("the home screen shows the ayah you are bookmarked at instead. a long ") +
+                    t("press hides it there, and another brings it back; this is the same switch."),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Faint,
                 modifier = Modifier.padding(top = 18.dp, bottom = 12.dp),
