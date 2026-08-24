@@ -246,6 +246,18 @@ fun PrayerScreen() {
                 selectedIndex = AyahLanguage.entries.indexOf(prayer.ayahLanguage),
             ) { index -> scope.launch { store.setAyahLanguage(AyahLanguage.entries[index]) } }
 
+            Text(
+                text = t("the home screen shows the ayah you are bookmarked at instead, and a ") +
+                    t("long press on it there hides it. this is the way back."),
+                style = MaterialTheme.typography.bodyMedium,
+                color = Faint,
+                modifier = Modifier.padding(top = 18.dp, bottom = 12.dp),
+            )
+            PillPicker(
+                options = listOf(t("shown on the home screen"), t("hidden")),
+                selectedIndex = if (settings?.homeAyahHidden == true) 1 else 0,
+            ) { index -> scope.launch { store.setHomeAyahHidden(index == 1) } }
+
             YusrButton(
                 label = if (ayatDownloaded > 0) t("download again") else t("download the qur'an"),
                 modifier = Modifier.padding(top = 12.dp),

@@ -309,7 +309,7 @@ private fun HomeScreen(
             today?.let { PrayerStrip(it, modifier = Modifier.padding(top = 22.dp)) }
         }
 
-        val shown = ayah
+        val shown = if (settings?.homeAyahHidden == true) null else ayah
         if (shown != null) {
             AyahCard(
                 ayah = shown,
@@ -321,6 +321,7 @@ private fun HomeScreen(
                     val (nextSurah, nextAyah) = SurahNames.next(shown.surah, shown.ayah)
                     scope.launch { store.setBookmark(nextSurah, nextAyah) }
                 },
+                onHide = { scope.launch { store.setHomeAyahHidden(true) } },
                 modifier = Modifier.padding(top = 14.dp),
             )
         }
@@ -572,18 +573,33 @@ private fun PrayerStrip(today: PrayerToday, modifier: Modifier = Modifier) {
  * Tapping it moves to the next one, and moves the reader's bookmark with it. That is the only
  * counter in this app that runs the right way: every other number here goes up as you spend more of
  * your life on the phone, and this one goes up as you read.
+ *
+ * A long press asks whether to take it off the home screen, and the question replaces the line
+ * about the next ayah until it is answered. Asking rather than hiding on the press itself: a
+ * thumb held a moment too long on the one thing here anybody reads should not make it disappear.
+ * Nothing is deleted either way — the bookmark stays where it is, and the reader opens there.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AyahCard(
     ayah: Ayah,
     language: AyahLanguage,
     onRead: () -> Unit,
+    onHide: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var asking by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .noRippleClickable(onClick = onRead)
+            .combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                // While the question is up the tap answers it rather than turning the page over,
+                // so nobody reads the next ayah by trying to dismiss the offer to hide this one.
+                onClick = { if (asking) asking = false else onRead() },
+                onLongClick = { asking = true },
+            )
             .padding(vertical = 11.dp),
         verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
@@ -617,13 +633,34 @@ private fun AyahCard(
                 style = MaterialTheme.typography.labelSmall,
                 color = Dim,
             )
-            Text(
-                // Says what the tap does rather than what you are supposed to have done, which is
-                // the version somebody looking for a way to move the verse on can actually find.
-                text = t("tap for the next ayah →"),
-                style = MaterialTheme.typography.labelSmall,
-                color = Fainter,
-            )
+            if (asking) {
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text(
+                        text = t("hide the ayah"),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Faint,
+                        modifier = Modifier.noRippleClickable {
+                            asking = false
+                            onHide()
+                        },
+                    )
+                    Text(
+                        text = t("keep it"),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Fainter,
+                        modifier = Modifier.noRippleClickable { asking = false },
+                    )
+                }
+            } else {
+                Text(
+                    // Says what the tap does rather than what you are supposed to have done, which
+                    // is the version somebody looking for a way to move the verse on can actually
+                    // find.
+                    text = t("tap for the next ayah →"),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Fainter,
+                )
+            }
         }
         Hairline(modifier = Modifier.padding(top = 4.dp))
     }
