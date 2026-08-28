@@ -11,6 +11,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -20,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.yusr.R
 import dev.yusr.container
+import dev.yusr.data.quran.Tajweed
 import dev.yusr.data.settings.ThemeMode
 
 // The night palette. Not a grey scale: the ground is a green-black and the text is a warm
@@ -251,3 +253,63 @@ fun YusrTheme(content: @Composable () -> Unit) {
         content = content,
     )
 }
+
+/**
+ * The colours the mushaf uses when tajwīd is turned on.
+ *
+ * The rest of this app spends one accent on two things and leaves everything else to grey. A
+ * colour mushaf cannot work that way — a reader has to tell a madd from a ghunnah at a glance —
+ * so this is the one palette in the app, and it is built the way the printed colour masaahif
+ * build theirs: by family rather than by rule. The madds run warm, from the six counts of a
+ * lāzim down to the two of a hidden one; everything nasal is green; what is assimilated without
+ * a ghunnah is violet; qalqalah is blue; and a letter that is written but not read is grey,
+ * which is the page saying "there is nothing here to say".
+ *
+ * Two sets, because a colour that reads on a green-black ground is a stain on unbleached paper.
+ */
+private val NightTajweed: Map<Tajweed.Rule, Color> = mapOf(
+    Tajweed.Rule.MADD_6 to Color(0xFFD06A5A),
+    Tajweed.Rule.MADD_MUTTASIL to Color(0xFFD98E4A),
+    Tajweed.Rule.MADD_MUNFASIL to Color(0xFFD98E4A),
+    Tajweed.Rule.MADD_246 to Color(0xFFC9A15C),
+    Tajweed.Rule.MADD_2 to Color(0xFF9AAE72),
+    Tajweed.Rule.GHUNNAH to Color(0xFF6FA97A),
+    Tajweed.Rule.IDGHAAM_GHUNNAH to Color(0xFF6FA97A),
+    Tajweed.Rule.IDGHAAM_SHAFAWI to Color(0xFF6FA97A),
+    Tajweed.Rule.IKHFA to Color(0xFF5FA39A),
+    Tajweed.Rule.IKHFA_SHAFAWI to Color(0xFF5FA39A),
+    Tajweed.Rule.IQLAB to Color(0xFF5E93A8),
+    Tajweed.Rule.QALQALAH to Color(0xFF6E8FC7),
+    Tajweed.Rule.IDGHAAM_NO_GHUNNAH to Color(0xFFA088C0),
+    Tajweed.Rule.IDGHAAM_MUTAJAANISAIN to Color(0xFFA088C0),
+    Tajweed.Rule.IDGHAAM_MUTAQAARIBAIN to Color(0xFFA088C0),
+    Tajweed.Rule.HAMZAT_WASL to Color(0xFF7E8379),
+    Tajweed.Rule.LAM_SHAMSIYYAH to Color(0xFF7E8379),
+    Tajweed.Rule.SILENT to Color(0xFF6B6F66),
+)
+
+private val DayTajweed: Map<Tajweed.Rule, Color> = mapOf(
+    Tajweed.Rule.MADD_6 to Color(0xFF9E3B2C),
+    Tajweed.Rule.MADD_MUTTASIL to Color(0xFFA9631E),
+    Tajweed.Rule.MADD_MUNFASIL to Color(0xFFA9631E),
+    Tajweed.Rule.MADD_246 to Color(0xFF8A6B2E),
+    Tajweed.Rule.MADD_2 to Color(0xFF5F7238),
+    Tajweed.Rule.GHUNNAH to Color(0xFF3D6B48),
+    Tajweed.Rule.IDGHAAM_GHUNNAH to Color(0xFF3D6B48),
+    Tajweed.Rule.IDGHAAM_SHAFAWI to Color(0xFF3D6B48),
+    Tajweed.Rule.IKHFA to Color(0xFF2F6B65),
+    Tajweed.Rule.IKHFA_SHAFAWI to Color(0xFF2F6B65),
+    Tajweed.Rule.IQLAB to Color(0xFF35637A),
+    Tajweed.Rule.QALQALAH to Color(0xFF3A5A9B),
+    Tajweed.Rule.IDGHAAM_NO_GHUNNAH to Color(0xFF6B4E93),
+    Tajweed.Rule.IDGHAAM_MUTAJAANISAIN to Color(0xFF6B4E93),
+    Tajweed.Rule.IDGHAAM_MUTAQAARIBAIN to Color(0xFF6B4E93),
+    Tajweed.Rule.HAMZAT_WASL to Color(0xFF6B6F66),
+    Tajweed.Rule.LAM_SHAMSIYYAH to Color(0xFF6B6F66),
+    Tajweed.Rule.SILENT to Color(0xFF8A8D84),
+)
+
+/** The set that suits the ground the page is being drawn on. */
+val TajweedColours: Map<Tajweed.Rule, Color>
+    @Composable get() =
+        if (MaterialTheme.colorScheme.background.luminance() < 0.5f) NightTajweed else DayTajweed

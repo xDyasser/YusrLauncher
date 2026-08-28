@@ -37,6 +37,11 @@ data class MushafPage(
         val ayah: Int,
         val text: String,
         val kind: Kind,
+        /**
+         * The rules of tajwīd inside this word, at positions within [text] — empty unless the
+         * page was composed with them, which is a setting and is off by default.
+         */
+        val tajweed: List<Tajweed.Span> = emptyList(),
     ) {
         enum class Kind {
             /** A word of the Qur'an. */
@@ -71,16 +76,32 @@ data class MushafPage(
             page: MushafLayout.Page,
             layout: MushafLayout,
             ayat: List<Ayah>,
+            tajweed: Boolean = false,
         ): MushafPage? {
             val byReference = ayat.associateBy { it.surah to it.ayah }
-            val words = mutableMapOf<Pair<Int, Int>, List<String>>()
+            val words = mutableMapOf<Pair<Int, Int>, List<UthmaniText.Word>>()
+            val rules = mutableMapOf<Pair<Int, Int>, List<Tajweed.Span>>()
 
             // Split once per ayah and kept, because an ayah that runs over four lines would
             // otherwise be split four times.
-            fun wordsOf(surah: Int, ayah: Int): List<String>? {
+            fun wordsOf(surah: Int, ayah: Int): List<UthmaniText.Word>? {
                 words[surah to ayah]?.let { return it }
                 val text = byReference[surah to ayah]?.arabic ?: return null
-                return UthmaniText.words(surah, ayah, text).also { words[surah to ayah] = it }
+                // The rules are read off the whole ayah rather than off each word, because the
+                // nūn ending one word takes its rule from the letter starting the next.
+                if (tajweed) {
+                    rules[surah to ayah] = Tajweed.annotate(UthmaniText.prepared(surah, ayah, text))
+                }
+                return UthmaniText.placed(surah, ayah, text).also { words[surah to ayah] = it }
+            }
+
+            /** The rules that fall inside one word, moved to where they sit in that word. */
+            fun rulesIn(surah: Int, ayah: Int, word: UthmaniText.Word): List<Tajweed.Span> {
+                if (!tajweed) return emptyList()
+                val found = rules[surah to ayah] ?: return emptyList()
+                val end = word.start + word.text.length
+                return found.filter { it.start >= word.start && it.end <= end }
+                    .map { Tajweed.Span(it.rule, it.start - word.start, it.end - word.start) }
             }
 
             // Where the page's text is up to: the ayah, and which word of it comes next. The
@@ -126,7 +147,14 @@ data class MushafPage(
                                     kind = Word.Kind.END,
                                 )
                             } else {
-                                Word(surah, ayah, all[index - 1], Word.Kind.TEXT)
+                                val word = all[index - 1]
+                                Word(
+                                    surah = surah,
+                                    ayah = ayah,
+                                    text = word.text,
+                                    kind = Word.Kind.TEXT,
+                                    tajweed = rulesIn(surah, ayah, word),
+                                )
                             }
 
                             val done = line.end.surah == surah && line.end.ayah == ayah &&

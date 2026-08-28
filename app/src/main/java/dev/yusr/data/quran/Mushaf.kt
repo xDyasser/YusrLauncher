@@ -14,8 +14,12 @@ class Mushaf(private val context: Context, private val quran: QuranSource) {
     /**
      * Page [number], set and ready to draw, or null if it cannot be — which for now means only
      * that the Qur'an has not been downloaded onto the phone yet.
+     *
+     * [tajweed] decides whether the words come with the rules of tajwīd worked out on them. It
+     * is asked for here rather than left to the screen because the rules are read off whole
+     * āyāt, and by the time a screen has a page it has words.
      */
-    suspend fun page(number: Int): MushafPage? {
+    suspend fun page(number: Int, tajweed: Boolean = false): MushafPage? {
         if (number !in 1..MushafLayout.PAGES) return null
         val layout = layout() ?: return null
         val page = layout.page(number) ?: return null
@@ -30,7 +34,7 @@ class Mushaf(private val context: Context, private val quran: QuranSource) {
         )
         if (ayat.isEmpty()) return null
 
-        return MushafPage.compose(page = page, layout = layout, ayat = ayat)
+        return MushafPage.compose(page = page, layout = layout, ayat = ayat, tajweed = tajweed)
     }
 
     /** The page a reference is printed on, so a bookmark made anywhere opens the right leaf. */

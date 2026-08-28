@@ -56,12 +56,41 @@ object UthmaniText {
      * whole book adds up before it writes the layout out. If they ever drift apart, the build of
      * the asset fails rather than the reader quietly setting the wrong words on a line.
      */
-    fun words(surah: Int, ayah: Int, text: String): List<String> {
+    fun words(surah: Int, ayah: Int, text: String): List<String> =
+        placed(surah, ayah, text).map { it.text }
+
+    /** One word of an ayah, and where it begins in the text [prepared] returns. */
+    data class Word(val text: String, val start: Int)
+
+    /**
+     * The same words, each with its place in the ayah.
+     *
+     * The place is what lets a rule of tajwīd found in the ayah be drawn on the word that holds
+     * it: the rules are worked out over the whole ayah, because a nūn at the end of one word is
+     * decided by the letter at the start of the next, and the page is set one word at a time.
+     */
+    fun placed(surah: Int, ayah: Int, text: String): List<Word> {
+        val prepared = prepared(surah, ayah, text)
+        val words = mutableListOf<Word>()
+        var start = 0
+        while (start <= prepared.length) {
+            val end = prepared.indexOf(' ', start).takeIf { it >= 0 } ?: prepared.length
+            if (end > start) words += Word(prepared.substring(start, end), start)
+            start = end + 1
+        }
+        return words
+    }
+
+    /**
+     * The ayah as the page sets it: the broken tanwīn closed up, and the four āyāt where the
+     * mushaf draws a word boundary in another place put right.
+     */
+    fun prepared(surah: Int, ayah: Int, text: String): String {
         var prepared = repaired(text)
         WORD_BOUNDARIES[surah to ayah]?.forEach { (asWritten, asPrinted) ->
             prepared = prepared.replace(asWritten, asPrinted)
         }
-        return prepared.split(' ').filter { it.isNotEmpty() }
+        return prepared
     }
 
     /** Binds two halves of one printed word together, and is drawn as an ordinary space. */

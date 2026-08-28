@@ -60,6 +60,18 @@ can equally type. Nothing is ever uploaded; there is no account and no analytics
   way the mushaf does, so al-Baqara 2:1 arrives as *alif lām mīm* — a tasbīḥ, the adhkār, the duʿāʾ,
   and a fasting calendar that knows the white days, Mondays and Thursdays, ʿĀshūrāʾ and ʿArafah
   from the Hijri date and never suggests a fast on an Eid.
+- **Al-Mīzān on every ayah, and the colours of tajwīd.** Hold a word of the page down and
+  ʿAllāma al-Ṭabāṭabāʾī's tafsīr opens on it — the Arabic original, all twenty volumes of it,
+  in the APK rather than fetched, so the commentary works wherever the mushaf does. It opens on
+  the *passage* the ayah belongs to rather than on the ayah alone, because that is how al-Mīzān
+  is written: a run of āyāt, the *bayān* on all of them together, then what the traditions say.
+  The page itself can carry the rules of tajwīd in colour — the madds warm, everything nasal
+  green, a letter written but not read grey — worked out on the phone from the text's own
+  orthography, which states most of them outright: a nūn read plainly carries a sukūn and one
+  that is hidden carries nothing, iqlāb is a small mīm over the letter, a madd of more than two
+  counts carries the maddah. Off by default, because the printed page is black and somebody who
+  has read this mushaf for twenty years should not open the app to find it repainted. The whole
+  book is checked against an independent annotation of it in the tests, ayah by ayah.
 - **Mafātīḥ al-Jinān, whole and in Arabic.** All three bābs, both appendices and 194 texts —
   Kumayl, Nudba, ʿAhd, Ṣabāḥ, Iftitāḥ, Jawshan Kabīr, Abū Ḥamza, the Munājāt, Ziyārat ʿĀshūrāʾ —
   bundled rather than fetched, and read as a book: the parts, then what is in a part, then the
@@ -166,14 +178,20 @@ domain/     pure logic, no Android imports — GateEvaluator, BudgetCalculator, 
             FastingCalendar, Tasbih, Dhikr, FavoriteOrder
 data/       Room rules and history, DataStore settings, RuleMutator (the tighten/loosen asymmetry),
             the prayer timetable, the Qur'an and its recitation, the bundled supplications,
-            and the network fetches
+            al-Mīzān and the rules of tajwīd, and the network fetches
 service/    GuardService (foreground enforcement), notification filter, optional nav strip
 admin/      device admin and device owner policy
-ui/         home (and its widget host), hub (qibla, prayer, mushaf, tasbih, adhkar, fasting),
-            search, gate, block, settings, usage, setup checklist
+ui/         home (and its widget host), hub (qibla, prayer, mushaf, tafsīr, tasbih, adhkar,
+            fasting), search, gate, block, settings, usage, setup checklist
 work/       the deferred-change worker and the notification digest
 ```
 
 The decision "may this app open right now?" lives in exactly one place, `GateEvaluator`, and is
 reached through one repository method, so the launcher can never permit something the guard
 service would immediately undo.
+
+The assets nobody would want to hand-write are built by scripts in `tools/`, and every one of
+them checks its own output before writing it: `build_mushaf_layout.py` (where the 604 pages break
+their lines), `import_mafatih.py` (Mafātīḥ al-Jinān), `import_almizan.py` (al-Mīzān, which must
+tile all 6,236 āyāt with no gap and no overlap) and `build_tajweed_reference.py` (the fixture the
+tajwīd engine is held against, ayah by ayah).
