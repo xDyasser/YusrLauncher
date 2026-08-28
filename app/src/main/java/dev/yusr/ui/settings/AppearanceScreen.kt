@@ -133,6 +133,43 @@ fun AppearanceScreen() {
             }
         }
 
+        Text(
+            text = t("MUSHAF"),
+            style = MaterialTheme.typography.labelSmall,
+            color = Faint,
+            modifier = Modifier.padding(top = 36.dp),
+        )
+        Text(
+            text = t("the mushaf is set plain, the way the page is printed. turned on, the rules ") +
+                t("of tajwīd are coloured on the letters they fall on — the madds warm, ") +
+                t("everything nasal green, a letter written but not read grey. the rules are ") +
+                t("worked out on the phone from the text itself, and nothing is coloured that ") +
+                t("the mushaf does not say outright."),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Faint,
+            modifier = Modifier.padding(top = 10.dp),
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            listOf(false, true).forEach { on ->
+                val active = (settings?.tajweedColours ?: false) == on
+                Text(
+                    text = if (on) t("coloured") else t("plain"),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    color = if (active) MaterialTheme.colorScheme.onBackground else Faint,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(YusrShape)
+                        .border(1.dp, if (active) Faint else Fainter, YusrShape)
+                        .noRippleClickable { scope.launch { store.setTajweedColours(on) } }
+                        .padding(vertical = 13.dp),
+                )
+            }
+        }
+
         Column(modifier = Modifier.padding(top = 36.dp)) {
             Text(text = t("NAVIGATION"), style = MaterialTheme.typography.labelSmall, color = Faint)
             Text(

@@ -384,6 +384,10 @@ private val HUB = mapOf(
     "Ḥizb %s%s" to "الحزب %s%s",
     "Sūrat %s" to "سورة %s",
     "Play %s" to "تشغيل %s",
+    // ---- al-Mīzān, opened by holding a word of the page down
+    "‹ Mushaf" to "المصحف ›",
+    "Tafsīr" to "تفسير",
+    "hold a word for its tafsīr" to "اضغط مطوّلًا على كلمة لتفسيرها",
     "114 sūras · 30 juzʾ · 60 ḥizb" to "١١٤ سورة · ٣٠ جزءًا · ٦٠ حزبًا",
     "Reciter" to "القارئ",
     "Bookmarked" to "علامة",
@@ -485,6 +489,19 @@ private val SETTINGS = mapOf(
     "LANGUAGE" to "اللغة",
     "THEME" to "السِّمة",
     "NAVIGATION" to "التنقّل",
+    // ---- the mushaf: whether the rules of tajwīd are coloured on the page
+    "MUSHAF" to "المصحف",
+    "plain" to "بلا ألوان",
+    "coloured" to "بالتجويد",
+    "the mushaf is set plain, the way the page is printed. turned on, the rules " to
+        "المصحف يُطبع كما يُطبع في الورق. وإن شُغِّل التلوين، لوِّنت أحكام ",
+    "of tajwīd are coloured on the letters they fall on — the madds warm, " to
+        "التجويد على الحروف التي تقع عليها: المدود بالألوان الدافئة، ",
+    "everything nasal green, a letter written but not read grey. the rules are " to
+        "وكل ما فيه غنّة بالأخضر، والحرف المكتوب غير المنطوق بالرمادي. وتُستخرج الأحكام ",
+    "worked out on the phone from the text itself, and nothing is coloured that " to
+        "في الجهاز من النصّ نفسه، ولا يُلوَّن ما لا ",
+    "the mushaf does not say outright." to "يصرّح به رسم المصحف.",
     "system" to "كالنظام",
     "english" to "الإنجليزية",
     "arabic" to "العربية",

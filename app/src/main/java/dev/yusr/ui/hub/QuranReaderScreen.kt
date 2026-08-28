@@ -37,6 +37,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
@@ -58,12 +60,14 @@ import dev.yusr.ui.Hairline
 import dev.yusr.ui.SectionLabel
 import dev.yusr.ui.ThinProgress
 import dev.yusr.ui.noRippleClickable
+import dev.yusr.ui.noRippleCombinedClickable
 import dev.yusr.ui.theme.Backdrop
 import dev.yusr.ui.theme.Dim
 import dev.yusr.ui.theme.Faint
 import dev.yusr.ui.theme.Fainter
 import dev.yusr.ui.theme.Gold
 import dev.yusr.ui.theme.QuranStyle
+import dev.yusr.ui.theme.TajweedColours
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -78,8 +82,8 @@ import kotlinx.coroutines.withContext
  * turns over, which line the sajda falls on — and a reader that reflows the text into a scroll
  * throws all of that away and hands back a search box in exchange.
  *
- * Three pages behind one back gesture: the leaf you are reading, the index — sūrahs, juz and
- * ḥizbs — and the list of reciters.
+ * Four pages behind one back gesture: the leaf you are reading, the index — sūrahs, juz and
+ * ḥizbs — the list of reciters, and al-Mīzān on whichever ayah was held down.
  *
  * Recitation plays from the phone, never streamed. A sūrah is fetched once, ayah by ayah, and
  * then belongs to you — which is the same bargain the rest of this app makes with the network,
@@ -97,6 +101,10 @@ fun QuranReaderScreen(onBack: () -> Unit) {
 
     var page by remember { mutableStateOf(ReaderPage.READER) }
     BackHandler(enabled = page != ReaderPage.READER) { page = ReaderPage.READER }
+
+    // The ayah the tafsīr was asked for, which outlives the page it is shown on: turning back to
+    // the mushaf and holding the same word again should not have to fetch the passage twice.
+    var explaining by remember { mutableStateOf<Pair<Int, Int>?>(null) }
 
     // Where the reader is, held above all three pages, and still an ayah rather than a page.
     //
@@ -147,6 +155,10 @@ fun QuranReaderScreen(onBack: () -> Unit) {
             onBack = onBack,
             onOpenIndex = { page = ReaderPage.INDEX },
             onOpenReciters = { page = ReaderPage.RECITERS },
+            onExplain = { surah, ayah ->
+                explaining = surah to ayah
+                page = ReaderPage.TAFSIR
+            },
         )
         ReaderPage.INDEX -> MushafIndex(
             current = here,
@@ -157,10 +169,18 @@ fun QuranReaderScreen(onBack: () -> Unit) {
             onBack = { page = ReaderPage.READER },
         )
         ReaderPage.RECITERS -> ReciterList(onBack = { page = ReaderPage.READER })
+        ReaderPage.TAFSIR -> {
+            val (surah, ayah) = explaining ?: here
+            TafsirScreen(
+                surah = surah,
+                ayah = ayah,
+                onBack = { page = ReaderPage.READER },
+            )
+        }
     }
 }
 
-private enum class ReaderPage { READER, INDEX, RECITERS }
+private enum class ReaderPage { READER, INDEX, RECITERS, TAFSIR }
 
 @Composable
 private fun Reader(
@@ -169,6 +189,7 @@ private fun Reader(
     onBack: () -> Unit,
     onOpenIndex: () -> Unit,
     onOpenReciters: () -> Unit,
+    onExplain: (Int, Int) -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -178,6 +199,13 @@ private fun Reader(
 
     val reciterId by store.reciterId.collectAsState(initial = null)
     val reciter = remember(reciterId) { Reciters.byId(reciterId) }
+
+    // Off unless asked for, and asked for in the settings rather than here: a mushaf that
+    // repainted itself the first time somebody opened it would be answering a question nobody
+    // put to it.
+    val settings by store.settings.collectAsState(initial = null)
+    val tajweed = settings?.tajweedColours == true
+
 
     // The layout is read off the disk once and then never again, so the reader waits for it here
     // rather than each leaf waiting for it separately.
@@ -315,6 +343,8 @@ private fun Reader(
                     // pages you have not arrived at yet.
                     marked = if (index + 1 == plan.pageOf(place.first, place.second)) place else null,
                     onMark = onGoTo,
+                    tajweed = tajweed,
+                    onExplain = onExplain,
                 )
             }
         }
@@ -367,6 +397,8 @@ private fun Leaf(
     layout: MushafLayout,
     marked: Pair<Int, Int>?,
     onMark: (Int, Int) -> Unit,
+    tajweed: Boolean,
+    onExplain: (Int, Int) -> Unit,
 ) {
     val context = LocalContext.current
     val mushaf = remember { context.container.mushaf }
@@ -374,10 +406,10 @@ private fun Leaf(
     // Null is "not set yet" and a page with no lines is "not on the phone" — the two look nothing
     // alike to whoever is holding it, and telling them apart is what keeps the download notice
     // from flashing up on a page that is only a moment from having its text.
-    var page by remember(number) { mutableStateOf<MushafPage?>(null) }
-    var missing by remember(number) { mutableStateOf(false) }
-    LaunchedEffect(number) {
-        val set = mushaf.page(number)
+    var page by remember(number, tajweed) { mutableStateOf<MushafPage?>(null) }
+    var missing by remember(number, tajweed) { mutableStateOf(false) }
+    LaunchedEffect(number, tajweed) {
+        val set = mushaf.page(number, tajweed)
         page = set
         missing = set == null
     }
@@ -396,6 +428,7 @@ private fun Leaf(
             page = set,
             marked = marked,
             onMark = onMark,
+            onExplain = onExplain,
             modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 6.dp),
         )
 
@@ -485,6 +518,7 @@ private fun MushafLines(
     page: MushafPage,
     marked: Pair<Int, Int>?,
     onMark: (Int, Int) -> Unit,
+    onExplain: (Int, Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val measurer = rememberTextMeasurer()
@@ -541,6 +575,7 @@ private fun MushafLines(
                         style = style,
                         marked = marked,
                         onMark = onMark,
+                        onExplain = onExplain,
                     )
                 }
             }
@@ -571,7 +606,8 @@ private fun SurahBand(surah: Int, style: TextStyle) {
  * One line of the text: the words, spaced out to both margins, each one belonging to an ayah.
  *
  * A word is its own tap target rather than the line being one, because an ayah is what somebody
- * means when they touch the page, and an ayah runs across the middle of lines.
+ * means when they touch the page, and an ayah runs across the middle of lines. Tapped, it marks
+ * the place; held, it opens al-Mīzān on the passage that ayah is inside.
  */
 @Composable
 private fun TextLine(
@@ -579,7 +615,9 @@ private fun TextLine(
     style: TextStyle,
     marked: Pair<Int, Int>?,
     onMark: (Int, Int) -> Unit,
+    onExplain: (Int, Int) -> Unit,
 ) {
+    val colours = TajweedColours
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (line.centred) {
@@ -591,18 +629,39 @@ private fun TextLine(
     ) {
         line.words.forEach { word ->
             val here = marked?.first == word.surah && marked.second == word.ayah
+            val plain = when (word.kind) {
+                // The ayah numbers and the rubʿ marks are the printer's marks rather than the
+                // revelation, and are set back a shade so the words read as the words.
+                MushafPage.Word.Kind.TEXT -> MaterialTheme.colorScheme.primary
+                else -> Gold
+            }
+            // The letters a rule falls on are the only ones that take a colour. Everything else
+            // on the line stays the colour the page is set in, which is what keeps a coloured
+            // mushaf a mushaf with colours in it rather than a chart.
+            val text = remember(word, colours, plain) {
+                if (word.tajweed.isEmpty()) {
+                    AnnotatedString(word.text)
+                } else {
+                    buildAnnotatedString {
+                        append(word.text)
+                        word.tajweed.forEach { span ->
+                            colours[span.rule]?.let { colour ->
+                                addStyle(SpanStyle(color = colour), span.start, span.end)
+                            }
+                        }
+                    }
+                }
+            }
             Text(
-                text = word.text,
+                text = text,
                 style = style,
-                color = when (word.kind) {
-                    // The ayah numbers and the rubʿ marks are the printer's marks rather than the
-                    // revelation, and are set back a shade so the words read as the words.
-                    MushafPage.Word.Kind.TEXT -> MaterialTheme.colorScheme.primary
-                    else -> Gold
-                },
+                color = plain,
                 modifier = Modifier
                     .background(if (here) Gold.copy(alpha = MARK_TINT) else Color.Transparent)
-                    .noRippleClickable { onMark(word.surah, word.ayah) },
+                    .noRippleCombinedClickable(
+                        onLongClick = { onExplain(word.surah, word.ayah) },
+                        onClick = { onMark(word.surah, word.ayah) },
+                    ),
             )
         }
     }
@@ -789,7 +848,10 @@ private fun MushafIndex(current: Pair<Int, Int>, onPick: (Int, Int) -> Unit, onB
 
     HubPageListFrame(
         title = t("Index"),
-        subtitle = t("114 sūras · 30 juzʾ · 60 ḥizb"),
+        // The second line is where the tafsīr is said out loud. A long press is not a gesture
+        // anybody guesses at, and the index is the one screen in the reader with room to say so
+        // without taking a line off the page.
+        subtitle = t("114 sūras · 30 juzʾ · 60 ḥizb") + " · " + t("hold a word for its tafsīr"),
         onBack = onBack,
         scrollKey = tab,
     ) {

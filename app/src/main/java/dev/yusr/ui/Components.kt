@@ -2,7 +2,9 @@ package dev.yusr.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -53,6 +55,27 @@ fun Modifier.noRippleClickable(enabled: Boolean = true, onClick: () -> Unit): Mo
         interactionSource = interaction,
         indication = null,
         enabled = enabled,
+        onClick = onClick,
+    )
+}
+
+/**
+ * The same, with something behind a long press.
+ *
+ * Used where one thing has two meanings a reader would expect of it: a word of the mushaf is
+ * tapped to mark the place and held to ask what it means.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun Modifier.noRippleCombinedClickable(
+    onLongClick: () -> Unit,
+    onClick: () -> Unit,
+): Modifier {
+    val interaction = remember { MutableInteractionSource() }
+    return this.combinedClickable(
+        interactionSource = interaction,
+        indication = null,
+        onLongClick = onLongClick,
         onClick = onClick,
     )
 }

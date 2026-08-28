@@ -199,6 +199,15 @@ data class AppSettings(
      * screen they would have to go looking for.
      */
     val homeAyahHidden: Boolean = false,
+    /**
+     * Whether the mushaf colours the rules of tajwīd.
+     *
+     * Off unless asked for. The page as it is printed is black text and nothing else, and
+     * somebody who has read this mushaf for twenty years should not open the app to find it
+     * repainted. Turned on, it is the whole set of rules rather than a selection, because half
+     * a colour mushaf teaches a reader that the letters left plain have no rule on them.
+     */
+    val tajweedColours: Boolean = false,
     val prayer: PrayerSettings = PrayerSettings(),
 )
 
@@ -242,6 +251,7 @@ class SettingsStore(private val context: Context) {
         val HIJRI_OFFSET = intPreferencesKey("hijri_offset_days")
         val AYAH_LANGUAGE = stringPreferencesKey("ayah_language")
         val HOME_AYAH_HIDDEN = booleanPreferencesKey("home_ayah_hidden")
+        val TAJWEED = booleanPreferencesKey("tajweed_colours")
         val PRAYER_SYNC = booleanPreferencesKey("prayer_sync_over_network")
         val QURAN_SYNCED_AT = longPreferencesKey("quran_synced_at")
         val MADHAB = stringPreferencesKey("madhab")
@@ -291,6 +301,7 @@ class SettingsStore(private val context: Context) {
             homeWidgetId = prefs[Keys.HOME_WIDGET_ID] ?: defaults.homeWidgetId,
             homeWidgetHeightDp = prefs[Keys.HOME_WIDGET_HEIGHT] ?: defaults.homeWidgetHeightDp,
             homeAyahHidden = prefs[Keys.HOME_AYAH_HIDDEN] ?: defaults.homeAyahHidden,
+            tajweedColours = prefs[Keys.TAJWEED] ?: defaults.tajweedColours,
             prayer = readPrayer(prefs, defaults.prayer),
         )
     }
@@ -423,6 +434,9 @@ class SettingsStore(private val context: Context) {
 
     /** Hiding the ayah takes nothing away and loosens no rule, so it applies at once. */
     suspend fun setHomeAyahHidden(hidden: Boolean) = putBoolean(Keys.HOME_AYAH_HIDDEN, hidden)
+
+    /** Colouring the mushaf changes nothing but the mushaf, so it applies at once too. */
+    suspend fun setTajweedColours(on: Boolean) = putBoolean(Keys.TAJWEED, on)
 
     suspend fun setPrayerSyncOverNetwork(enabled: Boolean) = putBoolean(Keys.PRAYER_SYNC, enabled)
 

@@ -13,6 +13,7 @@ import dev.yusr.data.prayer.PrayerRepository
 import dev.yusr.data.quran.Mushaf
 import dev.yusr.data.quran.QuranSource
 import dev.yusr.data.quran.RecitationStore
+import dev.yusr.data.quran.Tafsir
 import dev.yusr.data.quran.Supplications
 import dev.yusr.data.settings.SettingsStore
 import dev.yusr.ui.applyLanguage
@@ -89,6 +90,7 @@ class AppContainer(context: Context) {
     val quran: QuranSource = QuranSource(context)
     val mushaf: Mushaf = Mushaf(context, quran)
     val recitation: RecitationStore = RecitationStore(context)
+    val tafsir: Tafsir = Tafsir(context)
     val supplications: Supplications = Supplications(context)
     val devotions: DevotionRepository = DevotionRepository(context)
     val repository: YusrRepository =

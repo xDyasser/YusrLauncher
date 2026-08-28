@@ -40,8 +40,8 @@ class MushafPageTest {
         )
     }
 
-    private fun compose(layout: MushafLayout, ayat: List<Ayah>) =
-        MushafPage.compose(layout.page(1)!!, layout, ayat)
+    private fun compose(layout: MushafLayout, ayat: List<Ayah>, tajweed: Boolean = false) =
+        MushafPage.compose(layout.page(1)!!, layout, ayat, tajweed)
 
     private fun words(line: MushafPage.Line) =
         (line as MushafPage.Line.Text).words.filter { it.kind == MushafPage.Word.Kind.TEXT }
@@ -189,5 +189,45 @@ class MushafPageTest {
             "وَتَفَقَّدَ ٱلطَّيۡرَ فَقَالَ مَالِيَ لَآ أَرَى ٱلۡهُدۡهُدَ أَمۡ كَانَ مِنَ ٱلۡغَآئِبِينَ"
         const val WA_MA_LIYA = "وَمَالِيَ لَآ أَعۡبُدُ ٱلَّذِي فَطَرَنِي وَإِلَيۡهِ تُرۡجَعُونَ"
         const val IL_YASIN = "سَلَٰمٌ عَلَىٰٓ إِلۡ يَاسِينَ"
+    }
+
+    /**
+     * The rules of tajwīd, read off the whole ayah and handed to the word that holds them.
+     *
+     * The page is set one word at a time and the rules are not a property of a word: the nūn at
+     * the end of `مِن` is hidden because of the qāf beginning the next word. So the two have to
+     * be worked out together and split afterwards, and this is the test that they are split in
+     * the right place.
+     */
+    @Test
+    fun `a word carries the rules that fall inside it and no others`() {
+        val text = "مِن قَبۡلِكَ"
+        val layout = layoutOf("1:1:2")
+        val page = compose(layout, listOf(ayah(1, 1, text)), tajweed = true)!!
+        val set = (page.lines[0] as MushafPage.Line.Text).words
+
+        // The nūn ending the first word is hidden before the qāf that opens the second — a rule
+        // found by looking across the space, and drawn on the letter before it.
+        val first = set.first()
+        assertEquals("مِن", first.text)
+        assertEquals(listOf(Tajweed.Rule.IKHFA), first.tajweed.map { it.rule })
+        assertEquals('ن', first.text[first.tajweed.first().start])
+
+        // The qalqalah on the qāf belongs to the second word, and every position is inside it.
+        val second = set[1]
+        assertTrue(second.tajweed.isNotEmpty())
+        second.tajweed.forEach { span ->
+            assertTrue(span.start >= 0 && span.end <= second.text.length)
+        }
+        assertTrue(second.tajweed.any { it.rule == Tajweed.Rule.QALQALAH })
+    }
+
+    @Test
+    fun `a page composed without tajweed carries no rules at all`() {
+        val layout = layoutOf("1:1:2")
+        val page = compose(layout, listOf(ayah(1, 1, "مِن قَبۡلِكَ")))!!
+        (page.lines[0] as MushafPage.Line.Text).words.forEach {
+            assertEquals(emptyList<Tajweed.Span>(), it.tajweed)
+        }
     }
 }
