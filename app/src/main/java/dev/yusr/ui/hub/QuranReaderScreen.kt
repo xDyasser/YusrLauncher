@@ -35,7 +35,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -312,14 +314,13 @@ private fun Reader(
             .fillMaxSize()
             .background(Backdrop)
             .systemBarsPadding()
-            .padding(horizontal = 18.dp)
             .padding(top = 12.dp, bottom = 8.dp),
     ) {
         // The reader gets a thinner top than the rest of the hub: every line of chrome here is a
         // line of the Qur'an made smaller, because the page below is fitted to whatever room is
         // left over.
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = CHROME),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -355,7 +356,7 @@ private fun Reader(
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             HorizontalPager(
                 state = pager,
-                modifier = Modifier.fillMaxWidth().weight(1f),
+                modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = LEAF),
                 // The leaf either side is composed and its text fetched before it is ever dragged
                 // into view. This is the whole of what makes the turn look like paper rather than
                 // a load: by the time the edge of the next page appears, it is already written.
@@ -378,37 +379,39 @@ private fun Reader(
             }
         }
 
-        Hairline()
-        ReaderFooter(
-            reciter = reciter,
-            playing = playing,
-            complete = reciter != null && downloaded >= total && total > 0,
-            downloaded = downloaded,
-            total = total,
-            download = download,
-            marked = place,
-            onOpenReciters = onOpenReciters,
-            onTogglePlay = { playing = !playing },
-            // The chevrons turn the leaf. A swipe is the natural way to do it and the way it is
-            // mostly done, but a page you can only reach by dragging is a page somebody holding
-            // the phone one-handed, or reading it through TalkBack, cannot reach at all.
-            onTurn = { step ->
-                val to = (page - 1 + step).coerceIn(0, MushafLayout.PAGES - 1)
-                scope.launch { pager.animateScrollToPage(to) }
-            },
-            onDownload = {
-                val chosen = reciter ?: return@ReaderFooter
-                if (downloadJob?.isActive == true) {
-                    downloadJob?.cancel()
-                    downloadJob = null
-                    download = RecitationStore.Progress.Idle
-                } else {
-                    downloadJob = scope.launch {
-                        download = recitation.downloadSurah(chosen, surah) { download = it }
+        Column(modifier = Modifier.padding(horizontal = CHROME)) {
+            Hairline()
+            ReaderFooter(
+                reciter = reciter,
+                playing = playing,
+                complete = reciter != null && downloaded >= total && total > 0,
+                downloaded = downloaded,
+                total = total,
+                download = download,
+                marked = place,
+                onOpenReciters = onOpenReciters,
+                onTogglePlay = { playing = !playing },
+                // The chevrons turn the leaf. A swipe is the natural way to do it and the way it is
+                // mostly done, but a page you can only reach by dragging is a page somebody holding
+                // the phone one-handed, or reading it through TalkBack, cannot reach at all.
+                onTurn = { step ->
+                    val to = (page - 1 + step).coerceIn(0, MushafLayout.PAGES - 1)
+                    scope.launch { pager.animateScrollToPage(to) }
+                },
+                onDownload = {
+                    val chosen = reciter ?: return@ReaderFooter
+                    if (downloadJob?.isActive == true) {
+                        downloadJob?.cancel()
+                        downloadJob = null
+                        download = RecitationStore.Progress.Idle
+                    } else {
+                        downloadJob = scope.launch {
+                            download = recitation.downloadSurah(chosen, surah) { download = it }
+                        }
                     }
-                }
-            },
-        )
+                },
+            )
+        }
     }
 }
 
@@ -450,8 +453,13 @@ private fun Leaf(
             return@Column
         }
 
-        PageHeader(surah = set.surah, juz = layout.juzOf(number))
-        Hairline()
+        // The leaf is given more of the screen than the chrome around it, because every dp of
+        // it is a line of the Qur'an set larger. What the page has of its own — its heading, its
+        // rules, its number — is set back in by the difference, and stays in line with the app.
+        Column(modifier = Modifier.padding(horizontal = CHROME - LEAF)) {
+            PageHeader(surah = set.surah, juz = layout.juzOf(number))
+            Hairline()
+        }
 
         MushafLines(
             page = set,
@@ -461,8 +469,10 @@ private fun Leaf(
             modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 6.dp),
         )
 
-        Hairline()
-        PageFooter(number = number, layout = layout, marked = marked)
+        Column(modifier = Modifier.padding(horizontal = CHROME - LEAF)) {
+            Hairline()
+            PageFooter(number = number, layout = layout, marked = marked)
+        }
     }
 }
 
@@ -536,7 +546,9 @@ private val QUARTERS = listOf("", " ¼", " ½", " ¾")
  * A printed page does not scroll and neither does this one: the text is set at whatever size puts
  * every line of the page on the screen at once, height and width both, and that is the size it is
  * read at. Fitting to the height alone is not enough — the longest line of al-Baqara has to reach
- * both margins without running off one — so the size is the smaller of the two answers.
+ * both margins without running off one — so the size is the smaller of the two answers, and on
+ * nearly every page it is the width that answers. [Setting] is where that arithmetic lives, and
+ * why the words are set tighter than the face would space them.
  *
  * Lines are justified by spacing the words out to the margins, which is how the room left over at
  * the end of a line is taken up in print. The last line of a sūrah, and every line of the two
@@ -559,34 +571,36 @@ private fun MushafLines(
 
         // Worked out once per page and per shape of screen. Measuring fifteen lines is not free,
         // and it must not happen again on the frame that turns the page.
-        val size = remember(page.number, height, width) {
-            val perLine = height.toFloat() / page.lines.size
-            // A line's box is taller than its letters: the rest is the room above and below that
-            // keeps a page of Arabic from setting solid.
-            val byHeight = with(density) { (perLine * LINE_FILL).toSp() }
-
+        val size = remember(page.number, height, width, density) {
+            val at = with(density) { MEASURE_AT.toPx() }
+            // Every line is measured with the face's own word spaces in it and then set tight,
+            // the way it will be drawn, so the page is fitted to the width it actually needs.
+            val trim = at * Setting.TRIM
             val widest = page.lines
                 .filterIsInstance<MushafPage.Line.Text>()
                 .maxOfOrNull { line ->
                     val text = line.words.joinToString(" ") { it.text }
-                    measurer.measure(
+                    val measured = measurer.measure(
                         text = AnnotatedString(text),
                         style = QuranStyle.copy(fontSize = MEASURE_AT),
                         maxLines = 1,
                         softWrap = false,
                     ).size.width
-                }?.coerceAtLeast(1) ?: 1
+                    measured - trim * (line.words.size - 1)
+                }?.coerceAtLeast(1f) ?: 1f
 
-            // A hair under the full width: the fitted size is worked out from a measurement and
-            // drawn from another, and a line that ends exactly on the margin has nowhere to put
-            // the difference.
-            val byWidth = MEASURE_AT * (width.toFloat() * FIT_MARGIN / widest.toFloat())
             // Bounded at both ends against a leaf measured before it has any room: a size of
             // nothing draws an empty page, and an unbounded one draws a single enormous word.
-            minOf(byHeight.value, byWidth.value).coerceIn(MIN_SIZE, MAX_SIZE).sp
+            val fitted = Setting.size(
+                perLine = height.toFloat() / page.lines.size,
+                widest = widest,
+                width = width.toFloat(),
+                at = at,
+            )
+            with(density) { fitted.toSp() }.value.coerceIn(MIN_SIZE, MAX_SIZE).sp
         }
 
-        val style = QuranStyle.copy(fontSize = size, lineHeight = size * LINE_SPACING)
+        val style = QuranStyle.copy(fontSize = size, lineHeight = size * Setting.LINE_SPACING)
 
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -647,10 +661,11 @@ private fun SurahBand(surah: Int, style: TextStyle) {
  * that shaves the ends off words and the tops off ḥarakāt. Set as one run the shaping is the
  * font's own, the same as the printed page.
  *
- * Which leaves justification, the reason for the row of words in the first place: the room left
- * over on a line is shared out between its spaces, by widening each of them by the same amount.
- * That is what the printer does with a line of Arabic, and it lets the wash behind a marked ayah
- * run through the gaps between its words instead of breaking into patches at each one.
+ * Which leaves justification, the reason for the row of words in the first place: the words are
+ * set tight — a hair between them rather than the space the face would give them, which is what
+ * a printed mushaf does and what leaves the letters the room to be large — and the width that
+ * comes back is shared out between those spaces again, equally. That is what the printer does
+ * with a line of Arabic.
  *
  * The colours of tajwīd are painted over the run rather than put on the letters, for the reason
  * [Bands] gives at length: a colour on a letter cuts the line at that letter, and a cut line is
@@ -684,10 +699,16 @@ private fun TextLine(
     // The mark goes on last and on its own. It moves as the reader taps about the page, and the
     // line under it — measured twice, coloured and justified — should not have to be worked out
     // again to put a wash behind six words of it.
-    val text = remember(set, marked, wash) { set.washed(marked, wash) }
+    //
+    // Painted rather than set as a background on the words, and for the same reason the colours
+    // of tajwīd are painted: the platform fills a background with the very paint it is about to
+    // draw the letters with, shader and all, so a background asked for in gold comes out in
+    // whatever the gradient is passing through — which on a coloured page is the ink itself, a
+    // grey slab over the ayah you are trying to read.
+    val stripe = remember(set, marked) { set.stripe(marked) }
 
-    // Keyed on the line rather than on the text: the wash changes the text and not one letter's
-    // place in it, and a layout thrown away as the mark moves is a tap the page does not answer.
+    // Keyed on the line rather than on the mark: the mark moves as the reader taps about the
+    // page and moves no letter on it, and a layout thrown away as it moves is a tap unanswered.
     var layout by remember(set) { mutableStateOf<TextLayoutResult?>(null) }
     val ayahAt: (Offset) -> Pair<Int, Int>? = { at ->
         layout?.let { result ->
@@ -699,7 +720,7 @@ private fun TextLine(
     }
 
     Text(
-        text = text,
+        text = set.text,
         style = style,
         color = ink,
         maxLines = 1,
@@ -712,6 +733,14 @@ private fun TextLine(
         onTextLayout = { layout = it },
         modifier = Modifier
             .fillMaxWidth()
+            .drawBehind {
+                val here = stripe ?: return@drawBehind
+                drawRect(
+                    color = wash,
+                    topLeft = Offset(here.start, 0f),
+                    size = Size(here.endInclusive - here.start, size.height),
+                )
+            }
             .pointerInput(set) {
                 detectTapGestures(
                     onLongPress = { at -> ayahAt(at)?.let { onExplain(it.first, it.second) } },
@@ -721,37 +750,44 @@ private fun TextLine(
     )
 }
 
-/** A line ready to draw, and where in it each word of which ayah begins. */
+/** A line ready to draw, and where each word of which ayah begins — in it, and on the page. */
 private data class SetLine(val text: AnnotatedString, val words: List<PlacedWord>) {
 
-    /** The same line with the ayah at [at] washed over, in one piece, spaces and all. */
-    fun washed(at: Pair<Int, Int>?, wash: Color): AnnotatedString {
-        if (at == null) return text
-        val here = words.filter { it.surah == at.first && it.ayah == at.second }
-        if (here.isEmpty()) return text
-        return buildAnnotatedString {
-            append(text)
-            addStyle(
-                SpanStyle(background = wash),
-                here.first().at,
-                here.last().at + here.last().length,
-            )
-        }
+    /**
+     * How far across the line the ayah at [at] runs, from its first letter to its last, spaces
+     * and all — or nothing, if none of it is on this line.
+     */
+    fun stripe(at: Pair<Int, Int>?): ClosedFloatingPointRange<Float>? {
+        if (at == null) return null
+        val here = words.filter { it.surah == at.first && it.ayah == at.second && it.to > it.from }
+        if (here.isEmpty()) return null
+        return here.minOf { it.from }..here.maxOf { it.to }
     }
 }
 
-/** One word of the line: where it starts, how long it is, and the ayah it belongs to. */
-private data class PlacedWord(val at: Int, val length: Int, val surah: Int, val ayah: Int)
+/**
+ * One word of the line: where it starts in the text, how long it is, the ayah it belongs to, and
+ * where its letters stand on the line once the line has been set.
+ */
+private data class PlacedWord(
+    val at: Int,
+    val length: Int,
+    val surah: Int,
+    val ayah: Int,
+    val from: Float,
+    val to: Float,
+)
 
 /**
  * The line, coloured and justified.
  *
  * Three passes over it, and each one needs the one before. The words are strung together and
- * measured, which says how much room is left for the spaces to take up; the line is justified and
- * measured again, which says where on it every letter has ended up; and the colours are laid on
- * as bands across those places. The second measurement is the price of colouring a line without
- * cutting it, and it is paid once per line rather than once per frame — everything here is
- * remembered against the line, its size and the width of the page.
+ * measured, which says what the line has left over once it is set tight; the line is justified
+ * and measured again, which says where on it every letter has ended up; and the colours — and
+ * the places the wash behind a marked ayah is drawn from — are laid across those measurements.
+ * The second measurement is the price of colouring a line without cutting it, and it is paid
+ * once per line rather than once per frame: everything here is remembered against the line, its
+ * size and the width of the page.
  */
 private fun setLine(
     line: MushafPage.Line.Text,
@@ -764,15 +800,10 @@ private fun setLine(
     density: Density,
 ): SetLine {
     val plain = StringBuilder()
-    val placed = mutableListOf<PlacedWord>()
-    line.words.forEach { word ->
+    val starts = IntArray(line.words.size)
+    line.words.forEachIndexed { index, word ->
         if (plain.isNotEmpty()) plain.append(' ')
-        placed += PlacedWord(
-            at = plain.length,
-            length = word.text.length,
-            surah = word.surah,
-            ayah = word.ayah,
-        )
+        starts[index] = plain.length
         plain.append(word.text)
     }
     val text = plain.toString()
@@ -781,10 +812,12 @@ private fun setLine(
     // measurement is where they land on the page.
     val aligned = style.copy(textAlign = if (line.centred) TextAlign.Center else TextAlign.Start)
 
-    // What the line has left over once its words are set, shared out between its spaces. A
+    // What the line has left over once its words are set tight, shared out between its spaces. A
     // centred line — the last of a sūrah, and the framed opening pages — keeps its own width.
+    // The answer is negative on the line the page was fitted to, which is what sets that line
+    // tight; a space is a space, and narrowing one moves no letter off its own.
     val gaps = line.words.size - 1
-    val stretch = if (line.centred || gaps <= 0) {
+    val spacing = if (line.centred || gaps <= 0) {
         0f
     } else {
         val measured = measurer.measure(
@@ -793,13 +826,18 @@ private fun setLine(
             maxLines = 1,
             softWrap = false,
         ).size.width
-        ((width - measured).toFloat() / gaps).coerceAtLeast(0f)
+        Setting.spacing(
+            natural = measured.toFloat(),
+            gaps = gaps,
+            width = width.toFloat(),
+            trim = with(density) { style.fontSize.toPx() } * Setting.TRIM,
+        )
     }
 
     val justified = buildAnnotatedString {
         append(text)
-        if (stretch > 0f) {
-            val extra = with(density) { stretch.toSp() }
+        if (spacing != 0f) {
+            val extra = with(density) { spacing.toSp() }
             text.forEachIndexed { at, character ->
                 if (character == ' ') addStyle(SpanStyle(letterSpacing = extra), at, at + 1)
             }
@@ -823,9 +861,25 @@ private fun setLine(
         laid.multiParagraph.fillBoundingBoxes(TextRange(0, text.length), boxes, 0)
     }
 
+    // Where each word of the line has ended up, which is what the wash behind a marked ayah is
+    // drawn from. Taken here rather than when the mark moves: the line is measured once and the
+    // reader taps about the page all evening.
+    val placed = line.words.mapIndexed { index, word ->
+        val at = starts[index]
+        val (from, to) = extent(boxes, at, at + word.text.length)
+        PlacedWord(
+            at = at,
+            length = word.text.length,
+            surah = word.surah,
+            ayah = word.ayah,
+            from = from,
+            to = to,
+        )
+    }
+
     val bands = mutableListOf<Bands.Band<Color>>()
     line.words.forEachIndexed { index, word ->
-        val at = placed[index].at
+        val at = starts[index]
         if (word.kind != MushafPage.Word.Kind.TEXT) {
             band(boxes, text, at, at + word.text.length, printersMark)?.let { bands += it }
         } else {
@@ -879,17 +933,29 @@ private fun band(
     while (end < text.length && text[end].isMark()) end++
 
     var head = from
-    var left = Float.MAX_VALUE
-    var right = -Float.MAX_VALUE
-    while (true) {
-        for (i in head until end) {
-            left = minOf(left, boxes[i * 4])
-            right = maxOf(right, boxes[i * 4 + 2])
-        }
-        if (right - left > 0.5f || head == 0) break
+    var (left, right) = extent(boxes, head, end)
+    while (right - left <= 0.5f && head > 0) {
         head--
+        val wider = extent(boxes, head, end)
+        left = wider.first
+        right = wider.second
     }
     return if (right > left) Bands.Band(left, right, paint) else null
+}
+
+/**
+ * Where a stretch of the line stands: the left edge of the leftmost letter between [from] and
+ * [to] and the right edge of the rightmost, or nothing at all when they have no width between
+ * them.
+ */
+private fun extent(boxes: FloatArray, from: Int, to: Int): Pair<Float, Float> {
+    var left = Float.MAX_VALUE
+    var right = -Float.MAX_VALUE
+    for (i in maxOf(from, 0) until minOf(to, boxes.size / 4)) {
+        left = minOf(left, boxes[i * 4])
+        right = maxOf(right, boxes[i * 4 + 2])
+    }
+    return if (right > left) left to right else 0f to 0f
 }
 
 /** A vowel, a shadda, a small mīm: everything the mushaf writes above and below its letters. */
@@ -904,24 +970,12 @@ private fun NotDownloadedYet() {
             t("→ download the Qur'an fetches all 6,236 āyāt once, and then never again."),
         style = MaterialTheme.typography.bodyMedium,
         color = Dim,
-        modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = CHROME - LEAF)
+            .padding(top = 20.dp),
     )
 }
-
-/**
- * How much of a line's box the letters themselves take up.
- *
- * Measured rather than guessed: over the whole book, the tallest ayah of the mushaf inks 1.22 of
- * its own size above the baseline and 0.61 below it in this face, so a line of it wants a little
- * over 1.8 line boxes of its own before two of them touch. Fifteen of these have to make a page.
- */
-private const val LINE_FILL = 0.53f
-
-/** The room a line is given, as a multiple of its letters — this orthography stacks its marks. */
-private const val LINE_SPACING = 1.85f
-
-/** How much of the width a fitted line is allowed to fill. The rest is the margin of error. */
-private const val FIT_MARGIN = 0.99f
 
 /** The size lines are measured at before being scaled to fit; nothing is ever drawn at it. */
 private val MEASURE_AT = 40.sp
@@ -930,10 +984,22 @@ private val MEASURE_AT = 40.sp
 private const val MIN_SIZE = 8f
 private const val MAX_SIZE = 48f
 
-/** The band behind a sūrah's name, and the wash behind a tapped ayah. */
+/** The margin the reader's own chrome keeps, and the narrower one the leaf keeps. */
+private val CHROME = 18.dp
+private val LEAF = 4.dp
+
+/** The band behind a sūrah's name, and the size its letters are set at within it. */
 private const val BAND_TINT = 0.10f
 private const val BAND_SIZE = 0.62f
-private const val MARK_TINT = 0.16f
+
+/**
+ * The wash behind the ayah that has been tapped.
+ *
+ * A tenth of the gold and no more. This is a finger held under a line, not a highlighter pen:
+ * whatever is under it has to be as readable as the rest of the page, because it is the part of
+ * the page being read.
+ */
+private const val MARK_TINT = 0.10f
 
 /** The reciter, the transport, and — when the sūrah is not on the phone yet — the download. */
 @Composable
