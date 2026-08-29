@@ -46,6 +46,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -815,18 +816,25 @@ private fun setLine(
         layoutDirection = LayoutDirection.Rtl,
     )
 
+    // Every character's box in one pass. Asked for one at a time each answer walks the line from
+    // its edge, and a page is fifteen lines with a few dozen coloured letters on each of them.
+    val boxes = FloatArray(text.length * 4)
+    if (text.isNotEmpty()) {
+        laid.multiParagraph.fillBoundingBoxes(TextRange(0, text.length), boxes, 0)
+    }
+
     val bands = mutableListOf<Bands.Band<Color>>()
     line.words.forEachIndexed { index, word ->
         val at = placed[index].at
         if (word.kind != MushafPage.Word.Kind.TEXT) {
-            band(laid, text, at, at + word.text.length, printersMark)?.let { bands += it }
+            band(boxes, text, at, at + word.text.length, printersMark)?.let { bands += it }
         } else {
             // The letters a rule falls on are the only ones that take a colour. Everything else
             // on the line stays the colour the page is set in, which is what keeps a coloured
             // mushaf a mushaf with colours in it rather than a chart.
             word.tajweed.forEach { span ->
                 val colour = colours[span.rule] ?: return@forEach
-                band(laid, text, at + span.start, at + span.end, colour)?.let { bands += it }
+                band(boxes, text, at + span.start, at + span.end, colour)?.let { bands += it }
             }
         }
     }
@@ -860,7 +868,7 @@ private fun setLine(
  * alternative is colouring nothing.
  */
 private fun band(
-    laid: TextLayoutResult,
+    boxes: FloatArray,
     text: String,
     from: Int,
     to: Int,
@@ -875,9 +883,8 @@ private fun band(
     var right = -Float.MAX_VALUE
     while (true) {
         for (i in head until end) {
-            val box = laid.getBoundingBox(i)
-            left = minOf(left, box.left)
-            right = maxOf(right, box.right)
+            left = minOf(left, boxes[i * 4])
+            right = maxOf(right, boxes[i * 4 + 2])
         }
         if (right - left > 0.5f || head == 0) break
         head--
