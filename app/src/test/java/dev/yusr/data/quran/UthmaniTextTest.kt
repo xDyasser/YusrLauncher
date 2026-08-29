@@ -58,4 +58,32 @@ class UthmaniTextTest {
         val once = UthmaniText.repaired("إِصۡرࣰ ا كَمَا")
         assertEquals(once, UthmaniText.repaired(once))
     }
+
+    @Test
+    fun `the open tanwin is set with the mark the face has`() {
+        // U+08F0, U+08F1, U+08F2 onto U+064B, U+064C, U+064D.
+        assertEquals("هُدًى", UthmaniText.printed("هُدࣰى"))
+        assertEquals("مَآءٌ", UthmaniText.printed("مَآءࣱ"))
+        assertEquals("قَوۡمٍ", UthmaniText.printed("قَوۡمࣲ"))
+    }
+
+    @Test
+    fun `printing moves nothing`() {
+        // Everything worked out by position — a rule of tajwīd, a word's place in the ayah — is
+        // worked out before this and drawn after it, so one character has to become one.
+        val ayah = UthmaniText.repaired("ذَٰلِكَ ٱلۡكِتَٰبُ لَا رَيۡبَۛ فِيهِۛ هُدࣰ ى لِّلۡمُتَّقِينَ")
+        val printed = UthmaniText.printed(ayah)
+        assertEquals(ayah.length, printed.length)
+        assertEquals(ayah.indexOf(' '), printed.indexOf(' '))
+        assertEquals(ayah.count { it == ' ' }, printed.count { it == ' ' })
+    }
+
+    @Test
+    fun `text the face can already set is handed back untouched`() {
+        val fatiha = "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ"
+        assertEquals(fatiha, UthmaniText.printed(fatiha))
+        // The stacked tanwīn is one of the marks the face has, and is left as it stands.
+        assertEquals("عَذَابٌ", UthmaniText.printed("عَذَابٌ"))
+        assertEquals("", UthmaniText.printed(""))
+    }
 }

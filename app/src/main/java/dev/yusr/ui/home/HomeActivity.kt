@@ -65,6 +65,7 @@ import dev.yusr.data.db.AppRuleEntity
 import dev.yusr.data.prayer.PrayerToday
 import dev.yusr.data.quran.Ayah
 import dev.yusr.data.quran.SurahNames
+import dev.yusr.data.quran.UthmaniText
 import dev.yusr.data.settings.AyahLanguage
 import dev.yusr.data.settings.NO_WIDGET
 import dev.yusr.domain.FavoriteOrder
@@ -650,7 +651,7 @@ private fun AyahCard(
     ) {
         if (language != AyahLanguage.ENGLISH) {
             Text(
-                text = ayah.arabic,
+                text = UthmaniText.printed(ayah.arabic),
                 style = QuranQuoteStyle,
                 color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Right,

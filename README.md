@@ -95,10 +95,12 @@ can equally type. Nothing is ever uploaded; there is no account and no analytics
   and the titles of the two books of supplications come over into Arabic script with it. The
   choice is handed to Android's own per-app language, so it survives a restart and appears in the
   system's language settings beside every other app.
-- **One typeface for the interface and one for revelation.** IBM Plex Sans Arabic throughout,
-  Amiri for anything Qur'anic, both bundled so they work offline. Old gold is the only accent in
-  the app and is spent on two things: the prayer that is next, and the thing you are in the middle
-  of. It follows the system's light and dark setting, or can be pinned to either.
+- **One typeface for the interface and one for revelation.** IBM Plex Sans Arabic throughout, and
+  for the Qur'an the King Fahd Complex's Uthmanic Ḥafṣ — the face of the printed Madani mushaf,
+  which anchors every mark of this orthography to the letter it belongs to instead of leaving the
+  ḥarakāt strung along above the line. Both are bundled, so they work offline. Old gold is the
+  only accent in the app and is spent on two things: the prayer that is next, and the thing you
+  are in the middle of. It follows the system's light and dark setting, or can be pinned to either.
 - **Decide once, up front.** Until you press *lock these rules in*, every change applies
   immediately — you sort out the whole app list in one sitting rather than thirty minutes at a
   time. Preinstalled apps start allowed; what you installed yourself starts gated.

@@ -47,7 +47,11 @@ data class MushafPage(
             /** A word of the Qur'an. */
             TEXT,
 
-            /** The ۝ closing an ayah, with the ayah's number inside it. */
+            /**
+              * The number closing an ayah. It is set as the digits alone: the face of the mushaf
+              * draws its Arabic-Indic digits already inside the medallion, so a ۝ added here
+              * would print a second, empty one beside the number.
+              */
             END,
 
             /** The ۞ standing at the head of a rubʿ — a quarter of a ḥizb. */
@@ -56,9 +60,6 @@ data class MushafPage(
     }
 
     companion object {
-
-        /** ARABIC END OF AYAH — the medallion that takes the ayah's number inside it. */
-        private const val END_OF_AYAH = "۝"
 
         /** ARABIC START OF RUB EL HIZB — the ۞ that marks a quarter in the margin. */
         private const val RUB_EL_HIZB = "۞"
@@ -143,7 +144,7 @@ data class MushafPage(
                                 Word(
                                     surah = surah,
                                     ayah = ayah,
-                                    text = END_OF_AYAH + SurahNames.arabicDigits(ayah),
+                                    text = SurahNames.arabicDigits(ayah),
                                     kind = Word.Kind.END,
                                 )
                             } else {
@@ -151,7 +152,10 @@ data class MushafPage(
                                 Word(
                                     surah = surah,
                                     ayah = ayah,
-                                    text = word.text,
+                                    // Drawn as the face can draw it; the rules below were read
+                                    // off the text as the edition writes it, and the swap is one
+                                    // character for one, so their positions still hold.
+                                    text = UthmaniText.printed(word.text),
                                     kind = Word.Kind.TEXT,
                                     tajweed = rulesIn(surah, ayah, word),
                                 )
