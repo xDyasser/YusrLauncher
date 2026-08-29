@@ -69,9 +69,13 @@ can equally type. Nothing is ever uploaded; there is no account and no analytics
   green, a letter written but not read grey — worked out on the phone from the text's own
   orthography, which states most of them outright: a nūn read plainly carries a sukūn and one
   that is hidden carries nothing, iqlāb is a small mīm over the letter, a madd of more than two
-  counts carries the maddah. Off by default, because the printed page is black and somebody who
-  has read this mushaf for twenty years should not open the app to find it repainted. The whole
-  book is checked against an independent annotation of it in the tests, ayah by ayah.
+  counts carries the maddah. The colours are painted over the line as a gradient rather than put
+  on the letters, because a colour on a letter cuts the line at that letter and Android reshapes
+  each piece on its own — which costs an Arabic letter the ḥaraka standing above it. Every colour
+  on the page is named on a key of its own, reached from the mushaf. Off by default, because the
+  printed page is black and somebody who has read this mushaf for twenty years should not open
+  the app to find it repainted. The whole book is checked against an independent annotation of
+  it in the tests, ayah by ayah.
 - **Mafātīḥ al-Jinān, whole and in Arabic.** All three bābs, both appendices and 194 texts —
   Kumayl, Nudba, ʿAhd, Ṣabāḥ, Iftitāḥ, Jawshan Kabīr, Abū Ḥamza, the Munājāt, Ziyārat ʿĀshūrāʾ —
   bundled rather than fetched, and read as a book: the parts, then what is in a part, then the

@@ -407,6 +407,61 @@ private val HUB = mapOf(
         "تُنزَّل التلاوة مرّة ثم تُشغَّل بلا شبكة البتّة. ",
     "A whole sūra at 128 kbps is roughly a megabyte a minute." to
         "السورة كاملة بجودة ١٢٨ كيلوبت/ث نحو ميغابايت لكل دقيقة.",
+    // ---- the key to the colours, opened from the mushaf when tajwīd is coloured
+    "The colours" to "الألوان",
+    "what each colour on the page is saying" to "ما الذي يقوله كل لون في الصفحة",
+    "The rules are worked out on the phone from the text itself. Where " to
+        "تُستخرج الأحكام في الجهاز من النصّ نفسه. وحيث ",
+    "the mushaf does not say outright which rule applies, nothing is " to
+        "لا يصرّح المصحف بالحكم لا يُلوَّن ",
+    "coloured: a wrong colour on a letter of the Qur'an is worse than none." to
+        "الحرف: فلونٌ خاطئ على حرف من القرآن شرٌّ من ألّا يكون لون.",
+    "Ghunnah — held in the nose" to "الغنّة — تُمسك في الخيشوم",
+    "A nūn or a mīm with a shadda, and a nūn at rest running into yāʾ, mīm, " to
+        "نون أو ميم مشدّدة، ونون ساكنة تُدغم في ياء أو ميم أو ",
+    "wāw or another nūn: two counts through the nose." to "واو أو نون: حركتان من الخيشوم.",
+    "Idghām — gone into the letter after it" to "الإدغام — يذهب في الحرف بعده",
+    "A letter not sounded on its own but doubled onto the next one, with no " to
+        "حرف لا يُنطق وحده بل يُدغم في الذي بعده من غير ",
+    "ghunnah held: the nūn of مِن رَّبِّهِمۡ, the dāl of قَد تَّبَيَّنَ." to
+        "غنّة: كنون مِن رَّبِّهِمۡ ودال قَد تَّبَيَّنَ.",
+    "Ikhfāʾ — hidden" to "الإخفاء — بين الإظهار والإدغام",
+    "A nūn at rest or a tanwīn neither said plainly nor run into the letter " to
+        "نون ساكنة أو تنوين لا يُظهر ولا يُدغم في الحرف ",
+    "after it, and a mīm at rest before a bāʾ." to "الذي بعده، وميم ساكنة قبل الباء.",
+    "Iqlāb — turned into a mīm" to "الإقلاب — تُقلب ميمًا",
+    "A nūn at rest or a tanwīn read as a mīm before a bāʾ. The small mīm " to
+        "نون ساكنة أو تنوين تُقرأ ميمًا قبل الباء. والميم الصغيرة ",
+    "written above it is the mushaf saying so." to "المرسومة فوقها هي تصريح المصحف بذلك.",
+    "Qalqalah — struck" to "القلقلة — تُقلقل",
+    "Qāf, ṭāʾ, bāʾ, jīm and dāl at rest: struck rather than leant on, with a " to
+        "قاف وطاء وباء وجيم ودال إذا سكنت: تُقرع قرعًا ولا تُمدّ، ويُسمع ",
+    "small echo after them." to "لها صدى يسير.",
+    "Not read where it stands" to "لا يُنطق في موضعه",
+    "The joining alif, read only when you begin on it, and the lām of ٱل that " to
+        "همزة الوصل لا تُنطق إلا في الابتداء، ولام (ٱل) ",
+    "the sun letter after it takes over." to "يبتلعها الحرف الشمسي بعدها.",
+    "Written and not read" to "يُكتب ولا يُقرأ",
+    "A letter the mushaf writes and the reading passes over." to
+        "حرف رسمه المصحف وتجاوزته القراءة.",
+    "A madd written small — two counts" to "مدّ مرسوم صغيرًا — حركتان",
+    "The dagger alif, the small wāw of هُۥ, the small yāʾ of بِهِۦ: a letter of " to
+        "الألف الخنجرية، وواو هُۥ الصغيرة، وياء بِهِۦ الصغيرة: حرف ",
+    "madd written above the line, and read like one written on it." to
+        "مدّ مرسوم فوق السطر، ويُمدّ كالمرسوم عليه.",
+    "A madd stopped on — two, four or six" to "مدّ عارض للسكون — حركتان أو أربع أو ستّ",
+    "A madd at the end of an ayah or one letter short of it, stretched by " to
+        "مدّ في آخر الآية أو قبل آخرها بحرف، يطول بالوقوف ",
+    "stopping. Any of the three lengths, kept the same throughout." to
+        "عليه. أيّ المقادير الثلاثة شئت، على أن تلتزمه.",
+    "A madd meeting a hamza — four or five" to "مدّ يلقى همزة — أربع أو خمس",
+    "Muttaṣil where the hamza is in the same word, munfaṣil where it opens the " to
+        "متّصل إن كانت الهمزة في كلمته، ومنفصل إن كانت في أول ",
+    "next one." to "الكلمة التي بعدها.",
+    "A madd of six counts" to "مدّ ستّ حركات",
+    "A madd running into a letter at rest or one with a shadda, and the " to
+        "مدّ يلقى ساكنًا أو مشدّدًا، وحروف ",
+    "letters that open a sūrah — alif lām mīm." to "فواتح السور — الم.",
     // ---- tasbih
     "back one" to "تراجع",
     "reset" to "تصفير",

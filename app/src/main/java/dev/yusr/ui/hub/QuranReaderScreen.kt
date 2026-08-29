@@ -12,10 +12,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +36,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -48,6 +51,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -163,6 +167,7 @@ fun QuranReaderScreen(onBack: () -> Unit) {
             onBack = onBack,
             onOpenIndex = { page = ReaderPage.INDEX },
             onOpenReciters = { page = ReaderPage.RECITERS },
+            onOpenLegend = { page = ReaderPage.LEGEND },
             onExplain = { surah, ayah ->
                 explaining = surah to ayah
                 page = ReaderPage.TAFSIR
@@ -177,6 +182,7 @@ fun QuranReaderScreen(onBack: () -> Unit) {
             onBack = { page = ReaderPage.READER },
         )
         ReaderPage.RECITERS -> ReciterList(onBack = { page = ReaderPage.READER })
+        ReaderPage.LEGEND -> TajweedLegendScreen(onBack = { page = ReaderPage.READER })
         ReaderPage.TAFSIR -> {
             val (surah, ayah) = explaining ?: here
             TafsirScreen(
@@ -188,7 +194,7 @@ fun QuranReaderScreen(onBack: () -> Unit) {
     }
 }
 
-private enum class ReaderPage { READER, INDEX, RECITERS, TAFSIR }
+private enum class ReaderPage { READER, INDEX, RECITERS, TAFSIR, LEGEND }
 
 @Composable
 private fun Reader(
@@ -197,6 +203,7 @@ private fun Reader(
     onBack: () -> Unit,
     onOpenIndex: () -> Unit,
     onOpenReciters: () -> Unit,
+    onOpenLegend: () -> Unit,
     onExplain: (Int, Int) -> Unit,
 ) {
     val context = LocalContext.current
@@ -321,12 +328,25 @@ private fun Reader(
                 color = Fainter,
                 modifier = Modifier.noRippleClickable(onClick = onBack).padding(vertical = 4.dp),
             )
-            Text(
-                text = t("Index"),
-                style = MaterialTheme.typography.bodyMedium,
-                color = Faint,
-                modifier = Modifier.noRippleClickable(onClick = onOpenIndex).padding(8.dp),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Only where there is something to explain. With the colours off the page is
+                // black on cream and a key to it would be a key to nothing.
+                if (tajweed) {
+                    Text(
+                        text = "ℹ️",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier
+                            .noRippleClickable(onClick = onOpenLegend)
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                    )
+                }
+                Text(
+                    text = t("Index"),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Faint,
+                    modifier = Modifier.noRippleClickable(onClick = onOpenIndex).padding(8.dp),
+                )
+            }
         }
 
         // The mushaf itself, which opens the way a mushaf opens — from the right — whatever
@@ -631,6 +651,10 @@ private fun SurahBand(surah: Int, style: TextStyle) {
  * That is what the printer does with a line of Arabic, and it lets the wash behind a marked ayah
  * run through the gaps between its words instead of breaking into patches at each one.
  *
+ * The colours of tajwīd are painted over the run rather than put on the letters, for the reason
+ * [Bands] gives at length: a colour on a letter cuts the line at that letter, and a cut line is
+ * reshaped in pieces, which costs the letter its ḥaraka.
+ *
  * Tapped, it marks the ayah the touch fell in; held, it opens al-Mīzān on the passage that ayah
  * is inside. Which ayah that is comes from the text layout rather than from a tap target of its
  * own, since a line is one view now.
@@ -653,10 +677,16 @@ private fun TextLine(
     val wash = Gold.copy(alpha = MARK_TINT)
     val density = LocalDensity.current
 
-    val set = remember(line, style, width, marked, colours, printersMark, wash, density) {
-        setLine(line, style, width, measurer, marked, colours, printersMark, wash, density)
+    val set = remember(line, style, width, colours, printersMark, ink, density) {
+        setLine(line, style, width, measurer, colours, printersMark, ink, density)
     }
+    // The mark goes on last and on its own. It moves as the reader taps about the page, and the
+    // line under it — measured twice, coloured and justified — should not have to be worked out
+    // again to put a wash behind six words of it.
+    val text = remember(set, marked, wash) { set.washed(marked, wash) }
 
+    // Keyed on the line rather than on the text: the wash changes the text and not one letter's
+    // place in it, and a layout thrown away as the mark moves is a tap the page does not answer.
     var layout by remember(set) { mutableStateOf<TextLayoutResult?>(null) }
     val ayahAt: (Offset) -> Pair<Int, Int>? = { at ->
         layout?.let { result ->
@@ -668,7 +698,7 @@ private fun TextLine(
     }
 
     Text(
-        text = set.text,
+        text = text,
         style = style,
         color = ink,
         maxLines = 1,
@@ -691,37 +721,64 @@ private fun TextLine(
 }
 
 /** A line ready to draw, and where in it each word of which ayah begins. */
-private data class SetLine(val text: AnnotatedString, val words: List<PlacedWord>)
+private data class SetLine(val text: AnnotatedString, val words: List<PlacedWord>) {
 
-/** One word of the line: where it starts in the text, and the ayah it belongs to. */
-private data class PlacedWord(val at: Int, val surah: Int, val ayah: Int)
+    /** The same line with the ayah at [at] washed over, in one piece, spaces and all. */
+    fun washed(at: Pair<Int, Int>?, wash: Color): AnnotatedString {
+        if (at == null) return text
+        val here = words.filter { it.surah == at.first && it.ayah == at.second }
+        if (here.isEmpty()) return text
+        return buildAnnotatedString {
+            append(text)
+            addStyle(
+                SpanStyle(background = wash),
+                here.first().at,
+                here.last().at + here.last().length,
+            )
+        }
+    }
+}
+
+/** One word of the line: where it starts, how long it is, and the ayah it belongs to. */
+private data class PlacedWord(val at: Int, val length: Int, val surah: Int, val ayah: Int)
 
 /**
  * The line, coloured and justified.
  *
- * The colours a rule of tajwīd puts on a letter, the wash behind the ayah that is marked, and the
- * widening of the spaces that pushes the line out to both margins — all of it is style on one
- * string, so the type is laid out once and the page is a page rather than a row of boxes.
+ * Three passes over it, and each one needs the one before. The words are strung together and
+ * measured, which says how much room is left for the spaces to take up; the line is justified and
+ * measured again, which says where on it every letter has ended up; and the colours are laid on
+ * as bands across those places. The second measurement is the price of colouring a line without
+ * cutting it, and it is paid once per line rather than once per frame — everything here is
+ * remembered against the line, its size and the width of the page.
  */
 private fun setLine(
     line: MushafPage.Line.Text,
     style: TextStyle,
     width: Int,
     measurer: TextMeasurer,
-    marked: Pair<Int, Int>?,
     colours: Map<Tajweed.Rule, Color>,
     printersMark: Color,
-    wash: Color,
+    ink: Color,
     density: Density,
 ): SetLine {
     val plain = StringBuilder()
     val placed = mutableListOf<PlacedWord>()
     line.words.forEach { word ->
         if (plain.isNotEmpty()) plain.append(' ')
-        placed += PlacedWord(at = plain.length, surah = word.surah, ayah = word.ayah)
+        placed += PlacedWord(
+            at = plain.length,
+            length = word.text.length,
+            surah = word.surah,
+            ayah = word.ayah,
+        )
         plain.append(word.text)
     }
     val text = plain.toString()
+
+    // Measured the way it will be drawn, alignment and all, so that where the letters land in the
+    // measurement is where they land on the page.
+    val aligned = style.copy(textAlign = if (line.centred) TextAlign.Center else TextAlign.Start)
 
     // What the line has left over once its words are set, shared out between its spaces. A
     // centred line — the last of a sūrah, and the framed opening pages — keeps its own width.
@@ -731,45 +788,15 @@ private fun setLine(
     } else {
         val measured = measurer.measure(
             text = AnnotatedString(text),
-            style = style,
+            style = aligned,
             maxLines = 1,
             softWrap = false,
         ).size.width
         ((width - measured).toFloat() / gaps).coerceAtLeast(0f)
     }
 
-    val annotated = buildAnnotatedString {
+    val justified = buildAnnotatedString {
         append(text)
-
-        line.words.forEachIndexed { index, word ->
-            val at = placed[index].at
-            if (word.kind != MushafPage.Word.Kind.TEXT) {
-                addStyle(SpanStyle(color = printersMark), at, at + word.text.length)
-            }
-            // The letters a rule falls on are the only ones that take a colour. Everything else
-            // on the line stays the colour the page is set in, which is what keeps a coloured
-            // mushaf a mushaf with colours in it rather than a chart.
-            word.tajweed.forEach { span ->
-                colours[span.rule]?.let { colour ->
-                    addStyle(SpanStyle(color = colour), at + span.start, at + span.end)
-                }
-            }
-        }
-
-        // The ayah that is marked, washed over in one piece — the words of an ayah are set in a
-        // row, so the spaces between them are inside the wash and it does not break at each word.
-        if (marked != null) {
-            val here = line.words.indices.filter {
-                line.words[it].surah == marked.first && line.words[it].ayah == marked.second
-            }
-            if (here.isNotEmpty()) {
-                val from = placed[here.first()].at
-                val to = placed[here.last()].at + line.words[here.last()].text.length
-                addStyle(SpanStyle(background = wash), from, to)
-            }
-        }
-
-        // And the justification, put on the spaces themselves.
         if (stretch > 0f) {
             val extra = with(density) { stretch.toSp() }
             text.forEachIndexed { at, character ->
@@ -778,8 +805,89 @@ private fun setLine(
         }
     }
 
-    return SetLine(text = annotated, words = placed)
+    val laid = measurer.measure(
+        text = justified,
+        style = aligned,
+        overflow = TextOverflow.Visible,
+        softWrap = false,
+        maxLines = 1,
+        constraints = Constraints(maxWidth = width),
+        layoutDirection = LayoutDirection.Rtl,
+    )
+
+    val bands = mutableListOf<Bands.Band<Color>>()
+    line.words.forEachIndexed { index, word ->
+        val at = placed[index].at
+        if (word.kind != MushafPage.Word.Kind.TEXT) {
+            band(laid, text, at, at + word.text.length, printersMark)?.let { bands += it }
+        } else {
+            // The letters a rule falls on are the only ones that take a colour. Everything else
+            // on the line stays the colour the page is set in, which is what keeps a coloured
+            // mushaf a mushaf with colours in it rather than a chart.
+            word.tajweed.forEach { span ->
+                val colour = colours[span.rule] ?: return@forEach
+                band(laid, text, at + span.start, at + span.end, colour)?.let { bands += it }
+            }
+        }
+    }
+
+    val stops = Bands.stops(bands, width.toFloat(), ink)
+    if (stops.isEmpty()) return SetLine(text = justified, words = placed)
+
+    return SetLine(
+        text = buildAnnotatedString {
+            append(justified)
+            addStyle(
+                SpanStyle(brush = Brush.horizontalGradient(*stops.toTypedArray())),
+                0,
+                text.length,
+            )
+        },
+        words = placed,
+    )
 }
+
+/**
+ * Where on the line one coloured letter stands.
+ *
+ * The letter is measured with whatever marks it carries, because a ḥaraka is drawn above its
+ * letter and within its width: colouring one and not the other would leave a red letter under a
+ * black fatḥa, which is not how a mushaf is printed.
+ *
+ * A letter that measures no width at all is half of a ligature — the alif of لا, which the face
+ * draws as one shape with the lām — so the band is widened backwards until it has a width to
+ * cover. Colouring a shape that is two letters is the one thing this cannot do better: the
+ * alternative is colouring nothing.
+ */
+private fun band(
+    laid: TextLayoutResult,
+    text: String,
+    from: Int,
+    to: Int,
+    paint: Color,
+): Bands.Band<Color>? {
+    if (from !in text.indices) return null
+    var end = to.coerceIn(from + 1, text.length)
+    while (end < text.length && text[end].isMark()) end++
+
+    var head = from
+    var left = Float.MAX_VALUE
+    var right = -Float.MAX_VALUE
+    while (true) {
+        for (i in head until end) {
+            val box = laid.getBoundingBox(i)
+            left = minOf(left, box.left)
+            right = maxOf(right, box.right)
+        }
+        if (right - left > 0.5f || head == 0) break
+        head--
+    }
+    return if (right > left) Bands.Band(left, right, paint) else null
+}
+
+/** A vowel, a shadda, a small mīm: everything the mushaf writes above and below its letters. */
+private fun Char.isMark(): Boolean =
+    Character.getType(this) == Character.NON_SPACING_MARK.toInt()
 
 /** Said once, on a page that has no text because the book is not on the phone yet. */
 @Composable
@@ -1075,6 +1183,66 @@ private fun IndexRow(
             )
         }
         Hairline()
+    }
+}
+
+/**
+ * What the colours on the page mean.
+ *
+ * A coloured mushaf is only useful to somebody who can read the colours, and the convention is
+ * not one convention: every printer has their own, and a reader who learned green for ghunnah in
+ * one mushaf will find it standing for something else in the next. So the page says what it is
+ * doing, once, on a page of its own — reached from the mushaf and only when the colours are
+ * turned on, since with them off there is nothing here to explain.
+ *
+ * The list is grouped by colour rather than by rule, because that is the question a reader
+ * actually has: not "what is idghām mutajānisayn" but "why is this letter purple". Rules that
+ * share a colour share a line.
+ */
+@Composable
+private fun TajweedLegendScreen(onBack: () -> Unit) {
+    val colours = TajweedColours
+    HubPageFrame(
+        title = t("The colours"),
+        subtitle = t("what each colour on the page is saying"),
+        onBack = onBack,
+        backLabel = t("‹ Mushaf"),
+        footer = {
+            Text(
+                text = t("The rules are worked out on the phone from the text itself. Where ") +
+                    t("the mushaf does not say outright which rule applies, nothing is ") +
+                    t("coloured: a wrong colour on a letter of the Qur'an is worse than none."),
+                style = MaterialTheme.typography.bodySmall,
+                color = Dim,
+            )
+        },
+    ) {
+        tajweedLegend().forEach { entry ->
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 18.dp),
+                verticalAlignment = Alignment.Top,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(top = 6.dp)
+                        .size(10.dp)
+                        .background(colours[entry.rules.first()] ?: Faint, CircleShape),
+                )
+                Column(modifier = Modifier.padding(start = 12.dp)) {
+                    Text(
+                        text = entry.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                    Text(
+                        text = entry.gloss,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Faint,
+                        modifier = Modifier.padding(top = 3.dp),
+                    )
+                }
+            }
+        }
     }
 }
 
