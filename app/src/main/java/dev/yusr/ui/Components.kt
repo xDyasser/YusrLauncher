@@ -2,9 +2,7 @@ package dev.yusr.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,6 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import java.util.Locale
 import dev.yusr.data.quran.Ayah
+import dev.yusr.data.quran.UthmaniText
 import dev.yusr.data.settings.AyahLanguage
 import androidx.compose.ui.graphics.Color
 import dev.yusr.ui.theme.Dim
@@ -55,27 +54,6 @@ fun Modifier.noRippleClickable(enabled: Boolean = true, onClick: () -> Unit): Mo
         interactionSource = interaction,
         indication = null,
         enabled = enabled,
-        onClick = onClick,
-    )
-}
-
-/**
- * The same, with something behind a long press.
- *
- * Used where one thing has two meanings a reader would expect of it: a word of the mushaf is
- * tapped to mark the place and held to ask what it means.
- */
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun Modifier.noRippleCombinedClickable(
-    onLongClick: () -> Unit,
-    onClick: () -> Unit,
-): Modifier {
-    val interaction = remember { MutableInteractionSource() }
-    return this.combinedClickable(
-        interactionSource = interaction,
-        indication = null,
-        onLongClick = onLongClick,
         onClick = onClick,
     )
 }
@@ -309,9 +287,9 @@ fun AyahBlock(
     Column(modifier = modifier.fillMaxWidth()) {
         if (language != AyahLanguage.ENGLISH) {
             Text(
-                text = ayah.arabic,
-                // Amiri, not the interface face. This is the one place in the app where the
-                // letterforms are meant to say "slow down" before the words do.
+                text = UthmaniText.printed(ayah.arabic),
+                // The face of the mushaf, not the interface face. This is the one place in the
+                // app where the letterforms are meant to say "slow down" before the words do.
                 style = QuranQuoteStyle,
                 color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Right,

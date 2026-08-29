@@ -387,7 +387,7 @@ private val HUB = mapOf(
     // ---- al-Mīzān, opened by holding a word of the page down
     "‹ Mushaf" to "المصحف ›",
     "Tafsīr" to "تفسير",
-    "hold a word for its tafsīr" to "اضغط مطوّلًا على كلمة لتفسيرها",
+    "hold an ayah for its tafsīr" to "اضغط مطوّلًا على آية لتفسيرها",
     "114 sūras · 30 juzʾ · 60 ḥizb" to "١١٤ سورة · ٣٠ جزءًا · ٦٠ حزبًا",
     "Reciter" to "القارئ",
     "Bookmarked" to "علامة",

@@ -93,6 +93,38 @@ object UthmaniText {
         return prepared
     }
 
+    /**
+     * The same text as the face of the mushaf can set it.
+     *
+     * Unicode gave the open tanwīn its own codepoints (U+08F0, U+08F1, U+08F2) in 2016, and this
+     * edition writes them; the font the app sets the page in was cut before that and knows only
+     * the ordinary fatḥatān, ḍammatān and kasratān. Left alone, six and a half thousand marks
+     * would come out as empty boxes, or be drawn by whatever fallback face the phone happened to
+     * pick — which is worse, because a mark positioned by one font over a letter drawn by another
+     * lands nowhere near it.
+     *
+     * So the three are folded onto the three the font has. What is lost is a distinction the
+     * printed mushaf draws and this one now cannot: an open tanwīn is written with its two
+     * strokes side by side to say the nūn is sounded plainly, a stacked one with them one above
+     * the other. The reading is unchanged and so are the colours — [Tajweed] is worked out on the
+     * text as the edition writes it, before this is applied, and it is that difference the rules
+     * of iẓhār and ikhfāʾ are read from.
+     *
+     * One character in, one character out, so anything already worked out by position — a rule of
+     * tajwīd, a word's place in the ayah — still points where it pointed.
+     */
+    fun printed(text: String): String {
+        if (text.none { OPEN_TANWIN.containsKey(it) }) return text
+        return buildString(text.length) { text.forEach { append(OPEN_TANWIN[it] ?: it) } }
+    }
+
+    /** The open tanwīn marks, each against the one the mushaf's face draws in its place. */
+    private val OPEN_TANWIN: Map<Char, Char> = mapOf(
+        '\u08F0' to '\u064B',
+        '\u08F1' to '\u064C',
+        '\u08F2' to '\u064D',
+    )
+
     /** Binds two halves of one printed word together, and is drawn as an ordinary space. */
     private const val BINDING_SPACE = '\u00A0'
 

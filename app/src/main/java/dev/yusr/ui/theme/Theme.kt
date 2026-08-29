@@ -135,32 +135,76 @@ val PlexArabic = FontFamily(
 )
 
 /**
- * The face for revelation, and for nothing else.
+ * A naskh in the Būlāq tradition, for Arabic that is *about* the Qur'an rather than the Qur'an:
+ * the sūrah's name in its band, and anywhere else the interface wants the older letterforms.
  *
- * Amiri is a naskh in the Būlāq tradition, which is what a mushaf looks like. Setting an ayah in
- * the same sans as the rest of the interface is legible and wrong; this is the one place in the
- * app where the reader is meant to slow down, and the letterforms should say so before the words
- * do.
+ * It is not the face the text itself is set in. Amiri draws its vowel marks at a fixed height
+ * above the baseline instead of anchoring them to the letter beneath, which ordinary Arabic
+ * survives and the Uthmani orthography does not — a word like أَنۡعَمۡتَ comes out with its
+ * ḥarakāt strung along above the line rather than sitting on their letters.
  */
 val Amiri = FontFamily(
     Font(R.font.amiri_regular, FontWeight.Normal),
     Font(R.font.amiri_bold, FontWeight.Bold),
 )
 
-/** Qur'anic text: generous leading, because vowel marks sit above and below the line. */
+/**
+ * The face for revelation, and for nothing else.
+ *
+ * This is the face of the printed Madani mushaf — the one the King Fahd Complex cut for the
+ * Uthmani text and gave away, and the one the page layout this app draws from was measured on.
+ * It carries an anchor for every mark on every letter it can follow, which is the whole
+ * difference between a mushaf and Arabic with vowel marks scattered over it: the sukūn sits in
+ * the notch of the letter it stops, the shadda and the vowel stack in the order they are read,
+ * and a tall stack over a tooth does not collide with the line above.
+ *
+ * Two of its habits shape the code that uses it. Its Arabic-Indic digits are drawn as ayah
+ * numbers already inside their medallion, so a page sets the number alone and never adds a ۝ of
+ * its own; and it predates the codepoints Unicode gave the open tanwīn, which is why the text is
+ * put through [dev.yusr.data.quran.UthmaniText.printed] before it is set.
+ *
+ * Redistributed under the licence the font carries: free to use and copy, not to be modified —
+ * so it is committed exactly as the Complex published it, byte for byte.
+ */
+val UthmanicHafs = FontFamily(
+    Font(R.font.uthmanic_hafs, FontWeight.Normal),
+)
+
+/**
+ * Qur'anic text: generous leading, because the marks of this orthography stack a long way above
+ * the line and hang below it. Measured over the whole book, the tallest ayah of the mushaf inks
+ * 1.22 em over the baseline and 0.61 em under it, so a line needs about 1.85 of its own size
+ * before two of them can touch.
+ */
 val QuranStyle = TextStyle(
-    fontFamily = Amiri,
+    fontFamily = UthmanicHafs,
     fontWeight = FontWeight.Normal,
     fontSize = 25.sp,
-    lineHeight = 51.sp,
+    lineHeight = 46.sp,
 )
 
 /** The same, at the size an ayah is quoted rather than read. */
 val QuranQuoteStyle = TextStyle(
-    fontFamily = Amiri,
+    fontFamily = UthmanicHafs,
     fontWeight = FontWeight.Normal,
     fontSize = 21.sp,
-    lineHeight = 41.sp,
+    lineHeight = 42.sp,
+)
+
+/**
+ * Arabic that is read at length but is not the Qur'an: the supplications of Mafātīḥ al-Jinān and
+ * of Ḥiṣn al-Muslim.
+ *
+ * They are set in the naskh rather than in the mushaf's own face, which is the honest thing —
+ * al-Qummī's book is not revelation — and also the practical one, since that face carries the
+ * letters and marks of the Uthmani orthography and little else, not the punctuation a printed
+ * duʿāʾ is set with.
+ */
+val SupplicationStyle = TextStyle(
+    fontFamily = Amiri,
+    fontWeight = FontWeight.Normal,
+    fontSize = 25.sp,
+    lineHeight = 51.sp,
 )
 
 /**

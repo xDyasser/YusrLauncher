@@ -34,7 +34,7 @@ import dev.yusr.ui.theme.Dim
 import dev.yusr.ui.theme.Faint
 import dev.yusr.ui.theme.Fainter
 import dev.yusr.ui.theme.Gold
-import dev.yusr.ui.theme.QuranStyle
+import dev.yusr.ui.theme.SupplicationStyle
 
 /**
  * The adhkār and the duʿāʾ, out of whichever book the madhab implies.
@@ -292,7 +292,7 @@ private fun SupplicationBody(text: SupplicationText?, showTranslation: Boolean) 
         when (block.kind) {
             SupplicationBlock.Kind.ARABIC -> Text(
                 text = block.text,
-                style = QuranStyle,
+                style = SupplicationStyle,
                 color = MaterialTheme.colorScheme.primary,
                 textAlign = TextAlign.Right,
                 modifier = Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 4.dp),

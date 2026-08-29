@@ -3,6 +3,7 @@ package dev.yusr.ui.hub
 import android.media.MediaPlayer
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -32,16 +33,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -53,6 +60,7 @@ import dev.yusr.data.quran.RecitationStore
 import dev.yusr.data.quran.Reciter
 import dev.yusr.data.quran.Reciters
 import dev.yusr.data.quran.SurahNames
+import dev.yusr.data.quran.Tajweed
 import dev.yusr.ui.isArabic
 import dev.yusr.ui.reciterName
 import dev.yusr.ui.t
@@ -60,7 +68,7 @@ import dev.yusr.ui.Hairline
 import dev.yusr.ui.SectionLabel
 import dev.yusr.ui.ThinProgress
 import dev.yusr.ui.noRippleClickable
-import dev.yusr.ui.noRippleCombinedClickable
+import dev.yusr.ui.theme.Amiri
 import dev.yusr.ui.theme.Backdrop
 import dev.yusr.ui.theme.Dim
 import dev.yusr.ui.theme.Faint
@@ -548,7 +556,10 @@ private fun MushafLines(
                     ).size.width
                 }?.coerceAtLeast(1) ?: 1
 
-            val byWidth = MEASURE_AT * (width.toFloat() / widest.toFloat())
+            // A hair under the full width: the fitted size is worked out from a measurement and
+            // drawn from another, and a line that ends exactly on the margin has nowhere to put
+            // the difference.
+            val byWidth = MEASURE_AT * (width.toFloat() * FIT_MARGIN / widest.toFloat())
             // Bounded at both ends against a leaf measured before it has any room: a size of
             // nothing draws an empty page, and an unbounded one draws a single enormous word.
             minOf(byHeight.value, byWidth.value).coerceIn(MIN_SIZE, MAX_SIZE).sp
@@ -573,6 +584,8 @@ private fun MushafLines(
                     is MushafPage.Line.Text -> TextLine(
                         line = line,
                         style = style,
+                        width = width,
+                        measurer = measurer,
                         marked = marked,
                         onMark = onMark,
                         onExplain = onExplain,
@@ -594,7 +607,9 @@ private fun SurahBand(surah: Int, style: TextStyle) {
     ) {
         Text(
             text = t("Sūrat %s", SurahNames.arabic(surah).orEmpty()),
-            style = style.copy(fontSize = style.fontSize * BAND_SIZE),
+            // Not revelation, and not in the face kept for it — that one has no Latin in it at
+            // all, and the band reads "Sūrat al-Baqara" when the interface is in English.
+            style = style.copy(fontFamily = Amiri, fontSize = style.fontSize * BAND_SIZE),
             color = Gold,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
@@ -605,66 +620,165 @@ private fun SurahBand(surah: Int, style: TextStyle) {
 /**
  * One line of the text: the words, spaced out to both margins, each one belonging to an ayah.
  *
- * A word is its own tap target rather than the line being one, because an ayah is what somebody
- * means when they touch the page, and an ayah runs across the middle of lines. Tapped, it marks
- * the place; held, it opens al-Mīzān on the passage that ayah is inside.
+ * The line is set as one run rather than as a row of words. A word set on its own is measured to
+ * its own advance width and drawn clipped to it, and in this face — where a final letter sweeps
+ * back under the word before it and the marks stand well clear of the letters they belong to —
+ * that shaves the ends off words and the tops off ḥarakāt. Set as one run the shaping is the
+ * font's own, the same as the printed page.
+ *
+ * Which leaves justification, the reason for the row of words in the first place: the room left
+ * over on a line is shared out between its spaces, by widening each of them by the same amount.
+ * That is what the printer does with a line of Arabic, and it lets the wash behind a marked ayah
+ * run through the gaps between its words instead of breaking into patches at each one.
+ *
+ * Tapped, it marks the ayah the touch fell in; held, it opens al-Mīzān on the passage that ayah
+ * is inside. Which ayah that is comes from the text layout rather than from a tap target of its
+ * own, since a line is one view now.
  */
 @Composable
 private fun TextLine(
     line: MushafPage.Line.Text,
     style: TextStyle,
+    width: Int,
+    measurer: TextMeasurer,
     marked: Pair<Int, Int>?,
     onMark: (Int, Int) -> Unit,
     onExplain: (Int, Int) -> Unit,
 ) {
     val colours = TajweedColours
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (line.centred) {
-            Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)
-        } else {
-            Arrangement.SpaceBetween
-        },
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        line.words.forEach { word ->
-            val here = marked?.first == word.surah && marked.second == word.ayah
-            val plain = when (word.kind) {
-                // The ayah numbers and the rubʿ marks are the printer's marks rather than the
-                // revelation, and are set back a shade so the words read as the words.
-                MushafPage.Word.Kind.TEXT -> MaterialTheme.colorScheme.primary
-                else -> Gold
+    val ink = MaterialTheme.colorScheme.primary
+    // The ayah numbers and the rubʿ marks are the printer's marks rather than the revelation, and
+    // are set back a shade so the words read as the words.
+    val printersMark = Gold
+    val wash = Gold.copy(alpha = MARK_TINT)
+    val density = LocalDensity.current
+
+    val set = remember(line, style, width, marked, colours, printersMark, wash, density) {
+        setLine(line, style, width, measurer, marked, colours, printersMark, wash, density)
+    }
+
+    var layout by remember(set) { mutableStateOf<TextLayoutResult?>(null) }
+    val ayahAt: (Offset) -> Pair<Int, Int>? = { at ->
+        layout?.let { result ->
+            val offset = result.getOffsetForPosition(at)
+            // The last word beginning at or before the touch: which is the word it landed in, or
+            // the one it belongs to if it landed in the space after it.
+            set.words.lastOrNull { it.at <= offset }?.let { it.surah to it.ayah }
+        }
+    }
+
+    Text(
+        text = set.text,
+        style = style,
+        color = ink,
+        maxLines = 1,
+        softWrap = false,
+        // Nothing on this line is ever cut: the size it is set at was fitted to the page, and a
+        // letter that reaches past its own width is this face drawing Arabic rather than an
+        // overflow.
+        overflow = TextOverflow.Visible,
+        textAlign = if (line.centred) TextAlign.Center else TextAlign.Start,
+        onTextLayout = { layout = it },
+        modifier = Modifier
+            .fillMaxWidth()
+            .pointerInput(set) {
+                detectTapGestures(
+                    onLongPress = { at -> ayahAt(at)?.let { onExplain(it.first, it.second) } },
+                    onTap = { at -> ayahAt(at)?.let { onMark(it.first, it.second) } },
+                )
+            },
+    )
+}
+
+/** A line ready to draw, and where in it each word of which ayah begins. */
+private data class SetLine(val text: AnnotatedString, val words: List<PlacedWord>)
+
+/** One word of the line: where it starts in the text, and the ayah it belongs to. */
+private data class PlacedWord(val at: Int, val surah: Int, val ayah: Int)
+
+/**
+ * The line, coloured and justified.
+ *
+ * The colours a rule of tajwīd puts on a letter, the wash behind the ayah that is marked, and the
+ * widening of the spaces that pushes the line out to both margins — all of it is style on one
+ * string, so the type is laid out once and the page is a page rather than a row of boxes.
+ */
+private fun setLine(
+    line: MushafPage.Line.Text,
+    style: TextStyle,
+    width: Int,
+    measurer: TextMeasurer,
+    marked: Pair<Int, Int>?,
+    colours: Map<Tajweed.Rule, Color>,
+    printersMark: Color,
+    wash: Color,
+    density: Density,
+): SetLine {
+    val plain = StringBuilder()
+    val placed = mutableListOf<PlacedWord>()
+    line.words.forEach { word ->
+        if (plain.isNotEmpty()) plain.append(' ')
+        placed += PlacedWord(at = plain.length, surah = word.surah, ayah = word.ayah)
+        plain.append(word.text)
+    }
+    val text = plain.toString()
+
+    // What the line has left over once its words are set, shared out between its spaces. A
+    // centred line — the last of a sūrah, and the framed opening pages — keeps its own width.
+    val gaps = line.words.size - 1
+    val stretch = if (line.centred || gaps <= 0) {
+        0f
+    } else {
+        val measured = measurer.measure(
+            text = AnnotatedString(text),
+            style = style,
+            maxLines = 1,
+            softWrap = false,
+        ).size.width
+        ((width - measured).toFloat() / gaps).coerceAtLeast(0f)
+    }
+
+    val annotated = buildAnnotatedString {
+        append(text)
+
+        line.words.forEachIndexed { index, word ->
+            val at = placed[index].at
+            if (word.kind != MushafPage.Word.Kind.TEXT) {
+                addStyle(SpanStyle(color = printersMark), at, at + word.text.length)
             }
             // The letters a rule falls on are the only ones that take a colour. Everything else
             // on the line stays the colour the page is set in, which is what keeps a coloured
             // mushaf a mushaf with colours in it rather than a chart.
-            val text = remember(word, colours, plain) {
-                if (word.tajweed.isEmpty()) {
-                    AnnotatedString(word.text)
-                } else {
-                    buildAnnotatedString {
-                        append(word.text)
-                        word.tajweed.forEach { span ->
-                            colours[span.rule]?.let { colour ->
-                                addStyle(SpanStyle(color = colour), span.start, span.end)
-                            }
-                        }
-                    }
+            word.tajweed.forEach { span ->
+                colours[span.rule]?.let { colour ->
+                    addStyle(SpanStyle(color = colour), at + span.start, at + span.end)
                 }
             }
-            Text(
-                text = text,
-                style = style,
-                color = plain,
-                modifier = Modifier
-                    .background(if (here) Gold.copy(alpha = MARK_TINT) else Color.Transparent)
-                    .noRippleCombinedClickable(
-                        onLongClick = { onExplain(word.surah, word.ayah) },
-                        onClick = { onMark(word.surah, word.ayah) },
-                    ),
-            )
+        }
+
+        // The ayah that is marked, washed over in one piece — the words of an ayah are set in a
+        // row, so the spaces between them are inside the wash and it does not break at each word.
+        if (marked != null) {
+            val here = line.words.indices.filter {
+                line.words[it].surah == marked.first && line.words[it].ayah == marked.second
+            }
+            if (here.isNotEmpty()) {
+                val from = placed[here.first()].at
+                val to = placed[here.last()].at + line.words[here.last()].text.length
+                addStyle(SpanStyle(background = wash), from, to)
+            }
+        }
+
+        // And the justification, put on the spaces themselves.
+        if (stretch > 0f) {
+            val extra = with(density) { stretch.toSp() }
+            text.forEachIndexed { at, character ->
+                if (character == ' ') addStyle(SpanStyle(letterSpacing = extra), at, at + 1)
+            }
         }
     }
+
+    return SetLine(text = annotated, words = placed)
 }
 
 /** Said once, on a page that has no text because the book is not on the phone yet. */
@@ -679,11 +793,20 @@ private fun NotDownloadedYet() {
     )
 }
 
-/** How much of a line's box the letters themselves take up. */
-private const val LINE_FILL = 0.58f
+/**
+ * How much of a line's box the letters themselves take up.
+ *
+ * Measured rather than guessed: over the whole book, the tallest ayah of the mushaf inks 1.22 of
+ * its own size above the baseline and 0.61 below it in this face, so a line of it wants a little
+ * over 1.8 line boxes of its own before two of them touch. Fifteen of these have to make a page.
+ */
+private const val LINE_FILL = 0.53f
 
-/** The room a line is given, as a multiple of its letters — Arabic needs a generous leading. */
-private const val LINE_SPACING = 1.32f
+/** The room a line is given, as a multiple of its letters — this orthography stacks its marks. */
+private const val LINE_SPACING = 1.85f
+
+/** How much of the width a fitted line is allowed to fill. The rest is the margin of error. */
+private const val FIT_MARGIN = 0.99f
 
 /** The size lines are measured at before being scaled to fit; nothing is ever drawn at it. */
 private val MEASURE_AT = 40.sp
@@ -851,7 +974,7 @@ private fun MushafIndex(current: Pair<Int, Int>, onPick: (Int, Int) -> Unit, onB
         // The second line is where the tafsīr is said out loud. A long press is not a gesture
         // anybody guesses at, and the index is the one screen in the reader with room to say so
         // without taking a line off the page.
-        subtitle = t("114 sūras · 30 juzʾ · 60 ḥizb") + " · " + t("hold a word for its tafsīr"),
+        subtitle = t("114 sūras · 30 juzʾ · 60 ḥizb") + " · " + t("hold an ayah for its tafsīr"),
         onBack = onBack,
         scrollKey = tab,
     ) {

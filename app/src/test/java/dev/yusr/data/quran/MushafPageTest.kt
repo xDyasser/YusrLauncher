@@ -64,8 +64,19 @@ class MushafPageTest {
         val set = (page.lines[0] as MushafPage.Line.Text).words
         assertEquals(3, set.size)
         assertEquals(MushafPage.Word.Kind.END, set.last().kind)
-        // The medallion takes the ayah's number in the digits the page is set in.
-        assertTrue(set.last().text.contains('١'))
+        // The number alone, in the digits the page is set in: the face draws them inside the
+        // medallion itself, so a ۝ put here would print a second, empty one beside the number.
+        assertEquals("١", set.last().text)
+    }
+
+    @Test
+    fun `words are set as the face of the mushaf can set them`() {
+        // The open tanwīn this edition writes is folded onto the mark the font has, and nothing
+        // else about the word is touched.
+        val layout = layoutOf("1:1:1")
+        val page = compose(layout, listOf(ayah(1, 1, "هُدࣰى")))!!
+
+        assertEquals(listOf("هُدًى"), words(page.lines[0]))
     }
 
     @Test
