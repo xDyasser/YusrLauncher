@@ -17,15 +17,21 @@ fetches any of this itself.
 
 Sources, all fetched over plain HTTPS:
 
-  * The layout — the Quranic Universal Library's export of the KFGQPC **V1 (1405 print)**
+  * The layout — the Quranic Universal Library's export of the KFGQPC **V2 (1421H print)**
     15-line mushaf: 604 pages × 15 lines, each line a range of word ids, with sūrah headings
     and basmalas marked and short lines flagged as centred.
 
-    V1 rather than V2 (1421H) deliberately. The two prints break 26 pages differently, and V1
-    is the one whose page numbering agrees with everybody else's — it matches the page column
-    of an independent Qur'an database ayah for ayah, all 6,236 of them, where V2 differs in 56.
-    A page number that means what it means in every other mushaf is worth more here than the
-    newer print's line breaks.
+    V2 rather than V1 (1405 print), because V2 is the mushaf people are holding. The Complex
+    has set the book three times — 1405, 1421 and 1441 — and while all three run to the same
+    604 pages, they do not break their lines in the same places: V1 and V2 put a different
+    word at the end of 4,650 of the book's 9,046 lines. Nearly every copy printed this century
+    is the 1421 setting, so that is the one a reader comparing this page against the page in
+    their hands will be comparing it against.
+
+    The page numbering is not the deciding question, because it does not differ: both prints
+    open all 114 sūrahs on the same page, and both put every ayah of the book on the page the
+    rest of the world cites it by. An earlier version of this script chose V1 believing
+    otherwise; the check below is run on whichever layout is fetched, and V2 passes it.
 
   * The text — the same Uthmani Ḥafṣ edition the app itself downloads, so that word 4 of a
     line is word 4 of the string the device will actually be holding.
@@ -42,6 +48,7 @@ from __future__ import annotations
 
 import io
 import json
+import math
 import os
 import re
 import sqlite3
@@ -52,7 +59,7 @@ import zipfile
 
 LAYOUT_URL = (
     "https://raw.githubusercontent.com/blueheron786/"
-    "quranic-universal-library-mushaf-layouts/main/qpc-v1-15-lines.db.zip"
+    "quranic-universal-library-mushaf-layouts/main/qpc-v2-15-lines.db.zip"
 )
 TEXT_URL = (
     "https://raw.githubusercontent.com/fawazahmed0/quran-api/1/"
@@ -96,24 +103,26 @@ def fetch(url: str) -> bytes:
         return response.read()
 
 
-def word_counts() -> dict[tuple[int, int], int]:
-    """How many words the mushaf sets each ayah in, keyed by (sūrah, ayah)."""
+def word_counts() -> tuple[dict[tuple[int, int], int], dict[tuple[int, int], list[str]]]:
+    """How many words the mushaf sets each ayah in, and the words themselves."""
     text = json.loads(fetch(TEXT_URL))["quran"]
     if len(text) != AYAT:
         sys.exit(f"the text came to {len(text)} āyāt, not {AYAT}")
 
     counts: dict[tuple[int, int], int] = {}
+    words: dict[tuple[int, int], list[str]] = {}
     for verse in text:
         key = (verse["chapter"], verse["verse"])
         body = verse["text"]
         for split in SPLIT_TANWIN:
             body = body.replace(split, split.replace(" ", ""))
+        words[key] = body.split()
         counts[key] = (
-            len(body.split())
+            len(words[key])
             - JOINED_IN_MUSHAF.get(key, 0)
             + SPLIT_IN_MUSHAF.get(key, 0)
         )
-    return counts
+    return counts, words
 
 
 def tokens(counts: dict[tuple[int, int], int]) -> tuple[dict[int, tuple[int, int, int]], int]:
@@ -170,9 +179,93 @@ def encode(surah: int, ayah: int, index: int, count: int) -> str:
     return f"{surah}:{ayah}:{'e' if index > count else index}"
 
 
+FONT = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "app", "src", "main", "res", "font", "uthmanic_hafs.ttf",
+)
+
+# Kept identical to UthmaniText.kt: the three open tanwīn this edition writes in the Arabic
+# Extended-A block, which the face sets with the ordinary ones.
+PRINTED = {0x08F0: 0x064B, 0x08F1: 0x064C, 0x08F2: 0x064D}
+
+# ARABIC START OF RUB EL HIZB. The edition carries it on the word that opens a quarter; the page
+# sets it itself, so it is taken off there and put back as a word of its own.
+RUB_EL_HIZB = "\u06de"
+
+# Kept identical to Setting.kt.
+FACE_SPACE, WORD_SPACE = 0.22, 0.06
+
+
+def set_line(begins, ends, ids, words):
+    """One line as the app sets it: its words, its ayah markers and its rubʿ mark, in order.
+
+    Counted off the text the way MushafPage counts it — by splitting the ayah on its spaces —
+    rather than off the layout's own word ids, so that this measures the line the device will
+    actually draw. The two agree everywhere but the four maqṭūʿ and mawṣūl āyāt named above.
+    """
+    out = []
+    for word_id in range(begins, ends + 1):
+        surah, ayah, index = ids[word_id]
+        if index > len(words[(surah, ayah)]):
+            # The closing marker. The face draws the digits inside the medallion itself, so the
+            # word on the line is the number and nothing else — the same as MushafPage sets.
+            out.append("".join(chr(0x0660 + int(d)) for d in str(ayah)))
+            continue
+        form = words[(surah, ayah)][index - 1]
+        # The page sets the rubʿ mark itself, so where the edition carries one it is a word of
+        # its own on the line rather than part of the word behind it.
+        if form.startswith(RUB_EL_HIZB):
+            out.append(RUB_EL_HIZB)
+            form = form[len(RUB_EL_HIZB):]
+        out.append(form)
+    return out
+
+
+def report_widest(pages):
+    """The longest line in the book, which is the number Setting.WIDEST holds.
+
+    The size the whole mushaf is set at is worked back from this one line, so a layout that
+    breaks its lines somewhere else has a different longest line and wants a different number.
+    Reported rather than written: it belongs beside the rest of the page's arithmetic, in
+    Setting.kt, where the reasoning for it is.
+
+    Needs uharfbuzz to shape the Arabic, which is not worth making this script depend on — the
+    layout is correct without it, only unmeasured.
+    """
+    try:
+        import uharfbuzz as hb
+    except ImportError:
+        print("  (install uharfbuzz to measure the longest line for Setting.WIDEST)")
+        return
+
+    face = hb.Face(hb.Blob.from_file_path(FONT))
+    font = hb.Font(face)
+
+    def ems(text):
+        buffer = hb.Buffer()
+        buffer.add_str(text)
+        buffer.guess_segment_properties()
+        hb.shape(font, buffer)
+        return sum(p.x_advance for p in buffer.glyph_positions) / face.upem
+
+    trim = FACE_SPACE - WORD_SPACE
+    widest, where = 0.0, None
+    for page in pages:
+        # The two framed pages at the front are fitted to themselves and set larger, so they are
+        # not part of the size the rest of the book shares.
+        if len(page["l"]) != LINES_PER_PAGE:
+            continue
+        for number, line in enumerate(page["set"], 1):
+            measured = ems(" ".join(line).translate(PRINTED)) - trim * (len(line) - 1)
+            if measured > widest:
+                widest, where = measured, (page["p"], number)
+    print(f"  longest line: {widest:.2f} em, page {where[0]} line {where[1]}"
+          f" — Setting.WIDEST should be {math.ceil(widest * 10) / 10:.1f}")
+
+
 def main() -> None:
     print("mushaf layout")
-    counts = word_counts()
+    counts, words = word_counts()
 
     global ORDER
     ORDER = sorted(counts)
@@ -228,7 +321,8 @@ def main() -> None:
         first = min(int(row[4]) for row in lines if row[2] == "ayah")
         surah, ayah, index = ids[first]
         encoded = []
-        for _, _, kind, centred, _, end, surah_number in lines:
+        set_lines = []
+        for _, _, kind, centred, begins, end, surah_number in lines:
             if kind == "surah_name":
                 encoded.append(f"h{int(surah_number)}")
             elif kind == "basmallah":
@@ -237,23 +331,29 @@ def main() -> None:
                 at = ids[int(end)]
                 position = encode(at[0], at[1], at[2], counts[(at[0], at[1])])
                 encoded.append(("c" if centred else "") + position)
+                set_lines.append(set_line(int(begins), int(end), ids, words))
         pages.append(
             {
                 "p": number,
                 "s": encode(surah, ayah, index, counts[(surah, ayah)]),
                 "l": encoded,
+                "set": set_lines,
             }
         )
 
     asset = {
-        "version": 1,
-        "layout": "KFGQPC 15-line, V1 (1405 print), via the Quranic Universal Library",
+        "version": 2,
+        "layout": "KFGQPC 15-line, V2 (1421H print), via the Quranic Universal Library",
         "pages": PAGES,
         "linesPerPage": LINES_PER_PAGE,
         "words": total,
         **divisions(),
         "page": pages,
     }
+
+    report_widest(pages)
+    for page in pages:
+        del page["set"]
 
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as out:
