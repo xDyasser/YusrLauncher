@@ -52,13 +52,15 @@ can equally type. Nothing is ever uploaded; there is no account and no analytics
   the coordinates already set for the prayer times and needing no network. Six things behind it:
   the day's timetable with its preferred windows, a Qur'an reader that is a mushaf rather than a
   scroll — the six hundred and four pages of the Madani print, fifteen lines to the page, the same
-  words breaking on the same lines, turning right to left the way the binding opens, with the juz
-  at the head of each page and the ḥizb and its quarter at the foot. The type is set as large as
-  the leaf will take — fitted to the longest line the page has, with the words set tight the way
-  a printed mushaf sets them rather than spaced out the way a keyboard would, and the letters of
-  a page whose lines run long drawn a little narrower so it is the height rather than the width
-  that decides how big the page is read at. The basmala is set above each sūrah as a heading
-  rather than swallowed into its first ayah — al-Tawba, which opens without one, gets none, and
+  words breaking on the same lines as the 1421H Madinah print, turning right to left the way the
+  binding opens, with the juz at the head of each page and the ḥizb and its quarter at the foot.
+  It opens on the leaf alone, filling the screen, with the app's own bars and the phone's out of
+  the way until the margin of the page is tapped. The type is set as large as the paper will take
+  and at one size for the whole book, the way the print does: the words set tight the way a
+  printed mushaf sets them rather than spaced out the way a keyboard would, and the letters of a
+  crowded page drawn narrower than those of an empty one — which is what the calligrapher does,
+  measured off the Complex's own page fonts and matched to the ratio. The basmala is set above
+  each sūrah as a heading rather than swallowed into its first ayah — al-Tawba, which opens without one, gets none, and
   al-Fātiḥa keeps it as the ayah it is.
   Nothing is cut to make that true: the text is taken from an edition that numbers the book the
   way the mushaf does, so al-Baqara 2:1 arrives as *alif lām mīm* — a tasbīḥ, the adhkār, the duʿāʾ,

@@ -13,12 +13,19 @@ import org.json.JSONObject
  * two together and the app can set a page that breaks where the paper breaks — the same words on
  * the same line, so that whoever has memorised the shape of a page finds it here.
  *
- * It is bundled rather than downloaded. The layout of the mushaf is not news; it has not changed
- * since 1405 and will not, and a reader that has the text but is still waiting to be told how to
- * set it would be a book you cannot open.
+ * It is bundled rather than downloaded. Which words go on which line is not news — it was settled
+ * in Madinah and stays settled — and a reader that has the text but is still waiting to be told
+ * how to set it would be a book you cannot open.
  *
- * The layout is the King Fahd Complex's own, taken from the V1 print — the one whose page numbers
- * agree with every other mushaf's, so that "page 293" here is page 293 wherever else it is said.
+ * The layout is the King Fahd Complex's own, taken from the 1421H print. The Complex has set the
+ * book three times, and while all three settings run to the same six hundred and four pages and
+ * open every sūrah on the same one — so that "page 293" here is page 293 wherever else it is
+ * said — they do not break their lines in the same places: the 1405 and the 1421 put a different
+ * word at the end of four thousand six hundred and fifty of the book's nine thousand lines. This
+ * is the 1421 because that is the mushaf on the shelf; nearly every copy printed this century is
+ * that one, and a page has to hold what the reader's own copy holds or it is no use to anyone
+ * reading the two side by side.
+ *
  * See `tools/build_mushaf_layout.py`, which builds the asset and checks it against the text.
  */
 class MushafLayout private constructor(

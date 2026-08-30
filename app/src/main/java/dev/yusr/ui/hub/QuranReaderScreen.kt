@@ -1,5 +1,6 @@
 package dev.yusr.ui.hub
 
+import android.app.Activity
 import android.media.MediaPlayer
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -9,11 +10,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -44,6 +47,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
@@ -60,6 +64,9 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import dev.yusr.container
 import dev.yusr.data.quran.Basmala
 import dev.yusr.data.quran.MushafLayout
@@ -310,45 +317,81 @@ private fun Reader(
     }
     val total = SurahNames.ayahCount(surah)
 
+    // Whether the app is showing at all. It is not, to begin with: the reader opens on the leaf
+    // and nothing else, because every strip of it that is not the mushaf is a line of the Qur'an
+    // set smaller, and the page carries its own heading and its own number so nobody is lost
+    // without ours. A tap on the leaf's margin — its head or its foot, rather than its words —
+    // brings the app back, and another sends it away again.
+    var chrome by remember { mutableStateOf(false) }
+
+    // The phone's own bars go with it. This is the one screen in the app that earns that: a
+    // mushaf is a page you look at for an hour, not a thing you glance at between notifications.
+    val view = LocalView.current
+    val bars = remember(view) {
+        (view.context as? Activity)?.window?.let { WindowCompat.getInsetsController(it, view) }
+    }
+    LaunchedEffect(bars, chrome) {
+        val controller = bars ?: return@LaunchedEffect
+        // A swipe from the edge still brings them back for a moment, which is how somebody gets
+        // at the clock or the back gesture's hint without leaving the page.
+        controller.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        if (chrome) {
+            controller.show(WindowInsetsCompat.Type.systemBars())
+        } else {
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+    // They belong to the window rather than to this screen, so they are handed back on the way
+    // out: a mushaf that has been closed should not leave the launcher without its clock.
+    DisposableEffect(bars) {
+        onDispose { bars?.show(WindowInsetsCompat.Type.systemBars()) }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Backdrop)
-            .systemBarsPadding()
+            // Not the system bars but everything that would draw over the page: with the bars
+            // hidden there is still a camera cut out of the top of most screens, and a line of
+            // the Qur'an behind it is a line nobody can read.
+            .windowInsetsPadding(WindowInsets.safeDrawing)
             .padding(top = 12.dp, bottom = 8.dp),
     ) {
-        // The reader gets a thinner top than the rest of the hub: every line of chrome here is a
-        // line of the Qur'an made smaller, because the page below is fitted to whatever room is
-        // left over.
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = CHROME),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = t("‹ Devotions"),
-                style = MaterialTheme.typography.bodyMedium,
-                color = Fainter,
-                modifier = Modifier.noRippleClickable(onClick = onBack).padding(vertical = 4.dp),
-            )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Only where there is something to explain. With the colours off the page is
-                // black on cream and a key to it would be a key to nothing.
-                if (tajweed) {
+        // The way out and the way about, when they are showing. Every strip of them is a line
+        // of the Qur'an made smaller, because the page below is fitted to whatever room is left
+        // over — which is why they are not showing unless they have been asked for.
+        if (chrome) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = CHROME),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = t("‹ Devotions"),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Fainter,
+                    modifier = Modifier.noRippleClickable(onClick = onBack).padding(vertical = 4.dp),
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Only where there is something to explain. With the colours off the page is
+                    // black on cream and a key to it would be a key to nothing.
+                    if (tajweed) {
+                        Text(
+                            text = "ℹ️",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier
+                                .noRippleClickable(onClick = onOpenLegend)
+                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                        )
+                    }
                     Text(
-                        text = "ℹ️",
+                        text = t("Index"),
                         style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier
-                            .noRippleClickable(onClick = onOpenLegend)
-                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                        color = Faint,
+                        modifier = Modifier.noRippleClickable(onClick = onOpenIndex).padding(8.dp),
                     )
                 }
-                Text(
-                    text = t("Index"),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Faint,
-                    modifier = Modifier.noRippleClickable(onClick = onOpenIndex).padding(8.dp),
-                )
             }
         }
 
@@ -376,42 +419,48 @@ private fun Reader(
                     onMark = onGoTo,
                     tajweed = tajweed,
                     onExplain = onExplain,
+                    onTapMargin = { chrome = !chrome },
                 )
             }
         }
 
-        Column(modifier = Modifier.padding(horizontal = CHROME)) {
-            Hairline()
-            ReaderFooter(
-                reciter = reciter,
-                playing = playing,
-                complete = reciter != null && downloaded >= total && total > 0,
-                downloaded = downloaded,
-                total = total,
-                download = download,
-                marked = place,
-                onOpenReciters = onOpenReciters,
-                onTogglePlay = { playing = !playing },
-                // The chevrons turn the leaf. A swipe is the natural way to do it and the way it is
-                // mostly done, but a page you can only reach by dragging is a page somebody holding
-                // the phone one-handed, or reading it through TalkBack, cannot reach at all.
-                onTurn = { step ->
-                    val to = (page - 1 + step).coerceIn(0, MushafLayout.PAGES - 1)
-                    scope.launch { pager.animateScrollToPage(to) }
-                },
-                onDownload = {
-                    val chosen = reciter ?: return@ReaderFooter
-                    if (downloadJob?.isActive == true) {
-                        downloadJob?.cancel()
-                        downloadJob = null
-                        download = RecitationStore.Progress.Idle
-                    } else {
-                        downloadJob = scope.launch {
-                            download = recitation.downloadSurah(chosen, surah) { download = it }
+        // The reciter, the transport and the download, on the same terms as the top: shown when
+        // the reader has asked for them and out of the page's way when it has not.
+        if (chrome) {
+            Column(modifier = Modifier.padding(horizontal = CHROME)) {
+                Hairline()
+                ReaderFooter(
+                    reciter = reciter,
+                    playing = playing,
+                    complete = reciter != null && downloaded >= total && total > 0,
+                    downloaded = downloaded,
+                    total = total,
+                    download = download,
+                    marked = place,
+                    onOpenReciters = onOpenReciters,
+                    onTogglePlay = { playing = !playing },
+                    // The chevrons turn the leaf. A swipe is the natural way to do it and
+                    // the way it is mostly done, but a page you can only reach by dragging
+                    // is a page somebody holding the phone one-handed, or reading it
+                    // through TalkBack, cannot reach at all.
+                    onTurn = { step ->
+                        val to = (page - 1 + step).coerceIn(0, MushafLayout.PAGES - 1)
+                        scope.launch { pager.animateScrollToPage(to) }
+                    },
+                    onDownload = {
+                        val chosen = reciter ?: return@ReaderFooter
+                        if (downloadJob?.isActive == true) {
+                            downloadJob?.cancel()
+                            downloadJob = null
+                            download = RecitationStore.Progress.Idle
+                        } else {
+                            downloadJob = scope.launch {
+                                download = recitation.downloadSurah(chosen, surah) { download = it }
+                            }
                         }
-                    }
-                },
-            )
+                    },
+                )
+            }
         }
     }
 }
@@ -423,6 +472,11 @@ private fun Reader(
  * pager have the next page ready before the drag that asks for it — and what keeps the page you
  * are leaving whole and on the screen while it slides off, instead of blanking as the number
  * under it changes.
+ *
+ * A tap in the leaf's margin — its heading, its number, the paper either side of them, anywhere
+ * but the fifteen lines themselves — is [onTapMargin], which is how the app is sent away and
+ * fetched back. The lines have taps of their own and answer them first, so marking an ayah and
+ * calling for the chrome never mean the same touch.
  */
 @Composable
 private fun Leaf(
@@ -432,6 +486,7 @@ private fun Leaf(
     onMark: (Int, Int) -> Unit,
     tajweed: Boolean,
     onExplain: (Int, Int) -> Unit,
+    onTapMargin: () -> Unit,
 ) {
     val context = LocalContext.current
     val mushaf = remember { context.container.mushaf }
@@ -447,7 +502,11 @@ private fun Leaf(
         missing = set == null
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) { detectTapGestures { onTapMargin() } },
+    ) {
         val set = page
         if (set == null) {
             if (missing) NotDownloadedYet()
@@ -545,13 +604,15 @@ private val QUARTERS = listOf("", " ¼", " ½", " ¾")
  * The fifteen lines, fitted to the leaf.
  *
  * A printed page does not scroll and neither does this one: the text is set at whatever size puts
- * every line of the page on the screen at once, height and width both, and that is the size it is
- * read at. Fitting to the height alone is not enough — the longest line of al-Baqara has to reach
- * both margins without running off one — and left to itself the width answers first on most pages
- * and answers small, so the letters are drawn a little narrower until the page's longest line
- * fits and the height is what decides. [Setting] is where that arithmetic lives, and why the
- * words are set tighter than the face would space them and the letters narrower than it draws
- * them.
+ * every line of the page on the screen at once, height and width both. On a phone that is the
+ * width, and by a long way — the longest line in the book has to reach both margins without
+ * running off one — so the words are set tighter than the face would space them and the letters
+ * are drawn narrower than it draws them, and what that buys is the size.
+ *
+ * The size is the book's rather than the page's: the same on all six hundred and two ordinary
+ * leaves, so that turning one changes what is on the page and nothing else. It is the width of
+ * the letters that moves from page to page instead, exactly as it does in the print. [Setting] is
+ * where that arithmetic lives and where the measurements behind it are written down.
  *
  * Lines are justified by spacing the words out to the margins, which is how the room left over at
  * the end of a line is taken up in print. The last line of a sūrah, and every line of the two
@@ -593,25 +654,25 @@ private fun MushafLines(
                 }?.coerceAtLeast(1f) ?: 1f
 
             val perLine = height.toFloat() / page.lines.size
-            // How narrow the letters have to be drawn for the longest line to fit at the size the
-            // height allows, and then the size itself, which is that one unless the letters ran
-            // out of room to give first.
-            val squeeze = Setting.squeeze(
-                perLine = perLine,
-                widest = widest,
-                width = width.toFloat(),
-                at = at,
-            )
+            // The page's own longest line, as a multiple of whatever size it ends up set at.
+            val ems = widest / at
+            // The book is set at one size, so it is the longest line in the *book* that decides
+            // it, not the longest line here. The two framed pages at the front are the exception:
+            // eight lines of short ones, set large the way the print sets them.
+            val fitting =
+                if (page.lines.size == Setting.LINES) maxOf(ems, Setting.WIDEST) else ems
             // Bounded at both ends against a leaf measured before it has any room: a size of
             // nothing draws an empty page, and an unbounded one draws a single enormous word.
-            val fitted = Setting.size(
-                perLine = perLine,
-                widest = widest,
-                width = width.toFloat(),
-                at = at,
-                squeeze = squeeze,
-            )
+            val fitted = Setting.size(perLine = perLine, ems = fitting, width = width.toFloat())
             val size = with(density) { fitted.toSp() }.value.coerceIn(MIN_SIZE, MAX_SIZE).sp
+            // And then how narrow this page in particular has to be drawn to hold that size —
+            // worked out from the size actually being set rather than from the one asked for, so
+            // that a leaf clamped at either end is still condensed to the width it really has.
+            val squeeze = Setting.squeeze(
+                size = with(density) { size.toPx() },
+                ems = ems,
+                width = width.toFloat(),
+            )
             QuranStyle.copy(
                 fontSize = size,
                 lineHeight = size * Setting.LINE_SPACING,
