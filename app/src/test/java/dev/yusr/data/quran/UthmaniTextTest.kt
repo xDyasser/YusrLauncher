@@ -54,6 +54,25 @@ class UthmaniTextTest {
     }
 
     @Test
+    fun `the page's own rub mark is taken off the front of an ayah that carries one`() {
+        assertEquals("إِنَّ ٱللَّهَ", UthmaniText.repaired("۞إِنَّ ٱللَّهَ"))
+    }
+
+    @Test
+    fun `a rub mark anywhere but the front is left where it is`() {
+        // It never happens in this edition, and if it ever did it would be part of the ayah.
+        assertEquals("إِنَّ ۞ ٱللَّهَ", UthmaniText.repaired("إِنَّ ۞ ٱللَّهَ"))
+    }
+
+    @Test
+    fun `an ayah that opens a rub is one word shorter by no words at all`() {
+        // The mark is written against the first word rather than beside it, so taking it away
+        // moves the first letter of the ayah and leaves the word count where it was.
+        val opening = UthmaniText.words(2, 26, "۞إِنَّ ٱللَّهَ لَا")
+        assertEquals(listOf("إِنَّ", "ٱللَّهَ", "لَا"), opening)
+    }
+
+    @Test
     fun `repairing twice changes nothing the second time`() {
         val once = UthmaniText.repaired("إِصۡرࣰ ا كَمَا")
         assertEquals(once, UthmaniText.repaired(once))

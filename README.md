@@ -55,9 +55,11 @@ can equally type. Nothing is ever uploaded; there is no account and no analytics
   words breaking on the same lines, turning right to left the way the binding opens, with the juz
   at the head of each page and the ḥizb and its quarter at the foot. The type is set as large as
   the leaf will take — fitted to the longest line the page has, with the words set tight the way
-  a printed mushaf sets them rather than spaced out the way a keyboard would. The basmala is set
-  above each sūrah as a heading rather than swallowed into its first ayah — al-Tawba, which opens
-  without one, gets none, and al-Fātiḥa keeps it as the ayah it is.
+  a printed mushaf sets them rather than spaced out the way a keyboard would, and the letters of
+  a page whose lines run long drawn a little narrower so it is the height rather than the width
+  that decides how big the page is read at. The basmala is set above each sūrah as a heading
+  rather than swallowed into its first ayah — al-Tawba, which opens without one, gets none, and
+  al-Fātiḥa keeps it as the ayah it is.
   Nothing is cut to make that true: the text is taken from an edition that numbers the book the
   way the mushaf does, so al-Baqara 2:1 arrives as *alif lām mīm* — a tasbīḥ, the adhkār, the duʿāʾ,
   and a fasting calendar that knows the white days, Mondays and Thursdays, ʿĀshūrāʾ and ʿArafah

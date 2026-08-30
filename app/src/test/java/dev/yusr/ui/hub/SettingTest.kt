@@ -7,10 +7,11 @@ import org.junit.Test
 /**
  * The page's arithmetic, held here rather than found on a screen.
  *
- * Two of these are not really tests of a function at all but of a pair of numbers: fifteen line
- * boxes have to make one leaf, and a word space that is trimmed has to be put back. Both are the
- * kind of thing that is fine until somebody nudges a constant a year from now, and then the
- * fifteenth line of every page is off the bottom of the phone.
+ * Three of these are not really tests of a function at all but of the numbers themselves: fifteen
+ * line boxes have to make one leaf, a word space that is trimmed has to be put back, and letters
+ * that are condensed have to stay recognisably the letters. All three are the kind of thing that
+ * is fine until somebody nudges a constant a year from now, and then the fifteenth line of every
+ * page is off the bottom of the phone.
  */
 class SettingTest {
 
@@ -30,21 +31,55 @@ class SettingTest {
     }
 
     @Test
-    fun `the width is what answers when the lines are long`() {
-        // A leaf 1000 wide with a line that wants 2000 at the size it was measured: half of it.
-        val size = Setting.size(perLine = 200f, widest = 2000f, width = 1000f, at = 100f)
-        assertEquals(100f * Setting.FIT_MARGIN / 2f, size, 1e-3f)
+    fun `the width is what answers when the letters have no more to give`() {
+        // A leaf 1000 wide with a line that wants 2000 at the size it was measured: half of it,
+        // and half again as much as that once the letters are drawn as narrow as they go.
+        val squeeze = Setting.squeeze(perLine = 200f, widest = 2000f, width = 1000f, at = 100f)
+        assertEquals(Setting.SQUEEZE, squeeze, 1e-6f)
+        val size = Setting.size(200f, widest = 2000f, width = 1000f, at = 100f, squeeze = squeeze)
+        assertEquals(100f * Setting.FIT_MARGIN / 2f / Setting.SQUEEZE, size, 1e-3f)
     }
 
     @Test
     fun `the height is what answers when the lines are short`() {
-        val size = Setting.size(perLine = 200f, widest = 500f, width = 1000f, at = 100f)
+        val squeeze = Setting.squeeze(perLine = 200f, widest = 500f, width = 1000f, at = 100f)
+        assertEquals(1f, squeeze, 1e-6f)
+        val size = Setting.size(200f, widest = 500f, width = 1000f, at = 100f, squeeze = squeeze)
         assertEquals(200f * Setting.LINE_FILL, size, 1e-3f)
     }
 
     @Test
+    fun `the letters are drawn narrower only as far as the longest line needs`() {
+        // At the size the height allows this line overruns the leaf by a twentieth, so it is
+        // drawn a twentieth narrower — not as narrow as it is allowed to go.
+        val perLine = 200f
+        val at = 100f
+        val widest = 1000f * Setting.FIT_MARGIN / (perLine * Setting.LINE_FILL / at) / 0.95f
+        val squeeze = Setting.squeeze(perLine = perLine, widest = widest, width = 1000f, at = at)
+        assertEquals(0.95f, squeeze, 1e-4f)
+        // And having given exactly that much, the height is what decides the size.
+        val size = Setting.size(perLine, widest, width = 1000f, at = at, squeeze = squeeze)
+        assertEquals(perLine * Setting.LINE_FILL, size, 1e-3f)
+    }
+
+    @Test
+    fun `a page whose lines already fit is not touched at all`() {
+        val squeeze = Setting.squeeze(perLine = 200f, widest = 100f, width = 1000f, at = 100f)
+        assertEquals(1f, squeeze, 0f)
+    }
+
+    @Test
     fun `a leaf with no room yet is set at nothing rather than at anything`() {
-        assertEquals(0f, Setting.size(perLine = 0f, widest = 0f, width = 0f, at = 0f), 0f)
+        assertEquals(1f, Setting.squeeze(perLine = 0f, widest = 0f, width = 0f, at = 0f), 0f)
+        assertEquals(0f, Setting.size(perLine = 0f, widest = 0f, width = 0f, at = 0f, 1f), 0f)
+    }
+
+    @Test
+    fun `the letters keep most of their width`() {
+        assertTrue(
+            "condensing buys the page its size; past a tenth or so it costs the letterforms",
+            Setting.SQUEEZE in 0.85f..1f,
+        )
     }
 
     @Test

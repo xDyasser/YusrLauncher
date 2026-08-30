@@ -1,18 +1,22 @@
 package dev.yusr.data.quran
 
 /**
- * The one repair the downloaded Uthmani Ḥafṣ text needs.
+ * The two repairs the downloaded Uthmani Ḥafṣ text needs.
  *
  * That edition writes an open tanwīn over a letter and then puts the space *before* the alif
  * carrying it, so `إِصۡرࣰ ا` arrives as two words where the mushaf has one. It happens about two
  * and a half thousand times, which is a page of the reader broken every few pages.
  *
+ * And it opens a hundred and ninety-nine āyāt with a ۞, the mark that stands at the head of a
+ * rubʿ. That mark belongs to the page rather than to the ayah — [MushafLayout] knows which word
+ * of the book a quarter opens on and [MushafPage] sets the mark there itself — so an edition that
+ * carries one in the text puts a second one on the page beside it, and prints one in the middle
+ * of any ayah quoted on its own elsewhere in the app.
+ *
  * Nothing else about the text is touched. No word begins with a bare alif in this orthography — a
  * word opening on one is written with hamza or waṣla — so a space in exactly this position is
- * never a word break, and closing it cannot run two words together.
- *
- * It is done once, as the text is stored, and the pairs are written out rather than worked out:
- * the three open tanwīn marks against the two letters that can carry one.
+ * never a word break, and closing it cannot run two words together; and the ۞ is never anywhere
+ * but the first character of the ayah, so taking it from there takes nothing else.
  */
 object UthmaniText {
 
@@ -26,9 +30,18 @@ object UthmaniText {
     /** The same pairs with the space taken out — what each of [SPLIT_TANWIN] should have been. */
     private val JOINED_TANWIN: List<String> = SPLIT_TANWIN.map { it.filterNot { c -> c == ' ' } }
 
-    /** [text] with every broken tanwīn closed up, and nothing else changed. */
+    /** ARABIC START OF RUB EL HIZB — the ۞ this edition opens a quarter's first ayah with. */
+    private const val RUB_EL_HIZB = '\u06DE'
+
+    /**
+     * [text] with every broken tanwīn closed up and the page's own rubʿ mark taken off the front,
+     * and nothing else changed.
+     *
+     * Done as the text is stored, and again wherever a stored ayah is read: an install that
+     * fetched the book before this was written is not going to fetch it a second time.
+     */
     fun repaired(text: String): String {
-        var repaired = text
+        var repaired = text.removePrefix(RUB_EL_HIZB.toString())
         SPLIT_TANWIN.forEachIndexed { index, split ->
             repaired = repaired.replace(split, JOINED_TANWIN[index])
         }
