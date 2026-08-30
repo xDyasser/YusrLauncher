@@ -651,7 +651,9 @@ private fun AyahCard(
     ) {
         if (language != AyahLanguage.ENGLISH) {
             Text(
-                text = UthmaniText.printed(ayah.arabic),
+                // Repaired on the way out as well as on the way in: an install that fetched
+                // the book before that repair existed still has the old text in it.
+                text = UthmaniText.printed(UthmaniText.repaired(ayah.arabic)),
                 style = QuranQuoteStyle,
                 color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Right,

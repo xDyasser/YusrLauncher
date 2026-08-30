@@ -287,7 +287,9 @@ fun AyahBlock(
     Column(modifier = modifier.fillMaxWidth()) {
         if (language != AyahLanguage.ENGLISH) {
             Text(
-                text = UthmaniText.printed(ayah.arabic),
+                // Repaired on the way out as well as on the way in: an install that fetched
+                // the book before that repair existed still has the old text in it.
+                text = UthmaniText.printed(UthmaniText.repaired(ayah.arabic)),
                 // The face of the mushaf, not the interface face. This is the one place in the
                 // app where the letterforms are meant to say "slow down" before the words do.
                 style = QuranQuoteStyle,

@@ -53,6 +53,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -546,9 +547,11 @@ private val QUARTERS = listOf("", " ¼", " ½", " ¾")
  * A printed page does not scroll and neither does this one: the text is set at whatever size puts
  * every line of the page on the screen at once, height and width both, and that is the size it is
  * read at. Fitting to the height alone is not enough — the longest line of al-Baqara has to reach
- * both margins without running off one — so the size is the smaller of the two answers, and on
- * nearly every page it is the width that answers. [Setting] is where that arithmetic lives, and
- * why the words are set tighter than the face would space them.
+ * both margins without running off one — and left to itself the width answers first on most pages
+ * and answers small, so the letters are drawn a little narrower until the page's longest line
+ * fits and the height is what decides. [Setting] is where that arithmetic lives, and why the
+ * words are set tighter than the face would space them and the letters narrower than it draws
+ * them.
  *
  * Lines are justified by spacing the words out to the margins, which is how the room left over at
  * the end of a line is taken up in print. The last line of a sūrah, and every line of the two
@@ -571,7 +574,7 @@ private fun MushafLines(
 
         // Worked out once per page and per shape of screen. Measuring fifteen lines is not free,
         // and it must not happen again on the frame that turns the page.
-        val size = remember(page.number, height, width, density) {
+        val style = remember(page.number, height, width, density) {
             val at = with(density) { MEASURE_AT.toPx() }
             // Every line is measured with the face's own word spaces in it and then set tight,
             // the way it will be drawn, so the page is fitted to the width it actually needs.
@@ -589,18 +592,32 @@ private fun MushafLines(
                     measured - trim * (line.words.size - 1)
                 }?.coerceAtLeast(1f) ?: 1f
 
-            // Bounded at both ends against a leaf measured before it has any room: a size of
-            // nothing draws an empty page, and an unbounded one draws a single enormous word.
-            val fitted = Setting.size(
-                perLine = height.toFloat() / page.lines.size,
+            val perLine = height.toFloat() / page.lines.size
+            // How narrow the letters have to be drawn for the longest line to fit at the size the
+            // height allows, and then the size itself, which is that one unless the letters ran
+            // out of room to give first.
+            val squeeze = Setting.squeeze(
+                perLine = perLine,
                 widest = widest,
                 width = width.toFloat(),
                 at = at,
             )
-            with(density) { fitted.toSp() }.value.coerceIn(MIN_SIZE, MAX_SIZE).sp
+            // Bounded at both ends against a leaf measured before it has any room: a size of
+            // nothing draws an empty page, and an unbounded one draws a single enormous word.
+            val fitted = Setting.size(
+                perLine = perLine,
+                widest = widest,
+                width = width.toFloat(),
+                at = at,
+                squeeze = squeeze,
+            )
+            val size = with(density) { fitted.toSp() }.value.coerceIn(MIN_SIZE, MAX_SIZE).sp
+            QuranStyle.copy(
+                fontSize = size,
+                lineHeight = size * Setting.LINE_SPACING,
+                textGeometricTransform = TextGeometricTransform(scaleX = squeeze),
+            )
         }
-
-        val style = QuranStyle.copy(fontSize = size, lineHeight = size * Setting.LINE_SPACING)
 
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -644,7 +661,13 @@ private fun SurahBand(surah: Int, style: TextStyle) {
             text = t("Sūrat %s", SurahNames.arabic(surah).orEmpty()),
             // Not revelation, and not in the face kept for it — that one has no Latin in it at
             // all, and the band reads "Sūrat al-Baqara" when the interface is in English.
-            style = style.copy(fontFamily = Amiri, fontSize = style.fontSize * BAND_SIZE),
+            // Drawn at its own width: the condensing is what buys the page's letters their size,
+            // and a heading of three words has no line to fit.
+            style = style.copy(
+                fontFamily = Amiri,
+                fontSize = style.fontSize * BAND_SIZE,
+                textGeometricTransform = null,
+            ),
             color = Gold,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
@@ -826,11 +849,14 @@ private fun setLine(
             maxLines = 1,
             softWrap = false,
         ).size.width
+        // The face's own word space is drawn narrower along with the letters, so what comes off
+        // it is narrower too — the measurement it is taken away from was made condensed.
+        val squeeze = style.textGeometricTransform?.scaleX ?: 1f
         Setting.spacing(
             natural = measured.toFloat(),
             gaps = gaps,
             width = width.toFloat(),
-            trim = with(density) { style.fontSize.toPx() } * Setting.TRIM,
+            trim = with(density) { style.fontSize.toPx() } * Setting.TRIM * squeeze,
         )
     }
 
