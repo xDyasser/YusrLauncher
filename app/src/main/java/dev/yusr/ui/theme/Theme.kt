@@ -26,7 +26,7 @@ import dev.yusr.data.settings.ThemeMode
 
 // The night palette. Not a grey scale: the ground is a green-black and the text is a warm
 // off-white, which is what stops a screen made entirely of text from reading as a terminal.
-private val Night = Color(0xFF0D0F0E)
+internal val Night = Color(0xFF0D0F0E)
 private val NightBright = Color(0xFFF2EEE4)
 private val NightText = Color(0xFFE9E5DB)
 private val NightMuted = Color(0xFF8B9088)
@@ -34,7 +34,7 @@ private val NightFaint = Color(0xFF6F746C)
 private val NightEdge = Color(0xFF2A2E2B)
 
 // The day palette, from the Arabic light mockup: unbleached paper rather than white.
-private val Day = Color(0xFFF4F1E9)
+internal val Day = Color(0xFFF4F1E9)
 private val DayBright = Color(0xFF171A16)
 private val DayText = Color(0xFF23261F)
 private val DayMuted = Color(0xFF5E6459)
@@ -309,48 +309,62 @@ fun YusrTheme(content: @Composable () -> Unit) {
  * a ghunnah is violet; qalqalah is blue; and a letter that is written but not read is grey,
  * which is the page saying "there is nothing here to say".
  *
+ * The families set the hue. What sets the rest is the eye. These colours land on single letters
+ * a few millimetres tall, seen one at a time and never side by side, so two of them are told
+ * apart only if they are far apart — and an earlier set of these was not. Nine of its pairs sat
+ * within ΔE2000 10 of each other, which is the distance at which a reader stops reading colour
+ * and starts guessing it. So each family here is pinned to its own band of hue, given as much
+ * chroma as the ground will carry, and stepped in lightness against the family beside it, so
+ * neighbours differ in two ways rather than one. No two of them are now closer than ΔE2000 18,
+ * and on the night ground none is closer than 22. `TajweedColoursTest` holds them there.
+ *
+ * The greys are the exception, and deliberately so: what is not read should not shout. They are
+ * quieter than the text rather than louder, and they are near enough to each other that the test
+ * excludes that one pair — mistaking a joining alif for a silent letter costs a reader nothing,
+ * since neither is read.
+ *
  * Two sets, because a colour that reads on a green-black ground is a stain on unbleached paper.
  */
-private val NightTajweed: Map<Tajweed.Rule, Color> = mapOf(
-    Tajweed.Rule.MADD_6 to Color(0xFFD06A5A),
-    Tajweed.Rule.MADD_MUTTASIL to Color(0xFFD98E4A),
-    Tajweed.Rule.MADD_MUNFASIL to Color(0xFFD98E4A),
-    Tajweed.Rule.MADD_246 to Color(0xFFC9A15C),
-    Tajweed.Rule.MADD_2 to Color(0xFF9AAE72),
-    Tajweed.Rule.GHUNNAH to Color(0xFF6FA97A),
-    Tajweed.Rule.IDGHAAM_GHUNNAH to Color(0xFF6FA97A),
-    Tajweed.Rule.IDGHAAM_SHAFAWI to Color(0xFF6FA97A),
-    Tajweed.Rule.IKHFA to Color(0xFF5FA39A),
-    Tajweed.Rule.IKHFA_SHAFAWI to Color(0xFF5FA39A),
-    Tajweed.Rule.IQLAB to Color(0xFF5E93A8),
-    Tajweed.Rule.QALQALAH to Color(0xFF6E8FC7),
-    Tajweed.Rule.IDGHAAM_NO_GHUNNAH to Color(0xFFA088C0),
-    Tajweed.Rule.IDGHAAM_MUTAJAANISAIN to Color(0xFFA088C0),
-    Tajweed.Rule.IDGHAAM_MUTAQAARIBAIN to Color(0xFFA088C0),
-    Tajweed.Rule.HAMZAT_WASL to Color(0xFF7E8379),
-    Tajweed.Rule.LAM_SHAMSIYYAH to Color(0xFF7E8379),
-    Tajweed.Rule.SILENT to Color(0xFF6B6F66),
+internal val NightTajweed: Map<Tajweed.Rule, Color> = mapOf(
+    Tajweed.Rule.MADD_6 to Color(0xFFE56072),
+    Tajweed.Rule.MADD_MUTTASIL to Color(0xFFF78C56),
+    Tajweed.Rule.MADD_MUNFASIL to Color(0xFFF78C56),
+    Tajweed.Rule.MADD_246 to Color(0xFFF7C359),
+    Tajweed.Rule.MADD_2 to Color(0xFF9BB642),
+    Tajweed.Rule.GHUNNAH to Color(0xFF0AA06D),
+    Tajweed.Rule.IDGHAAM_GHUNNAH to Color(0xFF0AA06D),
+    Tajweed.Rule.IDGHAAM_SHAFAWI to Color(0xFF0AA06D),
+    Tajweed.Rule.IKHFA to Color(0xFF55DFD4),
+    Tajweed.Rule.IKHFA_SHAFAWI to Color(0xFF55DFD4),
+    Tajweed.Rule.IQLAB to Color(0xFF26B7FC),
+    Tajweed.Rule.QALQALAH to Color(0xFF8788D0),
+    Tajweed.Rule.IDGHAAM_NO_GHUNNAH to Color(0xFFF9A6F4),
+    Tajweed.Rule.IDGHAAM_MUTAJAANISAIN to Color(0xFFF9A6F4),
+    Tajweed.Rule.IDGHAAM_MUTAQAARIBAIN to Color(0xFFF9A6F4),
+    Tajweed.Rule.HAMZAT_WASL to Color(0xFF8C9089),
+    Tajweed.Rule.LAM_SHAMSIYYAH to Color(0xFF8C9089),
+    Tajweed.Rule.SILENT to Color(0xFF63675F),
 )
 
-private val DayTajweed: Map<Tajweed.Rule, Color> = mapOf(
-    Tajweed.Rule.MADD_6 to Color(0xFF9E3B2C),
-    Tajweed.Rule.MADD_MUTTASIL to Color(0xFFA9631E),
-    Tajweed.Rule.MADD_MUNFASIL to Color(0xFFA9631E),
-    Tajweed.Rule.MADD_246 to Color(0xFF8A6B2E),
-    Tajweed.Rule.MADD_2 to Color(0xFF5F7238),
-    Tajweed.Rule.GHUNNAH to Color(0xFF3D6B48),
-    Tajweed.Rule.IDGHAAM_GHUNNAH to Color(0xFF3D6B48),
-    Tajweed.Rule.IDGHAAM_SHAFAWI to Color(0xFF3D6B48),
-    Tajweed.Rule.IKHFA to Color(0xFF2F6B65),
-    Tajweed.Rule.IKHFA_SHAFAWI to Color(0xFF2F6B65),
-    Tajweed.Rule.IQLAB to Color(0xFF35637A),
-    Tajweed.Rule.QALQALAH to Color(0xFF3A5A9B),
-    Tajweed.Rule.IDGHAAM_NO_GHUNNAH to Color(0xFF6B4E93),
-    Tajweed.Rule.IDGHAAM_MUTAJAANISAIN to Color(0xFF6B4E93),
-    Tajweed.Rule.IDGHAAM_MUTAQAARIBAIN to Color(0xFF6B4E93),
-    Tajweed.Rule.HAMZAT_WASL to Color(0xFF6B6F66),
-    Tajweed.Rule.LAM_SHAMSIYYAH to Color(0xFF6B6F66),
-    Tajweed.Rule.SILENT to Color(0xFF8A8D84),
+internal val DayTajweed: Map<Tajweed.Rule, Color> = mapOf(
+    Tajweed.Rule.MADD_6 to Color(0xFF930B35),
+    Tajweed.Rule.MADD_MUTTASIL to Color(0xFFB64B01),
+    Tajweed.Rule.MADD_MUNFASIL to Color(0xFFB64B01),
+    Tajweed.Rule.MADD_246 to Color(0xFF5F5107),
+    Tajweed.Rule.MADD_2 to Color(0xFF507905),
+    Tajweed.Rule.GHUNNAH to Color(0xFF014700),
+    Tajweed.Rule.IDGHAAM_GHUNNAH to Color(0xFF014700),
+    Tajweed.Rule.IDGHAAM_SHAFAWI to Color(0xFF014700),
+    Tajweed.Rule.IKHFA to Color(0xFF006252),
+    Tajweed.Rule.IKHFA_SHAFAWI to Color(0xFF006252),
+    Tajweed.Rule.IQLAB to Color(0xFF0774B0),
+    Tajweed.Rule.QALQALAH to Color(0xFF2D3D79),
+    Tajweed.Rule.IDGHAAM_NO_GHUNNAH to Color(0xFFB03991),
+    Tajweed.Rule.IDGHAAM_MUTAJAANISAIN to Color(0xFFB03991),
+    Tajweed.Rule.IDGHAAM_MUTAQAARIBAIN to Color(0xFFB03991),
+    Tajweed.Rule.HAMZAT_WASL to Color(0xFF767A73),
+    Tajweed.Rule.LAM_SHAMSIYYAH to Color(0xFF767A73),
+    Tajweed.Rule.SILENT to Color(0xFF9BA096),
 )
 
 /** The set that suits the ground the page is being drawn on. */
