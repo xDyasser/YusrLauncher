@@ -78,7 +78,11 @@ can equally type. Nothing is ever uploaded; there is no account and no analytics
   counts carries the maddah. The colours are painted over the line as a gradient rather than put
   on the letters, because a colour on a letter cuts the line at that letter and Android reshapes
   each piece on its own — which costs an Arabic letter the ḥaraka standing above it. Every colour
-  on the page is named on a key of its own, reached from the mushaf. Off by default, because the
+  on the page is named on a key of its own, reached from the mushaf. The colours themselves are
+  measured rather than picked: a rule's colour lands on one letter a few millimetres tall, seen
+  on its own and never beside the colour it might be mistaken for, so every pair of them is held
+  apart in CIE Lab by a distance the eye keeps, and every one of them is held off the ground it
+  is drawn on. Off by default, because the
   printed page is black and somebody who has read this mushaf for twenty years should not open
   the app to find it repainted. The whole book is checked against an independent annotation of
   it in the tests, ayah by ayah.
