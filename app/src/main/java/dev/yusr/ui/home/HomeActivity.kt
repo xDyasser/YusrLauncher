@@ -72,6 +72,7 @@ import dev.yusr.domain.FavoriteOrder
 import dev.yusr.domain.Hijri
 import dev.yusr.domain.Madhab
 import dev.yusr.domain.MafatihDay
+import dev.yusr.domain.Occasions
 import dev.yusr.domain.Prayer
 import dev.yusr.domain.PrayerEntry
 import dev.yusr.domain.PrayerLog
@@ -305,6 +306,7 @@ private fun HomeScreen(
             ClockBlock(
                 nowMillis = now,
                 hijriOffsetDays = prayerSettings?.hijriOffsetDays ?: 0,
+                branch = prayerSettings?.effectiveMadhab?.branch ?: Madhab.Branch.SUNNI,
                 onLongPress = onOpenSettings,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -480,9 +482,15 @@ private fun HomeScreen(
 private fun ClockBlock(
     nowMillis: Long,
     hijriOffsetDays: Int,
+    branch: Madhab.Branch,
     onLongPress: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // What today is, when it is anything: one line under the date, in the tone of the day. The
+    // birth of an Imam takes the gold; a martyrdom is set in the reading colour and never gold.
+    val occasion = remember(nowMillis / 3_600_000, hijriOffsetDays, branch) {
+        Occasions.on(DayClock.localDateTime(nowMillis).toLocalDate(), hijriOffsetDays, branch).firstOrNull()
+    }
     val context = LocalContext.current
     val time = remember(nowMillis / 60_000) {
         val pattern = if (DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm"
@@ -534,6 +542,16 @@ private fun ClockBlock(
                 text = date,
                 style = MaterialTheme.typography.bodyMedium,
                 color = Dim,
+            )
+        }
+        occasion?.let {
+            Text(
+                text = t(it.label),
+                style = MaterialTheme.typography.bodySmall,
+                color = if (it.tone == Occasions.Tone.JOY) Gold else MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }

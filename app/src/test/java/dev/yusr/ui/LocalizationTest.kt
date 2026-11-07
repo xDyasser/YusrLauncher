@@ -3,7 +3,9 @@ package dev.yusr.ui
 import dev.yusr.data.quran.Reciters
 import dev.yusr.domain.AppTier
 import dev.yusr.domain.CalculationMethod
+import dev.yusr.domain.Madhab
 import dev.yusr.domain.MafatihDay
+import dev.yusr.domain.Occasions
 import dev.yusr.util.DayClock
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -27,6 +29,15 @@ class LocalizationTest {
     @After
     fun restore() {
         Locale.setDefault(original)
+    }
+
+    @Test
+    fun `every occasion in either calendar has its Arabic`() {
+        val labels = (Occasions.calendar(Madhab.Branch.SHIA) + Occasions.calendar(Madhab.Branch.SUNNI))
+            .map { it.label }
+            .toSet()
+        val missing = labels.filter { it !in ArabicStrings.TABLE }
+        assertTrue("no Arabic for: $missing", missing.isEmpty())
     }
 
     @Test

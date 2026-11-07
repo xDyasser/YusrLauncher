@@ -162,6 +162,7 @@ internal object ArabicStrings {
         putAll(SETUP)
         putAll(DOMAIN)
         putAll(MAFATIH_DAY)
+        putAll(OCCASIONS)
         putAll(UNITS)
         putAll(PENDING)
         putAll(PROSE)
@@ -224,6 +225,66 @@ private val MAFATIH_DAY = mapOf(
     "Ziyāra of al-Kāẕim, al-Riḍā, al-Jawād and al-Hādī · their day" to "زيارة الكاظم والرضا والجواد والهادي · في يومهم",
     "Ziyāra of al-ʿAskarī · his day" to "زيارة العسكريّ · في يومه",
     "Ziyāra of Ṣāḥib al-Zamān · his day" to "زيارة صاحب الزمان · في يومه",
+)
+
+/**
+ * The named days of the year, as an Arabic almanac would print them: wilāda, shahāda, wafāt, and
+ * the Imam named the way he is named in Arabic, by his laqab.
+ */
+private val OCCASIONS = mapOf(
+    "Occasions" to "المناسبات",
+    "today" to "اليوم",
+    "tomorrow" to "غدًا",
+    "in %s days" to "بعد %s أيام",
+    "The Hijri new year" to "رأس السنة الهجرية",
+    "ʿĀshūrāʾ · martyrdom of Imam al-Ḥusayn" to "عاشوراء · استشهاد الإمام الحسين",
+    "Martyrdom of Imam al-Sajjād" to "استشهاد الإمام السجّاد",
+    "Birth of Imam al-Kāẓim" to "ولادة الإمام الكاظم",
+    "Arbaʿīn of Imam al-Ḥusayn" to "أربعين الإمام الحسين",
+    "Passing of the Prophet · martyrdom of Imam al-Ḥasan" to "وفاة النبيّ · استشهاد الإمام الحسن",
+    "Martyrdom of Imam al-Riḍā" to "استشهاد الإمام الرضا",
+    "Martyrdom of Imam al-ʿAskarī" to "استشهاد الإمام العسكري",
+    "Imamate of Imam al-Mahdī begins" to "بدء إمامة الإمام المهدي",
+    "Birth of the Prophet and of Imam al-Ṣādiq" to "ولادة النبيّ والإمام الصادق",
+    "Birth of Imam al-ʿAskarī" to "ولادة الإمام العسكري",
+    "Birth of Sayyida Zaynab" to "ولادة السيّدة زينب",
+    "Martyrdom of al-Zahrāʾ · the first Fāṭimiyya" to "استشهاد الزهراء · الفاطمية الأولى",
+    "Martyrdom of al-Zahrāʾ · the second Fāṭimiyya" to "استشهاد الزهراء · الفاطمية الثانية",
+    "Birth of al-Zahrāʾ" to "ولادة الزهراء",
+    "Birth of Imam al-Bāqir" to "ولادة الإمام الباقر",
+    "Martyrdom of Imam al-Hādī" to "استشهاد الإمام الهادي",
+    "Birth of Imam al-Jawād" to "ولادة الإمام الجواد",
+    "Birth of Amīr al-Muʾminīn" to "ولادة أمير المؤمنين",
+    "Passing of Sayyida Zaynab" to "وفاة السيّدة زينب",
+    "Martyrdom of Imam al-Kāẓim" to "استشهاد الإمام الكاظم",
+    "The Mabʿath" to "المبعث النبوي",
+    "Birth of Imam al-Ḥusayn" to "ولادة الإمام الحسين",
+    "Birth of al-ʿAbbās" to "ولادة أبي الفضل العبّاس",
+    "Birth of Imam al-Sajjād" to "ولادة الإمام السجّاد",
+    "Birth of ʿAlī al-Akbar" to "ولادة علي الأكبر",
+    "Birth of Imam al-Mahdī" to "ولادة الإمام المهدي",
+    "Ramaḍān begins" to "أوّل شهر رمضان",
+    "Passing of Khadīja" to "وفاة السيّدة خديجة",
+    "Birth of Imam al-Ḥasan" to "ولادة الإمام الحسن",
+    "Laylat al-Qadr · Amīr al-Muʾminīn struck" to "ليلة القدر · ضربة أمير المؤمنين",
+    "Laylat al-Qadr · martyrdom of Amīr al-Muʾminīn" to "ليلة القدر · استشهاد أمير المؤمنين",
+    "Laylat al-Qadr" to "ليلة القدر",
+    "ʿĪd al-Fiṭr" to "عيد الفطر",
+    "Martyrdom of Imam al-Ṣādiq" to "استشهاد الإمام الصادق",
+    "Birth of Sayyida Maʿṣūma" to "ولادة السيّدة المعصومة",
+    "Birth of Imam al-Riḍā" to "ولادة الإمام الرضا",
+    "Martyrdom of Imam al-Jawād" to "استشهاد الإمام الجواد",
+    "Martyrdom of Imam al-Bāqir" to "استشهاد الإمام الباقر",
+    "ʿArafa · martyrdom of Muslim b. ʿAqīl" to "يوم عرفة · استشهاد مسلم بن عقيل",
+    "ʿĪd al-Aḍḥā" to "عيد الأضحى",
+    "Birth of Imam al-Hādī" to "ولادة الإمام الهادي",
+    "ʿĪd al-Ghadīr" to "عيد الغدير",
+    "The Mubāhala" to "يوم المباهلة",
+    "Mawlid al-Nabī" to "المولد النبوي",
+    "Al-Isrāʾ wa al-Miʿrāj" to "الإسراء والمعراج",
+    "Mid-Shaʿbān" to "النصف من شعبان",
+    "Laylat al-Qadr, by the common reckoning" to "ليلة القدر على المشهور",
+    "The day of ʿArafah" to "يوم عرفة",
 )
 
 /**

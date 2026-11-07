@@ -194,6 +194,18 @@ either book carries its source. To add to it, edit `app/src/main/assets/supplica
 rebuild: it is data, not code, so a new supplication is a new object in that file from an edition
 you trust and nothing else.
 
+**Occasions.** The hub lists today's occasion and the next few within six weeks, and the home
+screen prints today's under the date. Which calendar follows the school. The Shīʿī one is the
+year as the Fourteen fill it — every birth and martyrdom, Arbaʿīn, the nights of Qadr, Ghadīr,
+the Mubāhala, Daḥw al-Arḍ — dated by the convention most printed Shīʿī calendars follow (that of
+the official Iranian calendar). Where the narrations disagree too famously to choose, both are
+kept: al-Zahrāʾ's martyrdom is marked at the end of each Fāṭimiyya, the seventy-five-day and the
+ninety-five-day. A day that ends its month (Imam al-Riḍā at the end of Ṣafar, Imam al-Jawād at
+the end of Dhū al-Qaʿda) is read off the calendar rather than assumed to be the 30th. A birth or
+an Eid is set in gold; a martyrdom never is. Where Mafātīḥ has the text for the day, the line
+opens onto it. The Hijri offset under **Settings → Prayer times and salah** moves all of it with
+the local sighting.
+
 **The prayer log.** Once a prayer's time is in, tapping its column in the home screen's strip
 marks it prayed — a tick appears beside the time — and tapping again unmarks it. On a joined line
 one tap marks both. A faint line under the strip names the earliest prayer still unmarked; when

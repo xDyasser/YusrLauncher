@@ -49,6 +49,7 @@ import dev.yusr.domain.CalculationMethod
 import dev.yusr.domain.FastingCalendar
 import dev.yusr.domain.Madhab
 import dev.yusr.domain.MafatihDay
+import dev.yusr.domain.Occasions
 import dev.yusr.domain.Prayer
 import dev.yusr.domain.PrayerLog
 import dev.yusr.domain.Qibla
@@ -302,6 +303,25 @@ private fun HubPage(
                     modifier = Modifier.padding(top = 26.dp),
                 )
             }
+
+            // The named days, today's first and then the next few, by the school's own calendar.
+            val offset = prayer?.hijriOffsetDays ?: 0
+            val occasionsToday = remember { LocalDate.now() }
+            val occasions = remember(offset, madhab) {
+                Occasions.upcoming(
+                    occasionsToday,
+                    OCCASIONS_HORIZON_DAYS,
+                    offset,
+                    madhab?.branch ?: Madhab.Branch.SUNNI,
+                ).take(OCCASIONS_SHOWN)
+            }
+            OccasionsBlock(
+                occasions = occasions,
+                today = occasionsToday,
+                hijriOffsetDays = offset,
+                onOpen = onOpenReading,
+                modifier = Modifier.padding(top = 26.dp),
+            )
         }
 
         Hairline()

@@ -144,6 +144,12 @@ can equally type. Nothing is ever uploaded; there is no account and no analytics
 - **The gate.** Reaching a gated app costs a typed name, a written reason, and an escalating
   countdown (15s, then 30s, then 45s… capped at five minutes). Pasting is disabled; leaving the
   screen restarts the countdown.
+- **The year's occasions.** The named days of the Hijri year, by the school's own calendar — for
+  the Shīʿī schools the births and martyrdoms of the Fourteen, both Fāṭimiyya, Arbaʿīn, the
+  nights of Qadr, Ghadīr and the Mubāhala; for the Sunnī ones the Mawlid, the Isrāʾ, mid-Shaʿbān,
+  the Eids and ʿArafah. Today's occasion sits under the date on the home screen, in gold for a
+  birth or an Eid and never for a martyrdom; the hub lists the next few, each opening onto its
+  ziyāra or aʿmāl in Mafātīḥ where the book has one.
 - **A prayer log.** Once a prayer's time is in, a tap on it in the home strip or on the prayer
   page marks it prayed; a prayer whose time runs out unmarked is counted as owed — fajr at
   sunrise, dhuhr and ʿaṣr at maghrib, the night pair at sharʿī midnight for the Shīʿī schools and
@@ -206,7 +212,7 @@ Locally:
 domain/     pure logic, no Android imports — GateEvaluator, BudgetCalculator, ForegroundTally,
             BlackoutSchedule,
             NotificationPolicy, PrayerTimes, PrayerWindows, Fadila, Madhab, Qibla, Hijri,
-            FastingCalendar, MafatihDay, PrayerLog, Tasbih, Dhikr, FavoriteOrder
+            FastingCalendar, MafatihDay, Occasions, PrayerLog, Tasbih, Dhikr, FavoriteOrder
 data/       Room rules and history, DataStore settings, RuleMutator (the tighten/loosen asymmetry),
             the prayer timetable, the Qur'an and its recitation, the bundled supplications,
             al-Mīzān and the rules of tajwīd, and the network fetches
