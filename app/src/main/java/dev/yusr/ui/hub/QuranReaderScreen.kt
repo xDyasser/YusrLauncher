@@ -45,6 +45,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import dev.yusr.domain.EarnedMinutes
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
@@ -93,6 +96,7 @@ import dev.yusr.ui.theme.QuranStyle
 import dev.yusr.ui.theme.TajweedColours
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -272,6 +276,27 @@ private fun Reader(
             val first = plan.firstAyahOn(number) ?: return@collect
             onGoTo(first.surah, first.ayah)
         }
+    }
+
+    // A page read through counts towards the earned minutes: once it has been on screen for an
+    // ayah's pace per ayah that begins on it, its āyāt are added to the day's reading, once. The
+    // clock runs only while the reader is actually in front of someone — a page left open with
+    // the screen off is not being read — and turning the page before it is done starts the next
+    // page's clock from nothing. With earned minutes off nothing is recorded at all.
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val earning = settings?.earnedMinutesEnabled == true
+    LaunchedEffect(pager.settledPage, plan, earning) {
+        if (!earning) return@LaunchedEffect
+        val number = pager.settledPage + 1
+        val ayat = plan.ayatBeginningOn(number)
+        if (ayat == 0) return@LaunchedEffect
+        val required = EarnedMinutes.secondsToReadPage(ayat) * 1000L
+        var shown = 0L
+        while (shown < required) {
+            delay(PAGE_TICK_MS)
+            if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) shown += PAGE_TICK_MS
+        }
+        store.recordPageRead(number, ayat)
     }
 
     // And the paper follows anything that moves the reader without touching it — a bookmark set
@@ -1069,6 +1094,9 @@ private val MEASURE_AT = 40.sp
 
 /** The range a fitted line may end up in, in sp. Neither end is expected to be reached. */
 private const val MIN_SIZE = 8f
+
+/** How often the page-reading clock checks that the reader is still in front of someone. */
+private const val PAGE_TICK_MS = 1_000L
 private const val MAX_SIZE = 48f
 
 /** The margin the reader's own chrome keeps, and the narrower one the leaf keeps. */

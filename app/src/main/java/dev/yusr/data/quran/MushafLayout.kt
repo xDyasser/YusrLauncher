@@ -85,6 +85,35 @@ class MushafLayout private constructor(
         return pages[found].number
     }
 
+    /**
+     * How many āyāt *begin* on page [number]. An ayah carried over from the page before is not
+     * counted here — it was counted where it began — and one that runs on to the next page is,
+     * because it began here. Over the whole book these come to 6,236, once each.
+     */
+    fun ayatBeginningOn(number: Int): Int {
+        val start = page(number)?.start ?: return 0
+        val end = page(number + 1)?.start
+        var surah = start.surah
+        var ayah = start.ayah
+        fun advance() {
+            if (ayah < SurahNames.ayahCount(surah)) {
+                ayah++
+            } else {
+                surah++
+                ayah = 1
+            }
+        }
+        // A page that opens in the middle of an ayah has not begun it.
+        if (start.word != FIRST_WORD) advance()
+        var count = 0
+        while (surah <= SURAHS) {
+            if (end != null && Reference(surah, ayah) >= end) break
+            count++
+            advance()
+        }
+        return count
+    }
+
     /** The first ayah printed on page [number] — where a bookmark lands when a page is turned to. */
     fun firstAyahOn(number: Int): Reference? =
         page(number)?.start?.let { Reference(it.surah, it.ayah) }
@@ -139,6 +168,7 @@ class MushafLayout private constructor(
         const val JUZ = 30
         const val HIZB = 60
         const val QUARTERS_PER_HIZB = 4
+        private const val SURAHS = 114
 
         /** The first word of an ayah, and the number the asset counts words from. */
         const val FIRST_WORD = 1

@@ -122,8 +122,8 @@ fun FrictionScreen() {
             Text(
                 text = t(
                     "once an app's own minutes are spent, it can draw on what the day's devotions earned: " +
-                        "%s for each prayer marked, %s for each set of 33, %s for every %s āyāt read on the " +
-                        "home screen at a reading pace. salah, blackouts, blocks and daily opens are never touched.",
+                        "%s for each prayer marked, %s for each set of 33, %s for every %s āyāt read at a reading " +
+                        "pace, on the home screen or in the mushaf. salah, blackouts, blocks and daily opens are never touched.",
                     DayClock.formatMinutes(EarnedMinutes.PER_PRAYER),
                     DayClock.formatMinutes(EarnedMinutes.PER_TASBIH_SET),
                     DayClock.formatMinutes(1),

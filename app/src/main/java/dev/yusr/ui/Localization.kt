@@ -475,10 +475,10 @@ private val HUB = mapOf(
     "off · turn on" to "معطّلة · تفعيل",
     "most earned in a day" to "أقصى المكتسب في اليوم",
     "once an app's own minutes are spent, it can draw on what the day's devotions earned: " +
-        "%s for each prayer marked, %s for each set of 33, %s for every %s āyāt read on the " +
-        "home screen at a reading pace. salah, blackouts, blocks and daily opens are never touched." to
+        "%s for each prayer marked, %s for each set of 33, %s for every %s āyāt read at a reading " +
+        "pace, on the home screen or in the mushaf. salah, blackouts, blocks and daily opens are never touched." to
         "إذا نفدت دقائق تطبيق ما، أخذ ممّا اكتسبته أوراد اليوم: %s لكل صلاة مسجّلة، و%s لكل دورة من ٣٣، " +
-        "و%s لكل %s آيات تُقرأ في الشاشة الرئيسية على مهل. ولا يُمسّ وقت الصلاة ولا الحظر ولا المحجوب ولا عدد الفتحات.",
+        "و%s لكل %s آيات تُقرأ على مهل، في الشاشة الرئيسية أو في المصحف. ولا يُمسّ وقت الصلاة ولا الحظر ولا المحجوب ولا عدد الفتحات.",
     "let devotions earn minutes" to "السماح للأوراد باكتساب الدقائق",
     "earned minutes → %s a day" to "الدقائق المكتسبة ← %s يوميًّا",
     "today's earned minutes are spent, and the day's most is reached." to

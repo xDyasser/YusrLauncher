@@ -201,7 +201,8 @@ begins, which is still fajr. The fasting page prints imsāk beside the end of su
 year round, for the other fasts.
 
 **Earned minutes** (off unless you turn them on, under **Settings → Friction**). With them on, a
-prayer marked, a completed set of tasbīḥ and the āyāt read on the home screen fill a pool — 5
+prayer marked, a completed set of tasbīḥ and the āyāt read — on the home screen, or a page of
+the mushaf left in front of you for eight seconds an ayah, counted once a day — fill a pool — 5
 minutes a prayer, 2 a set of 33, 1 for every 3 āyāt read at a reading pace — up to a daily
 ceiling you choose (30 minutes to start, 120 at most). When an app's own daily minutes are
 spent, it may draw on the pool, for a session no longer than what is left of it; the block screen

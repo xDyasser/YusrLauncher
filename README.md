@@ -160,8 +160,9 @@ can equally type. Nothing is ever uploaded; there is no account and no analytics
 - **Earned minutes, if you want them.** Off by default, under **Settings → Friction**, and
   turning it on waits out the cooldown like any loosening. Once on, the day's devotions fill one
   shared pool: 5 minutes for each prayer marked, 2 for each completed set of 33 beads, 1 for every
-  3 āyāt read on the home screen at a reading pace (an ayah moved on from in under eight seconds
-  still moves the bookmark but earns nothing). The pool is held under a daily ceiling you set,
+  3 āyāt read at a reading pace — on the home screen, where an ayah moved on from in under eight
+  seconds still moves the bookmark but earns nothing, or in the mushaf, where a page counts once
+  a day after eight seconds on screen for each ayah that begins on it. The pool is held under a daily ceiling you set,
   30 minutes unless changed. An app whose own minute cap is spent draws on it, for no longer than
   is left; every app's own cap stays exactly where you put it. The pool buys minutes and nothing
   else — salah, blackouts, blocked apps, daily opens and the countdown are untouched — and the

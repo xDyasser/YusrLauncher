@@ -19,7 +19,7 @@ package dev.yusr.domain
  * | ------------------------------------------ | ------------ | ----------- |
  * | a prayer marked prayed                     | 5 minutes    | 25 a day    |
  * | a completed set of 33 beads                | 2 minutes    |             |
- * | 3 āyāt read on the home screen, at a pace  | 1 minute     |             |
+ * | 3 āyāt read, on the home screen or a page  | 1 minute     |             |
  *
  * and the whole is held under the daily ceiling the user sets ([DEFAULT_CAP] unless changed).
  * The ceiling is the real limit: without it a thumb on the tasbīḥ screen is an unlimited budget.
@@ -86,4 +86,11 @@ object EarnedMinutes {
      */
     fun countsAsRead(lastCountedAtMillis: Long?, nowMillis: Long): Boolean =
         lastCountedAtMillis == null || nowMillis - lastCountedAtMillis >= MIN_SECONDS_PER_AYAH * 1000L
+
+    /**
+     * How long a page of the mushaf has to be in front of the reader before its āyāt count as
+     * read: the same pace as the home screen, an ayah's worth of seconds for each ayah that
+     * begins on it. A page is counted once a day however often it is turned back to.
+     */
+    fun secondsToReadPage(ayatOnPage: Int): Int = MIN_SECONDS_PER_AYAH * ayatOnPage.coerceAtLeast(1)
 }

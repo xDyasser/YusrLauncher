@@ -77,6 +77,13 @@ class EarnedMinutesTest {
         assertTrue(EarnedMinutes.countsAsRead(1_000, 1_000 + EarnedMinutes.MIN_SECONDS_PER_AYAH * 1000L))
     }
 
+    @Test
+    fun `a page takes an ayah's pace for each ayah on it`() {
+        assertEquals(EarnedMinutes.MIN_SECONDS_PER_AYAH * 15, EarnedMinutes.secondsToReadPage(15))
+        // A page never asks for nothing, even one with a single long ayah beginning on it.
+        assertEquals(EarnedMinutes.MIN_SECONDS_PER_AYAH, EarnedMinutes.secondsToReadPage(0))
+    }
+
     // ---- the gate ----------------------------------------------------------------------------
 
     private val gated = AppRuleSnapshot(

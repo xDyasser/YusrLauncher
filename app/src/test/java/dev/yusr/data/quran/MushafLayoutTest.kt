@@ -25,6 +25,17 @@ class MushafLayoutTest {
     }
 
     @Test
+    fun `every ayah begins on exactly one page, and the book is 6236 of them`() {
+        val counts = (1..MushafLayout.PAGES).map { layout.ayatBeginningOn(it) }
+        assertEquals(6236, counts.sum())
+        // al-Fātiḥa's page holds its seven; no page is without the start of an ayah except
+        // where one ayah runs over a whole page, which the Madani print never does.
+        assertEquals(7, counts[0])
+        assertTrue(counts.all { it > 0 })
+        assertEquals(0, layout.ayatBeginningOn(0))
+    }
+
+    @Test
     fun `the book has six hundred and four pages`() {
         assertNotNull(layout.page(1))
         assertNotNull(layout.page(MushafLayout.PAGES))

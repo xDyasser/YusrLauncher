@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dev.yusr.domain.AsrMethod
 import dev.yusr.domain.CalculationMethod
@@ -265,6 +266,7 @@ class SettingsStore(private val context: Context) {
         val AYAT_READ_DATE = stringPreferencesKey("ayat_read_date")
         val AYAT_READ_COUNT = intPreferencesKey("ayat_read_count")
         val AYAT_READ_LAST = longPreferencesKey("ayat_read_last_counted_at")
+        val AYAT_READ_PAGES = stringSetPreferencesKey("ayat_read_pages")
         val PRAYER_SYNC = booleanPreferencesKey("prayer_sync_over_network")
         val QURAN_SYNCED_AT = longPreferencesKey("quran_synced_at")
         val MADHAB = stringPreferencesKey("madhab")
@@ -473,6 +475,25 @@ class SettingsStore(private val context: Context) {
      * [dev.yusr.domain.EarnedMinutes.countsAsRead] — so tapping through earns nothing, though the
      * bookmark still moves.
      */
+    /**
+     * A page of the mushaf read through at a reading pace — the reader has already waited out
+     * [dev.yusr.domain.EarnedMinutes.secondsToReadPage] with it on screen. Its āyāt are added to
+     * the day's count once: a page turned back to later the same day adds nothing.
+     */
+    suspend fun recordPageRead(page: Int, ayat: Int) {
+        val today = java.time.LocalDate.now().toString()
+        context.dataStore.edit { prefs ->
+            val sameDay = prefs[Keys.AYAT_READ_DATE] == today
+            val pages = if (sameDay) prefs[Keys.AYAT_READ_PAGES].orEmpty() else emptySet()
+            if (page.toString() in pages) return@edit
+            prefs[Keys.AYAT_READ_DATE] = today
+            prefs[Keys.AYAT_READ_COUNT] = (if (sameDay) prefs[Keys.AYAT_READ_COUNT] ?: 0 else 0) + ayat
+            prefs[Keys.AYAT_READ_PAGES] = pages + page.toString()
+            // A new day starts the home screen's pace afresh as well.
+            if (!sameDay) prefs.remove(Keys.AYAT_READ_LAST)
+        }
+    }
+
     suspend fun recordAyahRead(now: Long = System.currentTimeMillis()) {
         val today = java.time.LocalDate.now().toString()
         context.dataStore.edit { prefs ->
@@ -482,6 +503,8 @@ class SettingsStore(private val context: Context) {
             prefs[Keys.AYAT_READ_DATE] = today
             prefs[Keys.AYAT_READ_COUNT] = (if (sameDay) prefs[Keys.AYAT_READ_COUNT] ?: 0 else 0) + 1
             prefs[Keys.AYAT_READ_LAST] = now
+            // The pages counted belong to the day they were counted on.
+            if (!sameDay) prefs.remove(Keys.AYAT_READ_PAGES)
         }
     }
 
