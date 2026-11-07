@@ -154,9 +154,18 @@ can equally type. Nothing is ever uploaded; there is no account and no analytics
   page marks it prayed; a prayer whose time runs out unmarked is counted as owed — fajr at
   sunrise, dhuhr and ʿaṣr at maghrib, the night pair at sharʿī midnight for the Shīʿī schools and
   at ʿishāʾ and fajr for the Sunnī. The hub says how many of today's five are prayed and how many
-  of the week's are owed. It is a record, and it feeds nothing else: the gate and the budgets
-  never read it.
-- **Hard budgets.** Per-app daily minutes and daily opens. Spent is spent.
+  of the week's are owed. It is a record; the gate reads it only through earned minutes, below.
+- **Hard budgets.** Per-app daily minutes and daily opens. Spent is spent — unless you have
+  switched on earned minutes.
+- **Earned minutes, if you want them.** Off by default, under **Settings → Friction**, and
+  turning it on waits out the cooldown like any loosening. Once on, the day's devotions fill one
+  shared pool: 5 minutes for each prayer marked, 2 for each completed set of 33 beads, 1 for every
+  3 āyāt read on the home screen at a reading pace (an ayah moved on from in under eight seconds
+  still moves the bookmark but earns nothing). The pool is held under a daily ceiling you set,
+  30 minutes unless changed. An app whose own minute cap is spent draws on it, for no longer than
+  is left; every app's own cap stays exactly where you put it. The pool buys minutes and nothing
+  else — salah, blackouts, blocked apps, daily opens and the countdown are untouched — and the
+  hub says what the day earned, from where, and what is left.
 - **Blackout windows.** Hours when only favourites open at all — sleep, work, evenings.
 - **Notification suppression.** Notifications from gated apps are dismissed as they arrive and
   delivered as a summary twice a day. Calls, alarms, media, and anything the system pins always

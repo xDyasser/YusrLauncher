@@ -208,6 +208,14 @@ data class AppSettings(
      * a colour mushaf teaches a reader that the letters left plain have no rule on them.
      */
     val tajweedColours: Boolean = false,
+    /**
+     * Whether the day's devotions fill a pool of minutes that a spent app may draw on — see
+     * [dev.yusr.domain.EarnedMinutes]. Off unless asked for, and asking is a loosening, so it
+     * waits out the cooldown once the rules are locked.
+     */
+    val earnedMinutesEnabled: Boolean = false,
+    /** The most the pool can hold in a day. Raising it waits; lowering it does not. */
+    val earnedMinutesCap: Int = dev.yusr.domain.EarnedMinutes.DEFAULT_CAP,
     val prayer: PrayerSettings = PrayerSettings(),
 )
 
@@ -252,6 +260,11 @@ class SettingsStore(private val context: Context) {
         val AYAH_LANGUAGE = stringPreferencesKey("ayah_language")
         val HOME_AYAH_HIDDEN = booleanPreferencesKey("home_ayah_hidden")
         val TAJWEED = booleanPreferencesKey("tajweed_colours")
+        val EARNED_ENABLED = booleanPreferencesKey("earned_minutes_enabled")
+        val EARNED_CAP = intPreferencesKey("earned_minutes_cap")
+        val AYAT_READ_DATE = stringPreferencesKey("ayat_read_date")
+        val AYAT_READ_COUNT = intPreferencesKey("ayat_read_count")
+        val AYAT_READ_LAST = longPreferencesKey("ayat_read_last_counted_at")
         val PRAYER_SYNC = booleanPreferencesKey("prayer_sync_over_network")
         val QURAN_SYNCED_AT = longPreferencesKey("quran_synced_at")
         val MADHAB = stringPreferencesKey("madhab")
@@ -302,6 +315,8 @@ class SettingsStore(private val context: Context) {
             homeWidgetHeightDp = prefs[Keys.HOME_WIDGET_HEIGHT] ?: defaults.homeWidgetHeightDp,
             homeAyahHidden = prefs[Keys.HOME_AYAH_HIDDEN] ?: defaults.homeAyahHidden,
             tajweedColours = prefs[Keys.TAJWEED] ?: defaults.tajweedColours,
+            earnedMinutesEnabled = prefs[Keys.EARNED_ENABLED] ?: defaults.earnedMinutesEnabled,
+            earnedMinutesCap = prefs[Keys.EARNED_CAP] ?: defaults.earnedMinutesCap,
             prayer = readPrayer(prefs, defaults.prayer),
         )
     }
@@ -437,6 +452,38 @@ class SettingsStore(private val context: Context) {
 
     /** Colouring the mushaf changes nothing but the mushaf, so it applies at once too. */
     suspend fun setTajweedColours(on: Boolean) = putBoolean(Keys.TAJWEED, on)
+
+    /** Called only through [dev.yusr.data.RuleMutator] or a pending change that has served its time. */
+    suspend fun setEarnedMinutesEnabled(enabled: Boolean) = putBoolean(Keys.EARNED_ENABLED, enabled)
+
+    suspend fun setEarnedMinutesCap(minutes: Int) = putInt(Keys.EARNED_CAP, minutes)
+
+    // ---- āyāt read today, for the earned minutes ---------------------------------------------
+
+    /**
+     * How many āyāt have been read on the home screen today, at a reading pace. Kept as a date
+     * and a count rather than a history: tomorrow it starts again from nothing.
+     */
+    val ayatReadToday: Flow<Int> = context.dataStore.data.map { prefs ->
+        if (prefs[Keys.AYAT_READ_DATE] == java.time.LocalDate.now().toString()) prefs[Keys.AYAT_READ_COUNT] ?: 0 else 0
+    }
+
+    /**
+     * One ayah moved on from on the home screen. Counted only at a reading pace — see
+     * [dev.yusr.domain.EarnedMinutes.countsAsRead] — so tapping through earns nothing, though the
+     * bookmark still moves.
+     */
+    suspend fun recordAyahRead(now: Long = System.currentTimeMillis()) {
+        val today = java.time.LocalDate.now().toString()
+        context.dataStore.edit { prefs ->
+            val sameDay = prefs[Keys.AYAT_READ_DATE] == today
+            val last = if (sameDay) prefs[Keys.AYAT_READ_LAST] else null
+            if (!dev.yusr.domain.EarnedMinutes.countsAsRead(last, now)) return@edit
+            prefs[Keys.AYAT_READ_DATE] = today
+            prefs[Keys.AYAT_READ_COUNT] = (if (sameDay) prefs[Keys.AYAT_READ_COUNT] ?: 0 else 0) + 1
+            prefs[Keys.AYAT_READ_LAST] = now
+        }
+    }
 
     suspend fun setPrayerSyncOverNetwork(enabled: Boolean) = putBoolean(Keys.PRAYER_SYNC, enabled)
 

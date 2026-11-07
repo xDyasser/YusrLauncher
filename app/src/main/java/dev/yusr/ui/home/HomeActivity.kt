@@ -365,7 +365,12 @@ private fun HomeScreen(
                 // reference, and a tap has to move on from what was read.
                 onRead = {
                     val (nextSurah, nextAyah) = SurahNames.next(shown.surah, shown.ayah)
-                    scope.launch { store.setBookmark(nextSurah, nextAyah) }
+                    scope.launch {
+                        store.setBookmark(nextSurah, nextAyah)
+                        // Counted for the earned minutes only at a reading pace; the store
+                        // decides, so the bookmark moves either way.
+                        store.recordAyahRead()
+                    }
                 },
                 onHide = { scope.launch { store.setHomeAyahHidden(true) } },
                 modifier = Modifier.padding(top = 14.dp),

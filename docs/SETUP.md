@@ -194,6 +194,16 @@ either book carries its source. To add to it, edit `app/src/main/assets/supplica
 rebuild: it is data, not code, so a new supplication is a new object in that file from an edition
 you trust and nothing else.
 
+**Earned minutes** (off unless you turn them on, under **Settings → Friction**). With them on, a
+prayer marked, a completed set of tasbīḥ and the āyāt read on the home screen fill a pool — 5
+minutes a prayer, 2 a set of 33, 1 for every 3 āyāt read at a reading pace — up to a daily
+ceiling you choose (30 minutes to start, 120 at most). When an app's own daily minutes are
+spent, it may draw on the pool, for a session no longer than what is left of it; the block screen
+says so and offers the way to the hub. Only minutes are bought: salah, blackouts, blocked apps,
+daily opens and the countdown all stay as they are. Turning it on and raising the ceiling are
+loosenings, so once the rules are locked they wait out the cooldown; turning it off and lowering
+the ceiling take effect at once.
+
 **Occasions.** The hub lists today's occasion and the next few within six weeks, and the home
 screen prints today's under the date. Which calendar follows the school. The Shīʿī one is the
 year as the Fourteen fill it — every birth and martyrdom, Arbaʿīn, the nights of Qadr, Ghadīr,

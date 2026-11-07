@@ -132,6 +132,12 @@ object GateEvaluator {
         bypassesRemaining: Int,
         inPrayerWindow: Boolean = false,
         handedOff: Boolean = false,
+        /**
+         * Minutes in the shared pool the day's devotions have filled, still undrawn — see
+         * [EarnedMinutes]. Zero when the feature is off, which is exactly the old behaviour.
+         * Only the minute cap reads it: opens, salah, blackouts and blocks never do.
+         */
+        earnedMinutesLeft: Int = 0,
     ): GateDecision {
         if (rule.tier == AppTier.BLOCKED) {
             return GateDecision.Refuse(RefusalReason.PERMANENTLY_BLOCKED, bypassesRemaining)
@@ -163,14 +169,15 @@ object GateEvaluator {
         }
 
         val minuteCap = rule.budget.dailyMinutes
-        if (minuteCap != null && usage.minutesUsed >= minuteCap) {
+        val pool = earnedMinutesLeft.coerceAtLeast(0)
+        if (minuteCap != null && usage.minutesUsed >= minuteCap && pool == 0) {
             return GateDecision.Refuse(RefusalReason.DAILY_MINUTES_SPENT, bypassesRemaining)
         }
 
         return GateDecision.RequireFriction(
             delaySeconds = delayFor(usage.opens, policy),
             minReasonLength = policy.minReasonLength,
-            sessionMinutes = sessionFor(rule, policy, minuteCap, usage),
+            sessionMinutes = sessionFor(rule, policy, minuteCap, usage, pool),
         )
     }
 
@@ -181,16 +188,21 @@ object GateEvaluator {
         return raw.coerceAtMost(policy.maxDelaySeconds.toLong()).toInt()
     }
 
-    /** A session never runs past what is left of the daily minute budget. */
+    /**
+     * A session never runs past what is left of the daily minute budget — the app's own, and then
+     * the earned pool behind it.
+     */
     private fun sessionFor(
         rule: AppRuleSnapshot,
         policy: GatePolicy,
         minuteCap: Int?,
         usage: AppUsageToday,
+        pool: Int = 0,
     ): Int {
         val requested = rule.sessionMinutes ?: policy.defaultSessionMinutes
         if (minuteCap == null) return requested
-        val remaining = (minuteCap - usage.minutesUsed).coerceAtLeast(1)
+        val ownLeft = (minuteCap - usage.minutesUsed).coerceAtLeast(0)
+        val remaining = (ownLeft + pool).coerceAtLeast(1)
         return minOf(requested, remaining)
     }
 }

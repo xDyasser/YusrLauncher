@@ -201,6 +201,10 @@ enum class PendingChangeKind {
 
     /** Letting another app open a gated one without the gate — a hole, so it waits like one. */
     SET_OPENABLE_BY_HANDOFF,
+
+    /** Turning on the minutes devotions earn, or raising how many a day can hold. */
+    SET_EARNED_MINUTES_ENABLED,
+    SET_EARNED_MINUTES_CAP,
 }
 
 class Converters {

@@ -467,6 +467,25 @@ private val HUB = mapOf(
     "qibla" to "القبلة",
     "5 today" to "خمس اليوم",
     "5 today · faḍīla shown" to "خمس اليوم · مع أوقات الفضيلة",
+    // ---- earned minutes
+    "earned today %s of %s · %s left" to "المكتسب اليوم %s من %s · بقي %s",
+    "salah %s · tasbīḥ %s · Qur'an %s" to "الصلاة %s · التسبيح %s · القرآن %s",
+    "earned minutes" to "الدقائق المكتسبة",
+    "on · turn off" to "مفعّلة · إيقاف",
+    "off · turn on" to "معطّلة · تفعيل",
+    "most earned in a day" to "أقصى المكتسب في اليوم",
+    "once an app's own minutes are spent, it can draw on what the day's devotions earned: " +
+        "%s for each prayer marked, %s for each set of 33, %s for every %s āyāt read on the " +
+        "home screen at a reading pace. salah, blackouts, blocks and daily opens are never touched." to
+        "إذا نفدت دقائق تطبيق ما، أخذ ممّا اكتسبته أوراد اليوم: %s لكل صلاة مسجّلة، و%s لكل دورة من ٣٣، " +
+        "و%s لكل %s آيات تُقرأ في الشاشة الرئيسية على مهل. ولا يُمسّ وقت الصلاة ولا الحظر ولا المحجوب ولا عدد الفتحات.",
+    "let devotions earn minutes" to "السماح للأوراد باكتساب الدقائق",
+    "earned minutes → %s a day" to "الدقائق المكتسبة ← %s يوميًّا",
+    "today's earned minutes are spent, and the day's most is reached." to
+        "نفدت الدقائق المكتسبة اليوم، وبلغت حدّها الأقصى.",
+    "%s earned today, none left. mark a prayer, finish a set of tasbīḥ or read on to earn more." to
+        "اكتُسب اليوم %s ولم يبقَ منها شيء. سجّل صلاة أو أتمّ دورة تسبيح أو تابع القراءة لتكتسب المزيد.",
+    "open devotions" to "افتح الأوراد",
     // ---- the prayer log
     "%s of 5 prayed" to "%s من ٥ صُلّيت",
     "%s of 5 prayed · %s owed this week" to "%s من ٥ صُلّيت · %s قضاء هذا الأسبوع",

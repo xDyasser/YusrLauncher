@@ -221,6 +221,9 @@ interface PrayerLogDao {
     @Query("SELECT * FROM prayer_log WHERE date >= :from ORDER BY date")
     fun observeSince(from: String): Flow<List<PrayerLogEntity>>
 
+    @Query("SELECT COUNT(*) FROM prayer_log WHERE date = :date")
+    suspend fun countOn(date: String): Int
+
     @Upsert
     suspend fun upsert(row: PrayerLogEntity)
 

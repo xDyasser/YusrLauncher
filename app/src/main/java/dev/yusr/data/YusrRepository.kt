@@ -20,6 +20,7 @@ import dev.yusr.domain.AppUsageToday
 import dev.yusr.domain.BlackoutSchedule
 import dev.yusr.domain.BlackoutWindowSpec
 import dev.yusr.domain.BudgetCalculator
+import dev.yusr.domain.EarnedMinutes
 import dev.yusr.domain.ForegroundSnapshot
 import dev.yusr.domain.GateDecision
 import dev.yusr.domain.GateEvaluator
@@ -28,6 +29,7 @@ import dev.yusr.domain.SessionRecord
 import dev.yusr.util.DayClock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
 /**
@@ -48,6 +50,8 @@ class YusrRepository(
     private val digest = db.notificationDigestDao()
     private val blackouts = db.blackoutWindowDao()
     private val pending = db.pendingChangeDao()
+    private val prayerLog = db.prayerLogDao()
+    private val dhikr = db.dhikrDayDao()
 
     val settings: Flow<AppSettings> = settingsStore.settings
     val favorites: Flow<List<AppRuleEntity>> = rules.observeFavorites()
@@ -192,6 +196,54 @@ class YusrRepository(
             bypassesRemaining = bypassesRemaining(settings, now),
             inPrayerWindow = prayer.activeWindow(now) != null,
             handedOff = handedOff,
+            // Only worth the work of adding up every capped app when this one is over its own cap
+            // and the pool is switched on; otherwise the evaluator never reads it.
+            earnedMinutesLeft = if (
+                settings.earnedMinutesEnabled &&
+                rule.budget.dailyMinutes?.let { usage.minutesUsed >= it } == true
+            ) {
+                earnedStatus(now)?.left ?: 0
+            } else {
+                0
+            },
+        )
+    }
+
+    // ---- earned minutes ----------------------------------------------------------------
+
+    /** What the day's devotions earned, how much of it has gone, and what is left. */
+    data class EarnedStatus(val today: EarnedMinutes.Today, val spent: Int) {
+        val left: Int get() = EarnedMinutes.left(today, spent)
+    }
+
+    /**
+     * The day's pool, or null when it is switched off. The earning is read from the three
+     * records the hub already keeps — the prayer log, the tasbīḥ, and the āyāt read on the home
+     * screen — and the spending from every capped app's overrun past its own cap.
+     */
+    suspend fun earnedStatus(now: Long = System.currentTimeMillis()): EarnedStatus? {
+        val settings = settingsStore.current()
+        if (!settings.earnedMinutesEnabled) return null
+        val date = DayClock.localDateTime(now).toLocalDate().toString()
+        val today = EarnedMinutes.earned(
+            prayersMarked = prayerLog.countOn(date),
+            beads = dhikr.count(date) ?: 0,
+            ayatRead = settingsStore.ayatReadToday.first(),
+            cap = settings.earnedMinutesCap,
+        )
+        return EarnedStatus(today, spent = earnedSpent(now))
+    }
+
+    private suspend fun earnedSpent(now: Long): Int {
+        val capped = rules.getAll().filter { it.tier == AppTier.GATED && it.dailyMinutes != null }
+        if (capped.isEmpty()) return 0
+        val dayStart = DayClock.dayStart(now)
+        val records = sessionRecords(dayStart)
+        val phone = withContext(Dispatchers.IO) { phoneUsage.snapshot(dayStart, now) }
+        return EarnedMinutes.spent(
+            capped.map { rule ->
+                usageFrom(phone, records, rule.packageName, dayStart, now).minutesUsed to (rule.dailyMinutes ?: 0)
+            },
         )
     }
 
@@ -227,10 +279,24 @@ class YusrRepository(
     suspend fun usageToday(packageName: String, now: Long = System.currentTimeMillis()): AppUsageToday {
         val dayStart = DayClock.dayStart(now)
         val phone = withContext(Dispatchers.IO) { phoneUsage.snapshot(dayStart, now) }
-            ?: return BudgetCalculator.usageFor(sessionRecords(dayStart), packageName, dayStart, now)
+        return usageFrom(phone, sessionRecords(dayStart), packageName, dayStart, now)
+    }
 
+    /**
+     * The same reckoning over a snapshot already taken, so a question about every capped app at
+     * once — how much of the earned pool is gone — reads the phone's usage once rather than once
+     * an app.
+     */
+    private fun usageFrom(
+        phone: ForegroundSnapshot?,
+        records: List<SessionRecord>,
+        packageName: String,
+        dayStart: Long,
+        now: Long,
+    ): AppUsageToday {
+        phone ?: return BudgetCalculator.usageFor(records, packageName, dayStart, now)
         val counted = phone.usageFor(packageName, now)
-        val waived = BudgetCalculator.handedOffUsage(sessionRecords(dayStart), packageName, dayStart, now)
+        val waived = BudgetCalculator.handedOffUsage(records, packageName, dayStart, now)
         return AppUsageToday(
             opens = (counted.opens - waived.opens).coerceAtLeast(0),
             minutesUsed = ((counted.millis - waived.millis).coerceAtLeast(0L) / 60_000L).toInt(),
@@ -398,6 +464,11 @@ class YusrRepository(
 
             PendingChangeKind.SET_OPENABLE_BY_HANDOFF ->
                 setOpenableByHandoffNow(change.targetKey, change.newValue.toBoolean())
+
+            PendingChangeKind.SET_EARNED_MINUTES_ENABLED ->
+                settingsStore.setEarnedMinutesEnabled(change.newValue.toBoolean())
+            PendingChangeKind.SET_EARNED_MINUTES_CAP ->
+                settingsStore.setEarnedMinutesCap(change.newValue.toInt())
         }
         pending.deleteById(change.id)
     }

@@ -22,7 +22,8 @@ package dev.yusr.domain
  *
  * The Sunnī ends are the generous reading — dhuhr is held open until maghrib rather than until
  * ʿaṣr — because a ledger that called a prayer late by the strict reading of one school would be
- * wrong for the next. Nothing here feeds the gate or the budgets. It is a record, and a count.
+ * wrong for the next. It is a record and a count; the only thing that reads it besides the
+ * screens is [EarnedMinutes], when that has been switched on.
  */
 object PrayerLog {
 

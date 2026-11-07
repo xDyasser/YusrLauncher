@@ -21,6 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.yusr.container
 import dev.yusr.data.MutationResult
+import dev.yusr.domain.EarnedMinutes
 import dev.yusr.ui.t
 import dev.yusr.ui.YusrPage
 import dev.yusr.ui.noRippleClickable
@@ -102,6 +103,43 @@ fun FrictionScreen() {
             value = current.bypassesPerWeek.toString(),
             onDown = { scope.launch { report(mutator.setBypassesPerWeek(current.bypassesPerWeek - 1)) } },
             onUp = { scope.launch { report(mutator.setBypassesPerWeek(current.bypassesPerWeek + 1)) } },
+        )
+
+        // Earned minutes. A switch and a ceiling, and the rates spelled out under them: what a
+        // prayer, a set and a page are worth is the part of this anybody would want to check.
+        Column(modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp)) {
+            Text(
+                text = t("earned minutes").uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = Faint,
+            )
+            KnobButton(
+                label = if (current.earnedMinutesEnabled) t("on · turn off") else t("off · turn on"),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            ) {
+                scope.launch { report(mutator.setEarnedMinutesEnabled(!current.earnedMinutesEnabled)) }
+            }
+            Text(
+                text = t(
+                    "once an app's own minutes are spent, it can draw on what the day's devotions earned: " +
+                        "%s for each prayer marked, %s for each set of 33, %s for every %s āyāt read on the " +
+                        "home screen at a reading pace. salah, blackouts, blocks and daily opens are never touched.",
+                    DayClock.formatMinutes(EarnedMinutes.PER_PRAYER),
+                    DayClock.formatMinutes(EarnedMinutes.PER_TASBIH_SET),
+                    DayClock.formatMinutes(1),
+                    EarnedMinutes.AYAT_PER_MINUTE,
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = Faint,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
+
+        Knob(
+            caption = t("most earned in a day"),
+            value = DayClock.formatMinutes(current.earnedMinutesCap),
+            onDown = { scope.launch { report(mutator.setEarnedMinutesCap(current.earnedMinutesCap - 5)) } },
+            onUp = { scope.launch { report(mutator.setEarnedMinutesCap(current.earnedMinutesCap + 5)) } },
         )
 
         notice?.let {

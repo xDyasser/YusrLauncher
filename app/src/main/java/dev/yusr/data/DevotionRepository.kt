@@ -14,9 +14,11 @@ import java.time.LocalDate
 /**
  * The two things the hub keeps a record of: the day's tasbīḥ, and the days fasted.
  *
- * Both are deliberately small. Neither feeds the gate, the budgets, or anything that decides
- * whether an app may open — worship is not a currency to be spent on screen time, and wiring it
- * into the enforcement layer would make it one. They are counts on a screen, and that is all.
+ * Both are deliberately small. By default neither reaches the gate or anything that decides
+ * whether an app may open: they are counts on a screen. The one exception is opt-in — with
+ * earned minutes switched on (it waits out the cooldown like any loosening), completed sets of
+ * tasbīḥ help fill the day's pool, which an app whose own minutes are spent may draw on. The
+ * rates and the ceiling are in [dev.yusr.domain.EarnedMinutes]; the fasts never count.
  */
 class DevotionRepository(context: Context) {
 

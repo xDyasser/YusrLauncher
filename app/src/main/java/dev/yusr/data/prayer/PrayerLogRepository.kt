@@ -23,8 +23,9 @@ import java.time.temporal.ChronoUnit
  * computes, so there is one source for when a prayer's time ends and this screen cannot
  * disagree with the one next to it.
  *
- * Like the tasbīḥ and the fasts, none of this feeds the gate or the budgets. It is a record of
- * what was done, and a count of what is owed, and that is all it is for.
+ * It is a record of what was done and a count of what is owed. The gate never reads it, except
+ * through the opt-in earned minutes, where each prayer marked today puts minutes into the day's
+ * pool — see [dev.yusr.domain.EarnedMinutes].
  */
 class PrayerLogRepository(
     context: Context,

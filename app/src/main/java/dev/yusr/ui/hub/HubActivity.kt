@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import dev.yusr.container
 import dev.yusr.data.prayer.PrayerToday
 import dev.yusr.data.quran.SurahNames
+import dev.yusr.data.YusrRepository
 import dev.yusr.data.settings.LocationSource
 import dev.yusr.domain.CalculationMethod
 import dev.yusr.domain.FastingCalendar
@@ -190,6 +191,13 @@ private fun HubPage(
     }
     val owedThisWeek by remember(logDate) { prayerLog.observeMissedSince(7) }.collectAsState(initial = 0)
 
+    // The earned pool, when it is on: re-read whenever one of the three things that fill it moves.
+    val repository = remember { context.container.repository }
+    val ayatRead by store.ayatReadToday.collectAsState(initial = 0)
+    val earned by produceState<YusrRepository.EarnedStatus?>(null, beads, prayed, ayatRead, settings) {
+        value = repository.earnedStatus()
+    }
+
     val madhab = prayer?.effectiveMadhab
     val book by produceState<String?>(null, madhab) {
         value = madhab?.let {
@@ -294,6 +302,36 @@ private fun HubPage(
                 onOpen = onOpen,
                 modifier = Modifier.padding(top = 26.dp),
             )
+
+            earned?.let { status ->
+                // One line, under the grid it is earned from. Where the minutes came from is
+                // spelled out, because "12 earned" with no account of it reads as a score.
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(top = 18.dp),
+                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                ) {
+                    Text(
+                        text = t(
+                            "earned today %s of %s · %s left",
+                            DayClock.formatMinutes(status.today.total),
+                            DayClock.formatMinutes(status.today.cap),
+                            DayClock.formatMinutes(status.left),
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (status.left > 0) Gold else Dim,
+                    )
+                    Text(
+                        text = t(
+                            "salah %s · tasbīḥ %s · Qur'an %s",
+                            DayClock.formatMinutes(status.today.fromPrayer),
+                            DayClock.formatMinutes(status.today.fromDhikr),
+                            DayClock.formatMinutes(status.today.fromQuran),
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Dim,
+                    )
+                }
+            }
 
             if (readings.isNotEmpty()) {
                 TodayInMafatih(

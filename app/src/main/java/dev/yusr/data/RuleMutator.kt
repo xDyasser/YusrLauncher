@@ -4,6 +4,7 @@ import dev.yusr.data.db.BlackoutWindowEntity
 import dev.yusr.data.db.PendingChangeKind
 import dev.yusr.data.settings.SettingsStore
 import dev.yusr.domain.AppTier
+import dev.yusr.domain.EarnedMinutes
 import dev.yusr.ui.t
 import dev.yusr.ui.tierName
 import dev.yusr.util.DayClock
@@ -251,6 +252,38 @@ class RuleMutator(
                 packageName,
                 "true",
                 t("%s opens when another app sends you to it", existing.label),
+            )
+        }
+    }
+
+    // ---- earned minutes -----------------------------------------------------------------
+
+    /**
+     * Letting devotions buy minutes past a spent cap is more screen time, so turning it on waits.
+     * Turning it off closes the door, so it does not.
+     */
+    suspend fun setEarnedMinutesEnabled(enabled: Boolean): MutationResult {
+        return if (unlocked() || !enabled) {
+            settingsStore.setEarnedMinutesEnabled(enabled)
+            MutationResult.AppliedNow
+        } else {
+            defer(PendingChangeKind.SET_EARNED_MINUTES_ENABLED, "", "true", t("let devotions earn minutes"))
+        }
+    }
+
+    /** A larger daily pool is a loosening; a smaller one is not. */
+    suspend fun setEarnedMinutesCap(minutes: Int): MutationResult {
+        val wanted = minutes.coerceIn(0, EarnedMinutes.MAX_CAP)
+        val current = settingsStore.current().earnedMinutesCap
+        return if (unlocked() || wanted <= current) {
+            settingsStore.setEarnedMinutesCap(wanted)
+            MutationResult.AppliedNow
+        } else {
+            defer(
+                PendingChangeKind.SET_EARNED_MINUTES_CAP,
+                "",
+                wanted.toString(),
+                t("earned minutes → %s a day", DayClock.formatMinutes(wanted)),
             )
         }
     }

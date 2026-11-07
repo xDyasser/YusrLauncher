@@ -34,6 +34,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.yusr.container
+import dev.yusr.data.YusrRepository
+import dev.yusr.ui.hub.HubActivity
+import dev.yusr.util.DayClock
 import dev.yusr.domain.PrayerWindow
 import dev.yusr.domain.RefusalReason
 import dev.yusr.ui.t
@@ -129,6 +132,11 @@ private fun BlockScreen(
         value = if (reason == RefusalReason.PRAYER) repository.activePrayerWindow() else null
     }
 
+    // Null when earned minutes are off, which leaves this screen exactly as it was.
+    val earned by produceState<YusrRepository.EarnedStatus?>(initialValue = null, reason) {
+        value = if (reason == RefusalReason.DAILY_MINUTES_SPENT) repository.earnedStatus() else null
+    }
+
     val headline = when {
         sessionOver -> t("time is up")
         reason == RefusalReason.PERMANENTLY_BLOCKED -> t("blocked")
@@ -196,6 +204,34 @@ private fun BlockScreen(
                     .align(Alignment.CenterHorizontally)
                     .padding(top = 28.dp),
             )
+        }
+
+        // When minutes can be earned, a spent budget says how — and where. The door is the hub, not
+        // the app: what reopens it is time spent on something else first.
+        val status = earned
+        if (reason == RefusalReason.DAILY_MINUTES_SPENT && !sessionOver && status != null) {
+            Text(
+                text = if (status.today.capped) {
+                    t("today's earned minutes are spent, and the day's most is reached.")
+                } else {
+                    t(
+                        "%s earned today, none left. mark a prayer, finish a set of tasbīḥ or read on to earn more.",
+                        DayClock.formatMinutes(status.today.total),
+                    )
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = Faint,
+                modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+            )
+            if (!status.today.capped) {
+                YusrButton(
+                    label = t("open devotions"),
+                    modifier = Modifier.padding(top = 12.dp),
+                ) {
+                    context.startActivity(Intent(context, HubActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    onDone()
+                }
+            }
         }
 
         Text(
