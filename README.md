@@ -150,6 +150,10 @@ can equally type. Nothing is ever uploaded; there is no account and no analytics
   the Eids and ʿArafah. Today's occasion sits under the date on the home screen, in gold for a
   birth or an Eid and never for a martyrdom; the hub lists the next few, each opening onto its
   ziyāra or aʿmāl in Mafātīḥ where the book has one.
+- **Friday, and the week read back.** On Fridays the home screen offers al-Kahf — opened as a
+  visit, so the bookmark stays put — and the week's muḥāsaba: prayers marked and owed, fasts,
+  dhikr, screen time, passes through the gate, and the reasons you gave there, most frequent
+  first, in your own words.
 - **A prayer log.** Once a prayer's time is in, a tap on it in the home strip or on the prayer
   page marks it prayed; a prayer whose time runs out unmarked is counted as owed — fajr at
   sunrise, dhuhr and ʿaṣr at maghrib, the night pair at sharʿī midnight for the Shīʿī schools and

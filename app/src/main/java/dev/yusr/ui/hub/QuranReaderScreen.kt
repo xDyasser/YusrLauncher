@@ -117,7 +117,15 @@ import kotlinx.coroutines.withContext
  * and the only one that survives a masjid basement.
  */
 @Composable
-fun QuranReaderScreen(onBack: () -> Unit) {
+fun QuranReaderScreen(
+    onBack: () -> Unit,
+    /**
+     * A place to open at *without* moving the bookmark — al-Kahf on a Friday, say. Turning pages
+     * from there moves this visit and nothing else, so the reading the bookmark keeps is where it
+     * was when you come back. Null opens at the bookmark, and moves it, as always.
+     */
+    visit: Pair<Int, Int>? = null,
+) {
     val context = LocalContext.current
     val store = remember { context.container.settingsStore }
     // Deliberately the scope of this screen rather than of the index below it. Picking a place
@@ -146,12 +154,14 @@ fun QuranReaderScreen(onBack: () -> Unit) {
     // came back, which is the pause that made turning a page feel like the app had stopped to
     // think about it. The move happens here, at once; the write follows.
     val stored by store.bookmark.collectAsState(initial = null)
-    var place by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    var place by remember { mutableStateOf(visit) }
     // What the store still owes us: the last move made here, until it comes back around. A
     // bookmark set anywhere else — at the gate, most of the time — is news and is followed, but
     // an echo of a move we have already moved past would turn the page back under the reader.
     var awaiting by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     LaunchedEffect(stored) {
+        // A visit follows its own place, not the bookmark's.
+        if (visit != null) return@LaunchedEffect
         val current = stored ?: return@LaunchedEffect
         when (awaiting) {
             null -> place = current
@@ -162,6 +172,7 @@ fun QuranReaderScreen(onBack: () -> Unit) {
 
     fun goTo(surah: Int, ayah: Int) {
         place = surah to ayah
+        if (visit != null) return
         awaiting = place
         scope.launch { store.setBookmark(surah, ayah) }
     }

@@ -26,6 +26,7 @@ import dev.yusr.domain.GateDecision
 import dev.yusr.domain.GateEvaluator
 import dev.yusr.domain.PrayerWindow
 import dev.yusr.domain.SessionRecord
+import dev.yusr.domain.WeeklyReview
 import dev.yusr.util.DayClock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -206,6 +207,36 @@ class YusrRepository(
             } else {
                 0
             },
+        )
+    }
+
+    // ---- the week ----------------------------------------------------------------------
+
+    /** The week, as the hub's review reads it. Screen time is null when usage access is refused. */
+    data class Week(
+        val prayersMarked: Int,
+        val fastsKept: Int,
+        val beads: Int,
+        val screenMinutes: Int?,
+        val gatePasses: Int,
+        val bypasses: Int,
+        val reasons: List<WeeklyReview.Reason>,
+    )
+
+    /** The last [WeeklyReview.DAYS] days, today included, out of what the app already keeps. */
+    suspend fun week(now: Long = System.currentTimeMillis()): Week {
+        val today = DayClock.localDateTime(now).toLocalDate()
+        val from = today.minusDays((WeeklyReview.DAYS - 1).toLong())
+        val since = DayClock.dayStart(now) - (WeeklyReview.DAYS - 1) * 24L * 60 * 60 * 1000
+        val log = overrides.since(since)
+        return Week(
+            prayersMarked = prayerLog.countSince(from.toString()),
+            fastsKept = db.fastingDayDao().since(from.toString()).size,
+            beads = dhikr.sumSince(from.toString()),
+            screenMinutes = phoneMillisSince(since, now)?.let { (it / 60_000L).toInt() },
+            gatePasses = log.count { it.kind == OverrideKind.GATE_PASSED },
+            bypasses = log.count { it.kind == OverrideKind.EMERGENCY_BYPASS },
+            reasons = WeeklyReview.reasons(log.map { it.reason }),
         )
     }
 

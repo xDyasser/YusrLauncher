@@ -174,6 +174,8 @@ class HomeActivity : ComponentActivity() {
                     onOpenHub = { startActivity(Intent(this, HubActivity::class.java)) },
                     onOpenTasbih = { startActivity(HubActivity.intent(this, HubScreen.TASBIH)) },
                     onOpenReading = { id -> startActivity(HubActivity.readingIntent(this, id)) },
+                    onOpenKahf = { startActivity(HubActivity.visitIntent(this, KAHF, 1)) },
+                    onOpenReview = { startActivity(HubActivity.intent(this, HubScreen.REVIEW)) },
                 )
             }
         }
@@ -196,6 +198,8 @@ private fun HomeScreen(
     onOpenHub: () -> Unit,
     onOpenTasbih: () -> Unit,
     onOpenReading: (String) -> Unit,
+    onOpenKahf: () -> Unit,
+    onOpenReview: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -401,6 +405,34 @@ private fun HomeScreen(
                     onOpen = { onOpenReading(reading.entryId) },
                 )
             }
+        }
+
+        // Friday: al-Kahf, which every school recommends on the day, and the week read back. Two
+        // doors on one line. Al-Kahf opens as a visit, so the reading the bookmark keeps is where
+        // it was afterwards.
+        val friday = remember(now / 3_600_000) {
+            DayClock.localDateTime(now).dayOfWeek == java.time.DayOfWeek.FRIDAY
+        }
+        if (friday) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 9.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = t("Jumuʿa · al-Kahf →"),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Gold,
+                    modifier = Modifier.noRippleClickable(onClick = onOpenKahf),
+                )
+                Text(
+                    text = t("your week →"),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Dim,
+                    modifier = Modifier.noRippleClickable(onClick = onOpenReview).padding(start = 12.dp),
+                )
+            }
+            Hairline()
         }
 
         // The names take whatever room is left and scroll inside it. Twenty favourites is a bad
@@ -1063,6 +1095,9 @@ private val FAVORITE_MIN_INSET = 16.dp
 
 /** The mark in front of every favourite. Measured as well as drawn, so it is written once. */
 private const val FAVORITE_CHEVRON = "\u203a"
+
+/** Sūrat al-Kahf, which the Friday line opens on. */
+private const val KAHF = 18
 
 /**
  * The names, in the order the user put them in, each behind a chevron.

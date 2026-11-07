@@ -194,6 +194,13 @@ either book carries its source. To add to it, edit `app/src/main/assets/supplica
 rebuild: it is data, not code, so a new supplication is a new object in that file from an edition
 you trust and nothing else.
 
+**Jumuʿa and your week.** On a Friday the home screen adds one line: *al-Kahf*, which opens the
+mushaf at sūrah 18 as a visit — turning its pages does not move the bookmark your reading is kept
+at — and *your week*, the hub's seventh tile. That is a muḥāsaba of the last seven days, out of
+records the app already keeps: prayers marked and owed, fasts kept, dhikr counted, screen time,
+times through the gate, emergency bypasses, and the reasons you typed at the gate, grouped by what
+they say and most frequent first. Nothing in it is scored.
+
 **Ramaḍān.** Through the month the home screen puts one gold line above the prayers: how long
 until ifṭār, and once ifṭār has come, how long until imsāk. Imsāk is set ten minutes before fajr,
 the margin every printed Ramaḍān calendar keeps; it is a precaution and not where the fast

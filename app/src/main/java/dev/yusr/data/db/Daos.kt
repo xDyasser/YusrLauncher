@@ -82,6 +82,9 @@ interface OverrideLogDao {
     @Query("SELECT COUNT(*) FROM override_log WHERE kind = 'EMERGENCY_BYPASS' AND timestamp >= :since")
     fun observeBypassCountSince(since: Long): Flow<Int>
 
+    @Query("SELECT * FROM override_log WHERE timestamp >= :since ORDER BY timestamp")
+    suspend fun since(since: Long): List<OverrideLogEntity>
+
     @Insert
     suspend fun insert(entry: OverrideLogEntity)
 
@@ -208,6 +211,10 @@ interface DhikrDayDao {
     @Upsert
     suspend fun upsert(day: DhikrDayEntity)
 
+    /** The beads counted from [from] on, for the week's review. */
+    @Query("SELECT COALESCE(SUM(count), 0) FROM dhikr_days WHERE date >= :from")
+    suspend fun sumSince(from: String): Int
+
     /** Everything older than [date], which is how the counter forgets last week. */
     @Query("DELETE FROM dhikr_days WHERE date < :date")
     suspend fun deleteBefore(date: String)
@@ -223,6 +230,9 @@ interface PrayerLogDao {
 
     @Query("SELECT COUNT(*) FROM prayer_log WHERE date = :date")
     suspend fun countOn(date: String): Int
+
+    @Query("SELECT COUNT(*) FROM prayer_log WHERE date >= :from")
+    suspend fun countSince(from: String): Int
 
     @Upsert
     suspend fun upsert(row: PrayerLogEntity)

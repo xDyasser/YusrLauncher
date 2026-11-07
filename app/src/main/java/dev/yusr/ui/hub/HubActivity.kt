@@ -55,6 +55,7 @@ import dev.yusr.domain.Prayer
 import dev.yusr.domain.PrayerLog
 import dev.yusr.domain.Qibla
 import dev.yusr.domain.SupplicationCollection
+import dev.yusr.domain.WeeklyReview
 import dev.yusr.ui.isArabic
 import dev.yusr.ui.methodPill
 import dev.yusr.ui.t
@@ -92,6 +93,11 @@ class HubActivity : ComponentActivity() {
             ?.let { name -> runCatching { HubScreen.valueOf(name) }.getOrNull() }
             ?: HubScreen.HUB
         val openingEntry = intent?.getStringExtra(EXTRA_ENTRY)
+        // "18:1" — a place to visit in the mushaf without moving the bookmark.
+        val openingVisit = intent?.getStringExtra(EXTRA_VISIT)?.split(":")
+            ?.mapNotNull { it.toIntOrNull() }
+            ?.takeIf { it.size == 2 }
+            ?.let { it[0] to it[1] }
 
         setContent {
             YusrTheme {
@@ -102,10 +108,12 @@ class HubActivity : ComponentActivity() {
                 // The one text the duʿāʾ page should open on, when it was reached from a reading
                 // rather than from its tile. Cleared on the way back so the tile opens the book.
                 var entry by remember { mutableStateOf(openingEntry) }
+                var visit by remember { mutableStateOf(openingVisit) }
                 // Back from a page returns to the hub; back from the hub leaves.
                 BackHandler(enabled = screen != HubScreen.HUB) {
                     screen = HubScreen.HUB
                     entry = null
+                    visit = null
                 }
 
                 when (screen) {
@@ -121,7 +129,14 @@ class HubActivity : ComponentActivity() {
                     )
                     HubScreen.PRAYER -> PrayerTimesScreen(onBack = { screen = HubScreen.HUB })
                     HubScreen.MADHAB -> MadhabScreen(onBack = { screen = HubScreen.HUB })
-                    HubScreen.QURAN -> QuranReaderScreen(onBack = { screen = HubScreen.HUB })
+                    HubScreen.QURAN -> QuranReaderScreen(
+                        onBack = {
+                            screen = HubScreen.HUB
+                            visit = null
+                        },
+                        visit = visit,
+                    )
+                    HubScreen.REVIEW -> WeeklyReviewScreen(onBack = { screen = HubScreen.HUB })
                     HubScreen.TASBIH -> TasbihScreen(onBack = { screen = HubScreen.HUB })
                     HubScreen.ADHKAR -> SupplicationScreen(
                         dua = false,
@@ -144,6 +159,11 @@ class HubActivity : ComponentActivity() {
     companion object {
         private const val EXTRA_SCREEN = "screen"
         private const val EXTRA_ENTRY = "entry"
+        private const val EXTRA_VISIT = "visit"
+
+        /** Opens the mushaf at [surah]:[ayah] for a visit — the bookmark stays where it is. */
+        fun visitIntent(context: Context, surah: Int, ayah: Int): Intent =
+            intent(context, HubScreen.QURAN).putExtra(EXTRA_VISIT, "$surah:$ayah")
 
         /** Opens the hub straight onto one of its pages, which is how the home bar reaches them. */
         fun intent(context: Context, screen: HubScreen): Intent =
@@ -155,7 +175,7 @@ class HubActivity : ComponentActivity() {
     }
 }
 
-enum class HubScreen { HUB, PRAYER, MADHAB, QURAN, TASBIH, ADHKAR, DUA, FASTING }
+enum class HubScreen { HUB, PRAYER, MADHAB, QURAN, TASBIH, ADHKAR, DUA, FASTING, REVIEW }
 
 @Composable
 private fun HubPage(
@@ -297,6 +317,17 @@ private fun HubPage(
                         t("Fasting"),
                         if (fasting.isFast) t("%s · today", fastingLabel(fasting)) else t("%s this month", fastedThisMonth),
                         HubScreen.FASTING,
+                    ),
+                    // Seventh, under the six: the week read back. On a Friday it says so, because
+                    // that is the day it is meant to be read.
+                    HubTile(
+                        t("Your week"),
+                        if (LocalDate.now().dayOfWeek == java.time.DayOfWeek.FRIDAY) {
+                            t("Friday · read it back")
+                        } else {
+                            t("the last %s days", WeeklyReview.DAYS)
+                        },
+                        HubScreen.REVIEW,
                     ),
                 ),
                 onOpen = onOpen,
