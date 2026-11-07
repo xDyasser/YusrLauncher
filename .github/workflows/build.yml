@@ -36,6 +36,12 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # Named outright because the action's default list still asks sdkmanager for the
+          # retired `tools` package, which Google no longer serves, and the whole job dies on
+          # it before Gradle starts. These are the platform the app compiles against and the
+          # build-tools the build and the signing step each want.
+          packages: "platform-tools platforms;android-35 build-tools;35.0.0 build-tools;34.0.0"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
