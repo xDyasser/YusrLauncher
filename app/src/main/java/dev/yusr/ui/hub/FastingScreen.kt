@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import dev.yusr.container
 import dev.yusr.data.prayer.PrayerToday
 import dev.yusr.domain.FastingCalendar
+import dev.yusr.domain.Madhab
 import dev.yusr.domain.Prayer
 import dev.yusr.ui.t
 import dev.yusr.ui.Hairline
@@ -46,8 +47,9 @@ import java.time.format.DateTimeFormatter
  * Which days are fasts, and which of them you kept.
  *
  * Nothing here needs setting up. The recurring sunna fasts are calendar facts — the white days,
- * Mondays and Thursdays, ʿĀshūrāʾ, ʿArafah — so the app already knows what today is from the Hijri
- * date, and the only thing it cannot work out on its own is whether you actually fasted.
+ * the weekly or monthly days of whichever school is set, ʿArafah, the named days of the year — so
+ * the app already knows what today is from the Hijri date and the madhab, and the only thing it
+ * cannot work out on its own is whether you actually fasted.
  *
  * The days fasting is forbidden on are shown too, and shown as forbidden rather than quietly
  * omitted: a calendar that went blank on Eid would look like a calendar that had failed.
@@ -62,10 +64,15 @@ fun FastingScreen(onBack: () -> Unit) {
 
     val settings by store.settings.collectAsState(initial = null)
     val offset = settings?.prayer?.hijriOffsetDays ?: 0
+    // The two branches keep different days, and the Jaʿfarī list is the one this screen used to
+    // get wrong; until the madhab is read off disk the Sunnī one stands in for a frame or two.
+    val branch = settings?.prayer?.effectiveMadhab?.branch ?: Madhab.Branch.SUNNI
     val monthCount by devotions.observeFastedThisMonth().collectAsState(initial = 0)
 
     val today = remember { LocalDate.now() }
-    val days = remember(offset) { FastingCalendar.upcoming(today, days = 21, hijriOffsetDays = offset) }
+    val days = remember(offset, branch) {
+        FastingCalendar.upcoming(today, days = 21, hijriOffsetDays = offset, branch = branch)
+    }
 
     // Bumped after every mark so the ticks reload; the marked set is a suspending read rather
     // than a flow, because it is a whole page of dates at once rather than one value.
@@ -78,11 +85,17 @@ fun FastingScreen(onBack: () -> Unit) {
         value = prayerRepository.today()
     }
 
-    val classification = remember(offset) { FastingCalendar.classify(today, offset) }
+    val classification = remember(offset, branch) { FastingCalendar.classify(today, offset, branch) }
 
     HubPageFrame(
         title = t("Fasting"),
-        subtitle = if (classification.isFast) t(classification.label) else t("nothing due today"),
+        subtitle = when {
+            classification.isFast -> fastingLabel(classification)
+            // A day with something to say about itself that is not a fast — ʿĀshūrāʾ for a Shia,
+            // an Eid for anyone — says it, rather than "nothing due" on a day that is anything but.
+            classification.kind != FastingCalendar.Kind.NONE -> fastingLabel(classification)
+            else -> t("nothing due today")
+        },
         onBack = onBack,
         footer = {
             Text(
@@ -129,7 +142,7 @@ fun FastingScreen(onBack: () -> Unit) {
                     // marking next Thursday as kept is a promise, not a record.
                     .noRippleClickable(enabled = day.isFast && !day.date.isAfter(today)) {
                         scope.launch {
-                            devotions.setFasted(day.date, !fasted, offset)
+                            devotions.setFasted(day.date, !fasted, offset, branch)
                             revision++
                         }
                     }
@@ -157,11 +170,12 @@ fun FastingScreen(onBack: () -> Unit) {
                                 else -> Dim
                             },
                         )
-                        if (day.label.isNotBlank()) {
+                        val label = fastingLabel(day)
+                        if (label.isNotBlank()) {
                             Text(
-                                text = t(day.label),
+                                text = label,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = if (day.kind == FastingCalendar.Kind.FORBIDDEN) Faint else Dim,
+                                color = if (day.kind.forbidden) Faint else Dim,
                             )
                         }
                     }
@@ -169,7 +183,7 @@ fun FastingScreen(onBack: () -> Unit) {
                 Text(
                     text = when {
                         fasted -> t("kept")
-                        day.kind == FastingCalendar.Kind.FORBIDDEN -> "—"
+                        day.kind.forbidden -> "—"
                         day.isFast && !day.date.isAfter(today) -> t("mark")
                         day.isFast -> t("due")
                         else -> ""

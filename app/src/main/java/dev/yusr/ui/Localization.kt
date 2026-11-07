@@ -161,11 +161,70 @@ internal object ArabicStrings {
         putAll(SETTINGS)
         putAll(SETUP)
         putAll(DOMAIN)
+        putAll(MAFATIH_DAY)
         putAll(UNITS)
         putAll(PENDING)
         putAll(PROSE)
     }
 }
+
+/**
+ * What the day's readings out of Mafātīḥ al-Jinān are called. The calendar in the domain hands
+ * out these English labels; the Arabic is the name a reader of the book would use for the text,
+ * which is not always a translation of the English — "Laylat al-Mabʿath" is "ليلة المبعث", but
+ * "The day's duʿāʾ" is the book's own "دعوات الأيام".
+ */
+private val MAFATIH_DAY = mapOf(
+    "Ziyārat ʿĀshūrāʾ" to "زيارة عاشوراء",
+    "Muḥarram's aʿmāl" to "أعمال شهر محرّم",
+    "Ziyārat al-Arbaʿīn" to "زيارة الأربعين",
+    "First of Rajab" to "أوّل رجب",
+    "Mid-Rajab's aʿmāl" to "أعمال النصف من رجب",
+    "Ziyārat al-Ḥusayn · mid-Rajab" to "زيارة الحسين · النصف من رجب",
+    "Laylat al-Mabʿath" to "ليلة المبعث",
+    "Rajab's aʿmāl" to "أعمال شهر رجب",
+    "Mid-Shaʿbān's aʿmāl" to "أعمال النصف من شعبان",
+    "Ziyārat al-Ḥusayn · mid-Shaʿbān" to "زيارة الحسين · النصف من شعبان",
+    "Shaʿbān's aʿmāl" to "أعمال شهر شعبان",
+    "First night of Ramaḍān" to "الليلة الأولى من رمضان",
+    "First day of Ramaḍān" to "اليوم الأوّل من رمضان",
+    "Tonight's duʿāʾ" to "دعاء الليلة",
+    "Ziyārat al-Ḥusayn · Laylat al-Qadr" to "زيارة الحسين · ليلة القدر",
+    "Last night of Ramaḍān" to "آخر ليلة من رمضان",
+    "Farewell to Ramaḍān" to "وداع شهر رمضان",
+    "Duʿāʾ al-Iftitāḥ · every night" to "دعاء الافتتاح · كلّ ليلة",
+    "Duʿāʾ Abū Ḥamza · at saḥar" to "دعاء أبي حمزة · في السحر",
+    "The day's duʿāʾ" to "دعوات الأيام",
+    "ʿĪd al-Fiṭr's aʿmāl" to "أعمال عيد الفطر",
+    "Ziyārat al-Ḥusayn · the Eid" to "زيارة الحسين · يوم العيد",
+    "Daḥw al-Arḍ" to "دحو الأرض",
+    "Ziyārat al-Ḥusayn · ʿArafa" to "زيارة الحسين · يوم عرفة",
+    "Duʿāʾ of the Mubāhala" to "دعاء يوم المباهلة",
+    "Dhū al-Ḥijja's aʿmāl" to "أعمال شهر ذي الحجة",
+    "Last day of the year" to "آخر يوم من السنة",
+    "First of the month" to "أوّل الشهر",
+    "Duʿāʾ Kumayl · Thursday night" to "دعاء كميل · ليلة الجمعة",
+    "Thursday night's aʿmāl" to "أعمال ليلة الجمعة",
+    "Duʿāʾ al-Nudba · Friday morning" to "دعاء الندبة · صباح الجمعة",
+    "Duʿāʾ al-Simāt · Friday afternoon" to "دعاء السمات · عصر الجمعة",
+    "Friday's aʿmāl" to "أعمال يوم الجمعة",
+    "Duʿāʾ of Saturday" to "دعاء يوم السبت",
+    "Duʿāʾ of Sunday" to "دعاء يوم الأحد",
+    "Duʿāʾ of Monday" to "دعاء يوم الاثنين",
+    "Duʿāʾ of Tuesday" to "دعاء يوم الثلاثاء",
+    "Duʿāʾ of Wednesday" to "دعاء يوم الأربعاء",
+    "Duʿāʾ of Thursday" to "دعاء يوم الخميس",
+    "Duʿāʾ of Friday" to "دعاء يوم الجمعة",
+    "Ziyāra of the Prophet · his day" to "زيارة النبيّ · في يومه",
+    "Ziyāra of Amīr al-Muʾminīn · his day" to "زيارة أمير المؤمنين · في يومه",
+    "Ziyāra of al-Zahrāʾ · her day" to "زيارة الزهراء · في يومها",
+    "Ziyāra of al-Ḥasan · his day" to "زيارة الحسن · في يومه",
+    "Ziyāra of al-Ḥusayn · his day" to "زيارة الحسين · في يومه",
+    "Ziyāra of al-Sajjād, al-Bāqir and al-Ṣādiq · their day" to "زيارة السجّاد والباقر والصادق · في يومهم",
+    "Ziyāra of al-Kāẕim, al-Riḍā, al-Jawād and al-Hādī · their day" to "زيارة الكاظم والرضا والجواد والهادي · في يومهم",
+    "Ziyāra of al-ʿAskarī · his day" to "زيارة العسكريّ · في يومه",
+    "Ziyāra of Ṣāḥib al-Zamān · his day" to "زيارة صاحب الزمان · في يومه",
+)
 
 /**
  * Durations, which are text too.
@@ -224,6 +283,7 @@ private val DOMAIN = mapOf(
     "Ḥanbalī" to "حنبلي",
     "Jaʿfarī" to "جعفري",
     "Zaydī" to "زيدي",
+    "Zahrāʾ" to "الزهراء",
     "Sunnī" to "سنّي",
     "Shīʿī" to "شيعي",
     "Later ʿasr" to "العصر متأخّرًا",
@@ -235,6 +295,16 @@ private val DOMAIN = mapOf(
     "Monday" to "الإثنين",
     "Thursday" to "الخميس",
     "White days · %s %s" to "الأيام البيض · %s %s",
+    "White days" to "الأيام البيض",
+    "ʿĀshūrāʾ · imsāk till ʿaṣr, not a fast" to "عاشوراء · إمساك إلى العصر لا صوم",
+    "Mabʿath · 27 Rajab" to "المبعث · ٢٧ رجب",
+    "15 Shaʿbān" to "النصف من شعبان",
+    "Daḥw al-Arḍ · 25 Dhū al-Qaʿda" to "دحو الأرض · ٢٥ ذو القعدة",
+    "Ghadīr · 18 Dhū al-Ḥijja" to "الغدير · ١٨ ذو الحجة",
+    "Mubāhala · 24 Dhū al-Ḥijja" to "المباهلة · ٢٤ ذو الحجة",
+    "First Thursday of the month" to "أوّل خميس في الشهر",
+    "Last Thursday of the month" to "آخر خميس في الشهر",
+    "Wednesday after the tenth" to "أوّل أربعاء بعد العاشر",
     "ʿĪd al-Fiṭr · no fasting" to "عيد الفطر · لا صوم",
     "ʿĪd al-Aḍḥā · no fasting" to "عيد الأضحى · لا صوم",
     "Days of tashrīq · no fasting" to "أيام التشريق · لا صوم",
@@ -312,6 +382,10 @@ private val HUB = mapOf(
     "%s this month" to "%s هذا الشهر",
     "%s · today" to "%s · اليوم",
     "%s in this part" to "%s في هذا الباب",
+    "Today in Mafātīḥ al-Jinān" to "اليوم في مفاتيح الجنان",
+    "Today in Mafātīḥ · %s" to "اليوم في المفاتيح · %s",
+    "%s more in the book →" to "← و%s غيرها في الكتاب",
+    "open →" to "← افتح",
     // Ḥiṣn's parts. Mafātīḥ's are the book's own Arabic already and pass through untouched.
     "Morning" to "الصباح",
     "After fajr" to "بعد الفجر",

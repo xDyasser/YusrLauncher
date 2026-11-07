@@ -195,14 +195,31 @@ rebuild: it is data, not code, so a new supplication is a new object in that fil
 you trust and nothing else.
 
 **Fasting** needs no setting up. The recurring sunna fasts are calendar facts, so the app works
-them out from the Hijri date: the white days (the 13th to the 15th of any month), Mondays and
-Thursdays, ʿĀshūrāʾ and ʿArafah, and Ramaḍān in full. Fasting is never suggested on the two Eids
-or the days of tashrīq — those are shown as forbidden rather than left blank. Tick a day to record
-that you kept it; days still to come cannot be ticked, because that would be a promise rather than
-a record.
+them out from the Hijri date and the school you chose: the white days (the 13th to the 15th of any
+month), ʿArafah and Ramaḍān in full for everyone; Mondays and Thursdays and the ʿĀshūrāʾ fast for
+the four Sunnī schools; for the Jaʿfarī and Zaydī the first Thursday of the month, the last, and
+the first Wednesday after the tenth, with 27 Rajab, 15 Shaʿbān, 25 Dhū al-Qaʿda, and the 18th and
+24th of Dhū al-Ḥijja — Ghadīr and the Mubāhala. For those schools ʿĀshūrāʾ is shown as what it is,
+*imsāk* until ʿaṣr without a fasting intention, and is not offered as a fast to mark. Fasting is
+never suggested on the two Eids; the days of tashrīq are forbidden under the Sunnī schools and,
+under the Shīʿī ones, only at Minā, so for everyone else they are ordinary days and the 13th is the
+white day it is. Tick a day to record that you kept it; days still to come cannot be ticked,
+because that would be a promise rather than a record.
 
-**Tasbīḥ** counts to 33, 34 or 100 and resets with the day. The count on the home screen's bottom
-bar is today's, and tapping it opens the counter.
+**Tasbīḥ** counts to 33, 34 or 100 and resets with the day. The fourth choice is the tasbīḥ of
+al-Zahrāʾ: thirty-four *Allāhu akbar*, thirty-three *al-ḥamdu lillāh*, thirty-three *subḥāna llāh*,
+as a sequence — the phrase you are on is printed under the number, and the buzz comes shorter where
+the phrase changes and longer where the hundred closes, which is what the dividing beads on a
+misbaḥa are for. It is the default for the Jaʿfarī and Zaydī schools and one tap away for anyone.
+The count on the home screen's bottom bar is today's, and tapping it opens the counter.
+
+**Today in Mafātīḥ al-Jinān.** For a school that reads this book, the hub lists what it has for
+today: the day's duʿāʾ from the Ṣaḥīfa's appendices, the ziyāra of the Imam whose day it is, Kumayl
+on Thursday, Nudba and Simāt on Friday, and whatever the bāb of the year says — Rajab's aʿmāl, the
+Munājāt of Shaʿbān, Iftitāḥ every night of Ramaḍān and Abū Ḥamza at saḥar, the nights of Qadr,
+Ghadīr, ʿĀshūrāʾ, Arbaʿīn. Each opens straight onto the text; the home screen carries the first as a
+single line under the ayah. The day is the civil day for now — Thursday's readings appear all
+Thursday, not from Wednesday's maghrib, though that is when *laylat al-jumuʿa* begins.
 
 ## 2e. Prayer times and salah
 

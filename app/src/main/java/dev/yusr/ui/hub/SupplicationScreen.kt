@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +26,7 @@ import dev.yusr.data.quran.SupplicationBook
 import dev.yusr.data.quran.SupplicationEntry
 import dev.yusr.data.quran.SupplicationSection
 import dev.yusr.data.quran.SupplicationText
+import dev.yusr.domain.SupplicationCollection
 import dev.yusr.ui.isArabic
 import dev.yusr.ui.t
 import dev.yusr.ui.Hairline
@@ -53,7 +55,17 @@ import dev.yusr.ui.theme.SupplicationStyle
  * which is offered, never which is permitted.
  */
 @Composable
-fun SupplicationScreen(dua: Boolean, onBack: () -> Unit) {
+fun SupplicationScreen(
+    dua: Boolean,
+    onBack: () -> Unit,
+    /**
+     * A text to open straight onto, by its id in the book — the day's reading from the hub or
+     * the home screen. Null opens the book at its front, as before. The book it is looked up in
+     * is Mafātīḥ, which is the only one with a calendar; a madhab that reads the other book
+     * still gets the text, because a reading offered is a reading that opens.
+     */
+    initialEntryId: String? = null,
+) {
     val context = LocalContext.current
     val store = remember { context.container.settingsStore }
     val supplications = remember { context.container.supplications }
@@ -63,8 +75,11 @@ fun SupplicationScreen(dua: Boolean, onBack: () -> Unit) {
 
     // Null until the madhab is known, then the book that follows from it; switched by hand below.
     var showingOther by remember { mutableStateOf(false) }
-    val book by produceState<SupplicationBook?>(null, madhab, showingOther) {
-        val collection = madhab?.collection ?: return@produceState
+    val book by produceState<SupplicationBook?>(null, madhab, showingOther, initialEntryId) {
+        val collection = when {
+            initialEntryId != null -> SupplicationCollection.MAFATIH
+            else -> madhab?.collection ?: return@produceState
+        }
         value = if (showingOther) supplications.other(collection) else supplications.book(collection)
     }
 
@@ -72,6 +87,24 @@ fun SupplicationScreen(dua: Boolean, onBack: () -> Unit) {
     var openSection by remember(book?.id) { mutableStateOf<String?>(null) }
     var openEntry by remember(book?.id) { mutableStateOf<String?>(null) }
     var showTranslation by remember { mutableStateOf(false) }
+
+    // The asked-for text is opened once, when the book it is in has arrived, and the part it
+    // sits in is opened under it so that back walks out the ordinary way. Opened once rather
+    // than pinned: after backing out of it the book is the book, and switching to the other
+    // one does not drag a Mafātīḥ id along into Ḥiṣn.
+    var pendingEntry by remember { mutableStateOf(initialEntryId) }
+    LaunchedEffect(book?.id) {
+        val pending = pendingEntry ?: return@LaunchedEffect
+        val arrived = book ?: return@LaunchedEffect
+        val home = arrived.chapters.asSequence()
+            .flatMap { it.sections.asSequence() }
+            .firstOrNull { section -> section.items.any { it.id == pending } }
+        if (home != null) {
+            openSection = home.id
+            openEntry = pending
+        }
+        pendingEntry = null
+    }
 
     // Back walks out of the book the way you walked in, and only leaves once you are at its front.
     BackHandler(enabled = openEntry != null) { openEntry = null }

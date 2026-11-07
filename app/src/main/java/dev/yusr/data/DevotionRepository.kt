@@ -5,6 +5,7 @@ import dev.yusr.data.db.DhikrDayEntity
 import dev.yusr.data.db.FastingDayEntity
 import dev.yusr.data.db.YusrDatabase
 import dev.yusr.domain.FastingCalendar
+import dev.yusr.domain.Madhab
 import dev.yusr.domain.Tasbih
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -63,9 +64,14 @@ class DevotionRepository(context: Context) {
     fun observeFastedThisMonth(today: LocalDate = LocalDate.now()): Flow<Int> =
         fasting.observeCountSince(today.withDayOfMonth(1).toString())
 
-    suspend fun setFasted(date: LocalDate, fasted: Boolean, hijriOffsetDays: Int = 0) {
+    suspend fun setFasted(
+        date: LocalDate,
+        fasted: Boolean,
+        hijriOffsetDays: Int = 0,
+        branch: Madhab.Branch = Madhab.Branch.SUNNI,
+    ) {
         if (fasted) {
-            val kind = FastingCalendar.classify(date, hijriOffsetDays).kind
+            val kind = FastingCalendar.classify(date, hijriOffsetDays, branch).kind
             fasting.upsert(FastingDayEntity(date.toString(), kind.name))
         } else {
             fasting.delete(date.toString())

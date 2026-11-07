@@ -48,7 +48,9 @@ import dev.yusr.data.settings.LocationSource
 import dev.yusr.domain.CalculationMethod
 import dev.yusr.domain.FastingCalendar
 import dev.yusr.domain.Madhab
+import dev.yusr.domain.MafatihDay
 import dev.yusr.domain.Qibla
+import dev.yusr.domain.SupplicationCollection
 import dev.yusr.ui.isArabic
 import dev.yusr.ui.methodPill
 import dev.yusr.ui.t
@@ -84,6 +86,7 @@ class HubActivity : ComponentActivity() {
         val opening = intent?.getStringExtra(EXTRA_SCREEN)
             ?.let { name -> runCatching { HubScreen.valueOf(name) }.getOrNull() }
             ?: HubScreen.HUB
+        val openingEntry = intent?.getStringExtra(EXTRA_ENTRY)
 
         setContent {
             YusrTheme {
@@ -91,12 +94,22 @@ class HubActivity : ComponentActivity() {
                 // are never more than a step apart, so a back stack of activities would be
                 // machinery around what is really one screen with sections.
                 var screen by remember { mutableStateOf(opening) }
+                // The one text the duʿāʾ page should open on, when it was reached from a reading
+                // rather than from its tile. Cleared on the way back so the tile opens the book.
+                var entry by remember { mutableStateOf(openingEntry) }
                 // Back from a page returns to the hub; back from the hub leaves.
-                BackHandler(enabled = screen != HubScreen.HUB) { screen = HubScreen.HUB }
+                BackHandler(enabled = screen != HubScreen.HUB) {
+                    screen = HubScreen.HUB
+                    entry = null
+                }
 
                 when (screen) {
                     HubScreen.HUB -> HubPage(
                         onOpen = { screen = it },
+                        onOpenReading = { id ->
+                            entry = id
+                            screen = HubScreen.DUA
+                        },
                         onOpenSettings = {
                             startActivity(Intent(this, SettingsActivity::class.java))
                         },
@@ -111,7 +124,11 @@ class HubActivity : ComponentActivity() {
                     )
                     HubScreen.DUA -> SupplicationScreen(
                         dua = true,
-                        onBack = { screen = HubScreen.HUB },
+                        initialEntryId = entry,
+                        onBack = {
+                            screen = HubScreen.HUB
+                            entry = null
+                        },
                     )
                     HubScreen.FASTING -> FastingScreen(onBack = { screen = HubScreen.HUB })
                 }
@@ -121,17 +138,26 @@ class HubActivity : ComponentActivity() {
 
     companion object {
         private const val EXTRA_SCREEN = "screen"
+        private const val EXTRA_ENTRY = "entry"
 
         /** Opens the hub straight onto one of its pages, which is how the home bar reaches them. */
         fun intent(context: Context, screen: HubScreen): Intent =
             Intent(context, HubActivity::class.java).putExtra(EXTRA_SCREEN, screen.name)
+
+        /** Opens the duʿāʾ page straight onto one text of Mafātīḥ, which is how the home screen's reading does. */
+        fun readingIntent(context: Context, entryId: String): Intent =
+            intent(context, HubScreen.DUA).putExtra(EXTRA_ENTRY, entryId)
     }
 }
 
 enum class HubScreen { HUB, PRAYER, MADHAB, QURAN, TASBIH, ADHKAR, DUA, FASTING }
 
 @Composable
-private fun HubPage(onOpen: (HubScreen) -> Unit, onOpenSettings: () -> Unit) {
+private fun HubPage(
+    onOpen: (HubScreen) -> Unit,
+    onOpenReading: (String) -> Unit,
+    onOpenSettings: () -> Unit,
+) {
     val context = LocalContext.current
     val store = remember { context.container.settingsStore }
     val prayerRepository = remember { context.container.prayerRepository }
@@ -154,6 +180,25 @@ private fun HubPage(onOpen: (HubScreen) -> Unit, onOpenSettings: () -> Unit) {
                 if (isArabic()) book.arabicTitle.ifBlank { book.title } else book.title
             }
         }
+    }
+
+    // What the book has for today, for a school that reads this book. The ids come from the
+    // calendar in the domain; the Arabic headings they print under are looked up in the index
+    // the book already loaded, so nothing here is a second copy of a title.
+    val readsMafatih = madhab?.collection == SupplicationCollection.MAFATIH
+    val readings by produceState<List<Pair<MafatihDay.Reading, String?>>>(emptyList(), readsMafatih, prayer?.hijriOffsetDays) {
+        if (!readsMafatih) {
+            value = emptyList()
+            return@produceState
+        }
+        val today = MafatihDay.readings(LocalDate.now(), prayer?.hijriOffsetDays ?: 0)
+        val index = supplications.book(SupplicationCollection.MAFATIH)
+        val titles = index?.chapters?.asSequence()
+            ?.flatMap { it.sections.asSequence() }
+            ?.flatMap { it.items.asSequence() }
+            ?.associate { it.id to it.title }
+            .orEmpty()
+        value = today.map { it to titles[it.entryId] }
     }
 
     val scroll = rememberScrollState()
@@ -199,8 +244,12 @@ private fun HubPage(onOpen: (HubScreen) -> Unit, onOpenSettings: () -> Unit) {
 
             // Six things, in two columns, each with a line saying where it stands. A grid of
             // names with nothing under them would be a launcher inside a launcher.
-            val fasting = remember(prayer?.hijriOffsetDays) {
-                FastingCalendar.classify(LocalDate.now(), prayer?.hijriOffsetDays ?: 0)
+            val fasting = remember(prayer?.hijriOffsetDays, madhab) {
+                FastingCalendar.classify(
+                    LocalDate.now(),
+                    prayer?.hijriOffsetDays ?: 0,
+                    madhab?.branch ?: Madhab.Branch.SUNNI,
+                )
             }
             HubGrid(
                 tiles = listOf(
@@ -221,13 +270,22 @@ private fun HubPage(onOpen: (HubScreen) -> Unit, onOpenSettings: () -> Unit) {
                     HubTile(t("Duʿāʾ"), book ?: t("supplications"), HubScreen.DUA),
                     HubTile(
                         t("Fasting"),
-                        if (fasting.isFast) t("%s · today", t(fasting.label)) else t("%s this month", fastedThisMonth),
+                        if (fasting.isFast) t("%s · today", fastingLabel(fasting)) else t("%s this month", fastedThisMonth),
                         HubScreen.FASTING,
                     ),
                 ),
                 onOpen = onOpen,
                 modifier = Modifier.padding(top = 26.dp),
             )
+
+            if (readings.isNotEmpty()) {
+                TodayInMafatih(
+                    readings = readings,
+                    onOpen = onOpenReading,
+                    onOpenBook = { onOpen(HubScreen.DUA) },
+                    modifier = Modifier.padding(top = 26.dp),
+                )
+            }
         }
 
         Hairline()
@@ -262,6 +320,64 @@ private fun HubPage(onOpen: (HubScreen) -> Unit, onOpenSettings: () -> Unit) {
 }
 
 private data class HubTile(val title: String, val subtitle: String, val screen: HubScreen)
+
+/**
+ * The day's readings out of Mafātīḥ al-Jinān, as a list under the grid.
+ *
+ * Each line is what the app calls the text, in the language being read, with the book's own
+ * heading under it in Arabic — the name you would look for in the printed book. The first few
+ * are shown; a Thursday in Ramaḍān has more than a screen wants, and the rest are one tap away
+ * in the book itself, where they were anyway.
+ */
+@Composable
+private fun TodayInMafatih(
+    readings: List<Pair<MafatihDay.Reading, String?>>,
+    onOpen: (String) -> Unit,
+    onOpenBook: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        SectionLabel(t("Today in Mafātīḥ al-Jinān"), modifier = Modifier.padding(bottom = 4.dp))
+        readings.take(READINGS_SHOWN).forEach { (reading, heading) ->
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .noRippleClickable { onOpen(reading.entryId) }
+                    .padding(vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                Text(
+                    text = t(reading.label),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                // The book's heading, and only when it says something the label does not: in
+                // Arabic the two are the same words twice.
+                if (heading != null && !isArabic()) {
+                    Text(
+                        text = heading,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Dim,
+                        maxLines = 1,
+                    )
+                }
+            }
+            Hairline()
+        }
+        if (readings.size > READINGS_SHOWN) {
+            Text(
+                text = t("%s more in the book →", readings.size - READINGS_SHOWN),
+                style = MaterialTheme.typography.bodySmall,
+                color = Gold,
+                modifier = Modifier
+                    .noRippleClickable(onClick = onOpenBook)
+                    .padding(vertical = 10.dp),
+            )
+        }
+    }
+}
+
+private const val READINGS_SHOWN = 5
 
 /**
  * The six tiles, as a grid drawn entirely out of the gaps between them.

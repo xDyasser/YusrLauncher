@@ -494,13 +494,21 @@ class SettingsStore(private val context: Context) {
         }
     }
 
+    /**
+     * The cycle the counter is set to, or the one the school implies until a choice has been
+     * made: the tasbīḥ of al-Zahrāʾ for the Shīʿī schools, whose after-prayer dhikr it is, and
+     * the plain thirty-three otherwise. A default, not a lock — the screen offers all four.
+     */
     val tasbihCycle: Flow<Tasbih.Cycle> = context.dataStore.data.map { prefs ->
         prefs[Keys.TASBIH_CYCLE]
             ?.let { runCatching { Tasbih.Cycle.valueOf(it) }.getOrNull() }
-            ?: Tasbih.Cycle.THIRTY_THREE
+            ?: defaultTasbihCycle(prefs[Keys.MADHAB]?.let { runCatching { Madhab.valueOf(it) }.getOrNull() })
     }
 
     suspend fun setTasbihCycle(cycle: Tasbih.Cycle) = putString(Keys.TASBIH_CYCLE, cycle.name)
+
+    private fun defaultTasbihCycle(madhab: Madhab?): Tasbih.Cycle =
+        if (madhab?.branch == Madhab.Branch.SHIA) Tasbih.Cycle.ZAHRA else Tasbih.Cycle.THIRTY_THREE
 
     private suspend fun putInt(key: Preferences.Key<Int>, value: Int) {
         context.dataStore.edit { it[key] = value }

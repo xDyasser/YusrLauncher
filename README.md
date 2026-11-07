@@ -64,8 +64,17 @@ can equally type. Nothing is ever uploaded; there is no account and no analytics
   al-Fātiḥa keeps it as the ayah it is.
   Nothing is cut to make that true: the text is taken from an edition that numbers the book the
   way the mushaf does, so al-Baqara 2:1 arrives as *alif lām mīm* — a tasbīḥ, the adhkār, the duʿāʾ,
-  and a fasting calendar that knows the white days, Mondays and Thursdays, ʿĀshūrāʾ and ʿArafah
-  from the Hijri date and never suggests a fast on an Eid.
+  and a fasting calendar that knows the white days, ʿArafah and the rest from the Hijri date and
+  never suggests a fast on an Eid. It keeps the school's own days: Mondays and Thursdays and the
+  ʿĀshūrāʾ fast for the Sunnī schools; for the Jaʿfarī and Zaydī the first and last Thursday and
+  the Wednesday between, 27 Rajab, 15 Shaʿbān, Ghadīr, the Mubāhala and Daḥw al-Arḍ — and ʿĀshūrāʾ
+  shown as the *imsāk* it is for them, never as a fast to mark.
+- **The book's own calendar.** For a school that reads Mafātīḥ al-Jinān, the hub lists what the
+  book has for today — the day's duʿāʾ and the Imam whose day it is, Kumayl on Thursday, Nudba
+  and Simāt on Friday, and the bāb of the year as it comes round: Rajab, the nights of Ramaḍān one
+  by one, Ghadīr, ʿĀshūrāʾ, Arbaʿīn. The home screen carries the first of them as one line, and
+  each opens straight onto the text. The tasbīḥ knows the tasbīḥ of al-Zahrāʾ as a sequence —
+  thirty-four, thirty-three, thirty-three — and says which phrase you are on.
 - **Al-Mīzān on every ayah, and the colours of tajwīd.** Hold a word of the page down and
   ʿAllāma al-Ṭabāṭabāʾī's tafsīr opens on it — the Arabic original, all twenty volumes of it,
   in the APK rather than fetched, so the commentary works wherever the mushaf does. It opens on
@@ -191,7 +200,7 @@ Locally:
 domain/     pure logic, no Android imports — GateEvaluator, BudgetCalculator, ForegroundTally,
             BlackoutSchedule,
             NotificationPolicy, PrayerTimes, PrayerWindows, Fadila, Madhab, Qibla, Hijri,
-            FastingCalendar, Tasbih, Dhikr, FavoriteOrder
+            FastingCalendar, MafatihDay, Tasbih, Dhikr, FavoriteOrder
 data/       Room rules and history, DataStore settings, RuleMutator (the tighten/loosen asymmetry),
             the prayer timetable, the Qur'an and its recitation, the bundled supplications,
             al-Mīzān and the rules of tajwīd, and the network fetches

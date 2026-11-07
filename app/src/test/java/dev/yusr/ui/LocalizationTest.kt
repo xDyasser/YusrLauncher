@@ -3,6 +3,7 @@ package dev.yusr.ui
 import dev.yusr.data.quran.Reciters
 import dev.yusr.domain.AppTier
 import dev.yusr.domain.CalculationMethod
+import dev.yusr.domain.MafatihDay
 import dev.yusr.util.DayClock
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -26,6 +27,14 @@ class LocalizationTest {
     @After
     fun restore() {
         Locale.setDefault(original)
+    }
+
+    @Test
+    fun `every reading the Mafatih calendar can name has its Arabic`() {
+        // These are the one set of labels that come out of the domain by the dozen, and a reader
+        // in Arabic opening the book on a Thursday should not meet "Duʿāʾ Kumayl" in Latin letters.
+        val missing = MafatihDay.ALL_LABELS.filter { it !in ArabicStrings.TABLE }
+        assertTrue("no Arabic for: $missing", missing.isEmpty())
     }
 
     @Test

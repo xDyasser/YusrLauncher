@@ -70,9 +70,11 @@ import dev.yusr.data.settings.AyahLanguage
 import dev.yusr.data.settings.NO_WIDGET
 import dev.yusr.domain.FavoriteOrder
 import dev.yusr.domain.Hijri
+import dev.yusr.domain.MafatihDay
 import dev.yusr.domain.Prayer
 import dev.yusr.domain.PrayerEntry
 import dev.yusr.domain.PrayerWindow
+import dev.yusr.domain.SupplicationCollection
 import dev.yusr.service.GuardService
 import dev.yusr.ui.AppLauncher
 import dev.yusr.ui.Hairline
@@ -166,6 +168,7 @@ class HomeActivity : ComponentActivity() {
                     onOpenSetup = { startActivity(SettingsActivity.setupIntent(this)) },
                     onOpenHub = { startActivity(Intent(this, HubActivity::class.java)) },
                     onOpenTasbih = { startActivity(HubActivity.intent(this, HubScreen.TASBIH)) },
+                    onOpenReading = { id -> startActivity(HubActivity.readingIntent(this, id)) },
                 )
             }
         }
@@ -187,6 +190,7 @@ private fun HomeScreen(
     onOpenSetup: () -> Unit,
     onOpenHub: () -> Unit,
     onOpenTasbih: () -> Unit,
+    onOpenReading: (String) -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -336,6 +340,24 @@ private fun HomeScreen(
                 onHide = { scope.launch { store.setHomeAyahHidden(true) } },
                 modifier = Modifier.padding(top = 14.dp),
             )
+        }
+
+        // One line for a school that reads Mafātīḥ: the day's first reading out of the book, and
+        // a way straight into it. The hub has the whole list; the home screen has room for the
+        // one that matters most today, and says so once rather than listing.
+        if (prayerSettings != null && prayerSettings.effectiveMadhab.collection == SupplicationCollection.MAFATIH) {
+            val reading = remember(now / 3_600_000, prayerSettings.hijriOffsetDays) {
+                MafatihDay.readings(
+                    DayClock.localDateTime(now).toLocalDate(),
+                    prayerSettings.hijriOffsetDays,
+                ).firstOrNull()
+            }
+            if (reading != null) {
+                ReadingLine(
+                    label = t(reading.label),
+                    onOpen = { onOpenReading(reading.entryId) },
+                )
+            }
         }
 
         // The names take whatever room is left and scroll inside it. Twenty favourites is a bad
@@ -712,6 +734,38 @@ private fun AyahCard(
         }
         Hairline(modifier = Modifier.padding(top = 4.dp))
     }
+}
+
+/**
+ * "Today in Mafātīḥ · Duʿāʾ Kumayl →": the book's reading for the day, set as faintly as the
+ * line that moves the ayah on, because it is the same kind of thing — a door, not a notice.
+ */
+@Composable
+private fun ReadingLine(label: String, onOpen: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .noRippleClickable(onClick = onOpen)
+            .padding(vertical = 9.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = t("Today in Mafātīḥ · %s", label),
+            style = MaterialTheme.typography.bodySmall,
+            color = Dim,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = t("open →"),
+            style = MaterialTheme.typography.labelSmall,
+            color = Fainter,
+            modifier = Modifier.padding(start = 12.dp),
+        )
+    }
+    Hairline()
 }
 
 /** Hub on the left, the drawer in the middle, the day's count on the right. */
