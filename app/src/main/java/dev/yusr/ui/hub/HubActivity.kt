@@ -49,6 +49,8 @@ import dev.yusr.domain.CalculationMethod
 import dev.yusr.domain.FastingCalendar
 import dev.yusr.domain.Madhab
 import dev.yusr.domain.MafatihDay
+import dev.yusr.domain.Prayer
+import dev.yusr.domain.PrayerLog
 import dev.yusr.domain.Qibla
 import dev.yusr.domain.SupplicationCollection
 import dev.yusr.ui.isArabic
@@ -65,6 +67,7 @@ import dev.yusr.ui.theme.Fainter
 import dev.yusr.ui.theme.Gold
 import dev.yusr.ui.theme.YusrTheme
 import dev.yusr.util.DayClock
+import kotlinx.coroutines.flow.flowOf
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
@@ -173,6 +176,19 @@ private fun HubPage(
     val today by produceState<PrayerToday?>(null, prayer) { value = prayerRepository.today() }
     val heading = rememberHeading()
 
+    // The record under the prayer tile: how many of today's five are marked, and how many of
+    // the week's are owed. Read from the same log the home screen writes.
+    val prayerLog = remember { context.container.prayerLog }
+    val logDate = today?.date
+    val prayed by remember(logDate) {
+        logDate?.let { prayerLog.observePrayed(it) } ?: flowOf(emptySet<Prayer>())
+    }.collectAsState(initial = emptySet<Prayer>())
+    val prayedToday = remember(today, prayed, prayer) {
+        val snapshot = today ?: return@remember 0
+        PrayerLog.prayed(prayerLog.states(snapshot, prayed, prayer?.effectiveMadhab?.branch ?: Madhab.Branch.SUNNI))
+    }
+    val owedThisWeek by remember(logDate) { prayerLog.observeMissedSince(7) }.collectAsState(initial = 0)
+
     val madhab = prayer?.effectiveMadhab
     val book by produceState<String?>(null, madhab) {
         value = madhab?.let {
@@ -253,7 +269,7 @@ private fun HubPage(
             }
             HubGrid(
                 tiles = listOf(
-                    HubTile(t("Prayer times"), prayerSubtitle(today, prayer?.showFadila == true), HubScreen.PRAYER),
+                    HubTile(t("Prayer times"), prayerSubtitle(today, prayedToday, owedThisWeek), HubScreen.PRAYER),
                     HubTile(
                         t("Qur'an"),
                         (if (isArabic()) {
@@ -503,10 +519,15 @@ private fun QiblaBlock(
 private fun prayerLabel(today: PrayerToday): String =
     dev.yusr.ui.home.prayerName(today.next.prayer)
 
-private fun prayerSubtitle(today: PrayerToday?, fadila: Boolean): String = when {
+/**
+ * "3 of 5 prayed", and the week's debt when there is one. The record rather than the setting,
+ * because the tile used to say "faḍīla shown", which is a fact about a preference, and this is a
+ * fact about the day.
+ */
+private fun prayerSubtitle(today: PrayerToday?, prayedToday: Int, owedThisWeek: Int): String = when {
     today == null -> t("not set up")
-    fadila -> t("5 today · faḍīla shown")
-    else -> t("5 today")
+    owedThisWeek > 0 -> t("%s of 5 prayed · %s owed this week", prayedToday, owedThisWeek)
+    else -> t("%s of 5 prayed", prayedToday)
 }
 
 /**

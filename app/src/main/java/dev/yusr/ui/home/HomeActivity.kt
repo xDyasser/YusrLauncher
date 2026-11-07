@@ -70,9 +70,11 @@ import dev.yusr.data.settings.AyahLanguage
 import dev.yusr.data.settings.NO_WIDGET
 import dev.yusr.domain.FavoriteOrder
 import dev.yusr.domain.Hijri
+import dev.yusr.domain.Madhab
 import dev.yusr.domain.MafatihDay
 import dev.yusr.domain.Prayer
 import dev.yusr.domain.PrayerEntry
+import dev.yusr.domain.PrayerLog
 import dev.yusr.domain.PrayerWindow
 import dev.yusr.domain.SupplicationCollection
 import dev.yusr.service.GuardService
@@ -96,6 +98,7 @@ import dev.yusr.ui.theme.YusrTheme
 import dev.yusr.ui.theme.QuranQuoteStyle
 import dev.yusr.util.DayClock
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -228,6 +231,19 @@ private fun HomeScreen(
         value = prayerRepository.activeWindow(now)
     }
 
+    // The day's record: which of the five have been marked, and from that and the timetable
+    // where each one stands. Keyed on the date so that midnight starts a fresh page.
+    val prayerLog = remember { context.container.prayerLog }
+    val logDate = today?.date
+    val prayed by remember(logDate) {
+        logDate?.let { prayerLog.observePrayed(it) } ?: flowOf(emptySet<Prayer>())
+    }.collectAsState(initial = emptySet<Prayer>())
+    val prayerStates: Map<Prayer, PrayerLog.State> = remember(today, prayed, prayerSettings) {
+        val snapshot = today ?: return@remember emptyMap<Prayer, PrayerLog.State>()
+        val branch = prayerSettings?.effectiveMadhab?.branch ?: Madhab.Branch.SUNNI
+        prayerLog.states(snapshot, prayed, branch)
+    }
+
     // The ayah on the home screen is the one the reader is bookmarked at, and tapping it moves the
     // bookmark on by one. Not a random verse: the home screen and the mushaf are the same place in
     // the book, so reading a line here is reading a line of the Qur'an in order, and the reader
@@ -311,7 +327,19 @@ private fun HomeScreen(
                 modifier = Modifier.padding(top = 20.dp),
             )
         } else {
-            today?.let { PrayerStrip(it, modifier = Modifier.padding(top = 22.dp)) }
+            today?.let { snapshot ->
+                PrayerStrip(
+                    today = snapshot,
+                    states = prayerStates,
+                    onToggle = { entry ->
+                        val (prayers, mark) = PrayerLog.toggle(entry, prayerStates)
+                        scope.launch {
+                            prayers.forEach { prayerLog.setPrayed(snapshot.date, it, mark) }
+                        }
+                    },
+                    modifier = Modifier.padding(top = 22.dp),
+                )
+            }
         }
 
         val ayahHidden = settings?.homeAyahHidden == true
@@ -519,7 +547,13 @@ private fun ClockBlock(
  * "dhuhr's faḍīla ends in 42 m" is a reason to put the phone down now.
  */
 @Composable
-private fun PrayerStrip(today: PrayerToday, modifier: Modifier = Modifier) {
+private fun PrayerStrip(
+    today: PrayerToday,
+    /** Where each of the five stands in the log, or empty before the log has been read. */
+    states: Map<Prayer, PrayerLog.State>,
+    onToggle: (PrayerEntry) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(modifier = modifier.fillMaxWidth()) {
         Hairline()
         Row(
@@ -532,25 +566,43 @@ private fun PrayerStrip(today: PrayerToday, modifier: Modifier = Modifier) {
                 val isNext = entry.covers(today.next.prayer) && !today.next.tomorrow
                 val minute = entry.minuteOfDay
                 val passed = minute <= today.minuteOfDay
+                // A line is prayed when everything on it is; a joined line half done still asks.
+                val onLine = PrayerLog.OWED.filter { entry.covers(it) }
+                val prayed = onLine.isNotEmpty() && onLine.all { states[it] == PrayerLog.State.PRAYED }
+                val markable = onLine.any { states[it]?.markable == true }
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(5.dp),
+                    // The column is the button: once a prayer's time is in, a tap on it marks it
+                    // prayed, and a tap on a marked one unmarks it. Nothing to find, nothing to
+                    // open — the record is kept where the time is read.
+                    modifier = Modifier
+                        .noRippleClickable(enabled = markable) { onToggle(entry) }
+                        .padding(horizontal = 4.dp),
                 ) {
                     Text(
                         text = prayerName(entry),
                         style = MaterialTheme.typography.bodySmall,
-                        // Next in gold, already prayed in the mid grey, still to come the faintest
-                        // — so the strip reads as a position in the day rather than a table.
+                        // Next in gold, prayed in the reading colour, passed and unmarked in the
+                        // mid grey, still to come the faintest — so the strip reads as a position
+                        // in the day, and as the day's record, rather than a table.
                         color = when {
                             isNext -> Gold
+                            prayed -> MaterialTheme.colorScheme.onBackground
                             passed -> Faint
                             else -> Dim
                         },
                     )
                     Text(
-                        text = DayClock.clock(minute),
+                        // The tick is the whole of the record's display: the time stays, so the
+                        // strip never loses the one thing it was for.
+                        text = if (prayed) "✓ ${DayClock.clock(minute)}" else DayClock.clock(minute),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (isNext) Gold else Faint,
+                        color = when {
+                            isNext -> Gold
+                            prayed -> Dim
+                            else -> Faint
+                        },
                     )
                 }
             }
@@ -598,6 +650,28 @@ private fun PrayerStrip(today: PrayerToday, modifier: Modifier = Modifier) {
             maxLines = 1,
             modifier = Modifier.padding(top = 5.dp),
         )
+
+        // The one question the log has for you, when it has one: the earliest prayer whose time
+        // is in and which has not been marked. Set no louder than the night line, because it is
+        // asked all afternoon and a loud question asked all afternoon is a nag; but asked, because
+        // the record is only worth keeping if it is kept.
+        PrayerLog.outstanding(states)?.let { prayer ->
+            val entry = today.entries.firstOrNull { it.covers(prayer) } ?: return@let
+            val owed = states[prayer] == PrayerLog.State.MISSED
+            Text(
+                text = if (owed) {
+                    t("%s owed · mark as prayed →", t(prayerName(prayer)))
+                } else {
+                    t("mark %s as prayed →", t(prayerName(prayer)))
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = if (owed) Faint else Dim,
+                maxLines = 1,
+                modifier = Modifier
+                    .noRippleClickable { onToggle(entry) }
+                    .padding(top = 6.dp),
+            )
+        }
     }
 }
 

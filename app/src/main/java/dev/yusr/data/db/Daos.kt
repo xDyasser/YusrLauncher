@@ -214,6 +214,21 @@ interface DhikrDayDao {
 }
 
 @Dao
+interface PrayerLogDao {
+    @Query("SELECT * FROM prayer_log WHERE date = :date")
+    fun observeDay(date: String): Flow<List<PrayerLogEntity>>
+
+    @Query("SELECT * FROM prayer_log WHERE date >= :from ORDER BY date")
+    fun observeSince(from: String): Flow<List<PrayerLogEntity>>
+
+    @Upsert
+    suspend fun upsert(row: PrayerLogEntity)
+
+    @Query("DELETE FROM prayer_log WHERE date = :date AND prayer = :prayer")
+    suspend fun delete(date: String, prayer: String)
+}
+
+@Dao
 interface FastingDayDao {
     @Query("SELECT * FROM fasting_days ORDER BY date DESC")
     fun observeAll(): Flow<List<FastingDayEntity>>

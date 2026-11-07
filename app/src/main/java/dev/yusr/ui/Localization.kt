@@ -406,6 +406,15 @@ private val HUB = mapOf(
     "qibla" to "القبلة",
     "5 today" to "خمس اليوم",
     "5 today · faḍīla shown" to "خمس اليوم · مع أوقات الفضيلة",
+    // ---- the prayer log
+    "%s of 5 prayed" to "%s من ٥ صُلّيت",
+    "%s of 5 prayed · %s owed this week" to "%s من ٥ صُلّيت · %s قضاء هذا الأسبوع",
+    "%s · %s owed this week" to "%s · %s قضاء هذا الأسبوع",
+    "prayed ✓" to "صُلّيت ✓",
+    "owed · tap to mark as prayed" to "قضاء · المس لتسجيلها مصلّاة",
+    "tap to mark as prayed" to "المس لتسجيلها مصلّاة",
+    "mark %s as prayed →" to "← سجّل %s مصلّاة",
+    "%s owed · mark as prayed →" to "← %s قضاء · سجّلها مصلّاة",
     "Computed on this phone · your location never leaves it" to
         "يُحسب في هذا الهاتف · موقعك لا يغادره",
     "No location set, so there is no timetable to show." to

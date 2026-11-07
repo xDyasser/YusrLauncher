@@ -148,6 +148,23 @@ data class FastingDayEntity(
 )
 
 /**
+ * One prayer marked as prayed.
+ *
+ * Only the prayers actually marked are stored, one row each, keyed by the day they belong to
+ * and the prayer. Which of the five are *owed* is arithmetic on the timetable and the clock —
+ * see [dev.yusr.domain.PrayerLog] — so the one thing worth writing down is the answer to "did
+ * you?", and the moment it was given.
+ */
+@Entity(tableName = "prayer_log", primaryKeys = ["date", "prayer"])
+data class PrayerLogEntity(
+    /** The local date the prayer belongs to, ISO-8601 — ʿishāʾ prayed at 00:30 is still yesterday's. */
+    val date: String,
+    /** [dev.yusr.domain.Prayer] by name. */
+    val prayer: String,
+    val prayedAtMillis: Long,
+)
+
+/**
  * A settings change that makes the rules *weaker*. It sits here until [applyAtMillis] passes,
  * so a craving cannot undo a decision made calmly. Tightening changes never come through here.
  */

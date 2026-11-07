@@ -20,8 +20,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         QuranAyahEntity::class,
         DhikrDayEntity::class,
         FastingDayEntity::class,
+        PrayerLogEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -37,6 +38,7 @@ abstract class YusrDatabase : RoomDatabase() {
     abstract fun quranAyahDao(): QuranAyahDao
     abstract fun dhikrDayDao(): DhikrDayDao
     abstract fun fastingDayDao(): FastingDayDao
+    abstract fun prayerLogDao(): PrayerLogDao
 
     companion object {
 
@@ -148,6 +150,22 @@ abstract class YusrDatabase : RoomDatabase() {
             }
         }
 
+        /** Adds the prayer log: one row per prayer marked as prayed. Nothing to move. */
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS prayer_log (
+                        date TEXT NOT NULL,
+                        prayer TEXT NOT NULL,
+                        prayedAtMillis INTEGER NOT NULL,
+                        PRIMARY KEY (date, prayer)
+                    )
+                    """.trimIndent(),
+                )
+            }
+        }
+
         @Volatile
         private var instance: YusrDatabase? = null
 
@@ -163,6 +181,7 @@ abstract class YusrDatabase : RoomDatabase() {
                 MIGRATION_4_5,
                 MIGRATION_5_6,
                 MIGRATION_6_7,
+                MIGRATION_7_8,
             )
                 .build()
                 .also { instance = it }

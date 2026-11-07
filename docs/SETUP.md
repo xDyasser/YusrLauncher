@@ -194,6 +194,16 @@ either book carries its source. To add to it, edit `app/src/main/assets/supplica
 rebuild: it is data, not code, so a new supplication is a new object in that file from an edition
 you trust and nothing else.
 
+**The prayer log.** Once a prayer's time is in, tapping its column in the home screen's strip
+marks it prayed — a tick appears beside the time — and tapping again unmarks it. On a joined line
+one tap marks both. A faint line under the strip names the earliest prayer still unmarked; when
+its time runs out unmarked it is counted as owed, and the line says so. The ends are the schools'
+own: fajr at sunrise, dhuhr and ʿaṣr at maghrib, maghrib and ʿishāʾ at sharʿī midnight for the
+Jaʿfarī and Zaydī and at ʿishāʾ and fajr for the Sunnī schools. The **Prayer times** page keeps the
+same record under each line, and its heading and the hub tile say how many of the week's prayers
+are owed. Nothing enforces any of it; it is a ledger, kept so that the number of prayers owed is
+known rather than guessed.
+
 **Fasting** needs no setting up. The recurring sunna fasts are calendar facts, so the app works
 them out from the Hijri date and the school you chose: the white days (the 13th to the 15th of any
 month), ʿArafah and Ramaḍān in full for everyone; Mondays and Thursdays and the ʿĀshūrāʾ fast for

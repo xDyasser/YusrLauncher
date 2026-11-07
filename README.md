@@ -144,6 +144,12 @@ can equally type. Nothing is ever uploaded; there is no account and no analytics
 - **The gate.** Reaching a gated app costs a typed name, a written reason, and an escalating
   countdown (15s, then 30s, then 45s… capped at five minutes). Pasting is disabled; leaving the
   screen restarts the countdown.
+- **A prayer log.** Once a prayer's time is in, a tap on it in the home strip or on the prayer
+  page marks it prayed; a prayer whose time runs out unmarked is counted as owed — fajr at
+  sunrise, dhuhr and ʿaṣr at maghrib, the night pair at sharʿī midnight for the Shīʿī schools and
+  at ʿishāʾ and fajr for the Sunnī. The hub says how many of today's five are prayed and how many
+  of the week's are owed. It is a record, and it feeds nothing else: the gate and the budgets
+  never read it.
 - **Hard budgets.** Per-app daily minutes and daily opens. Spent is spent.
 - **Blackout windows.** Hours when only favourites open at all — sleep, work, evenings.
 - **Notification suppression.** Notifications from gated apps are dismissed as they arrive and
@@ -200,7 +206,7 @@ Locally:
 domain/     pure logic, no Android imports — GateEvaluator, BudgetCalculator, ForegroundTally,
             BlackoutSchedule,
             NotificationPolicy, PrayerTimes, PrayerWindows, Fadila, Madhab, Qibla, Hijri,
-            FastingCalendar, MafatihDay, Tasbih, Dhikr, FavoriteOrder
+            FastingCalendar, MafatihDay, PrayerLog, Tasbih, Dhikr, FavoriteOrder
 data/       Room rules and history, DataStore settings, RuleMutator (the tighten/loosen asymmetry),
             the prayer timetable, the Qur'an and its recitation, the bundled supplications,
             al-Mīzān and the rules of tajwīd, and the network fetches
