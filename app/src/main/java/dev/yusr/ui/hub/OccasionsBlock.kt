@@ -87,8 +87,10 @@ internal fun OccasionsBlock(
 /**
  * The colour a line about [tone] is set in: gold for a joyful day that is today, the reading
  * colour for anything else that is today, and nothing particular for the days ahead.
- * [Color.Unspecified] means "the screen's own reading colour".
+ * [Color.Unspecified] means "the screen's own reading colour". Composable because the theme's
+ * colours are read from the composition.
  */
+@Composable
 internal fun occasionColour(tone: Occasions.Tone, isToday: Boolean): Color = when {
     isToday && tone == Occasions.Tone.JOY -> Gold
     isToday -> Color.Unspecified
