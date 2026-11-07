@@ -36,6 +36,11 @@ class YusrApp : Application() {
         createNotificationChannels()
         WorkScheduler.scheduleRecurring(this)
         restoreLanguage()
+        // The night alarm is set from here as well as from boot and the settings screen, so a
+        // timetable that moved — a new place, a clock change — is caught the next time the app runs.
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+            runCatching { dev.yusr.service.NightWakeAlarm.schedule(this@YusrApp) }
+        }
     }
 
     /**
@@ -68,6 +73,36 @@ class YusrApp : Application() {
 
         manager.createNotificationChannel(
             NotificationChannel(
+                CHANNEL_NIGHT,
+                getString(R.string.night_channel_name),
+                NotificationManager.IMPORTANCE_HIGH,
+            ).apply {
+                description = getString(R.string.night_channel_description)
+                // Sounds as an alarm does — through the alarm volume, and through Do Not Disturb
+                // where the phone lets alarms through — because that is what it is.
+                setSound(
+                    android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_ALARM),
+                    android.media.AudioAttributes.Builder()
+                        .setUsage(android.media.AudioAttributes.USAGE_ALARM)
+                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build(),
+                )
+                setBypassDnd(true)
+            },
+        )
+
+        manager.createNotificationChannel(
+            NotificationChannel(
+                CHANNEL_KHUMS,
+                getString(R.string.khums_channel_name),
+                NotificationManager.IMPORTANCE_DEFAULT,
+            ).apply {
+                description = getString(R.string.khums_channel_description)
+            },
+        )
+
+        manager.createNotificationChannel(
+            NotificationChannel(
                 CHANNEL_DIGEST,
                 getString(R.string.digest_channel_name),
                 NotificationManager.IMPORTANCE_LOW,
@@ -80,6 +115,8 @@ class YusrApp : Application() {
     companion object {
         const val CHANNEL_GUARD = "guard"
         const val CHANNEL_DIGEST = "digest"
+        const val CHANNEL_NIGHT = "night-wake"
+        const val CHANNEL_KHUMS = "khums"
     }
 }
 

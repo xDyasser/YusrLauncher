@@ -30,6 +30,12 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- The ṣalāt al-layl alarm, and only that. An alarm clock's own permission: granted at
+         install from Android 13, which is this app's floor, so there is nothing to ask. -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <!-- So the alarm can light a locked screen, as every alarm clock does. -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+
     <!-- Lets the checklist ask for the battery exemption with one dialog instead of sending
          someone into a settings list to find this app by name. Play forbids this permission
          outside a handful of categories; this app is sideloaded and could never be listed
@@ -159,6 +165,20 @@
                 <data android:scheme="package" />
             </intent-filter>
         </receiver>
+
+        <!-- The night alarm: shown over the lock screen, nothing else in the app is. -->
+        <activity
+            android:name=".ui.night.NightWakeActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:excludeFromRecents="true"
+            android:taskAffinity=".night"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true" />
+
+        <receiver
+            android:name=".service.NightWakeReceiver"
+            android:exported="false" />
 
         <receiver
             android:name=".receiver.BootReceiver"

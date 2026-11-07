@@ -8,6 +8,10 @@
     <string name="guard_channel_description">Keeps the limit enforcement running.</string>
     <string name="digest_channel_name">Notification digest</string>
     <string name="digest_channel_description">A once-or-twice daily summary of notifications that were held back.</string>
+    <string name="night_channel_name">Ṣalāt al-layl</string>
+    <string name="night_channel_description">The alarm for the night prayer, if you set one.</string>
+    <string name="khums_channel_name">Khums</string>
+    <string name="khums_channel_description">A week before your khums year ends, and on the day.</string>
     <string name="guard_notification_title">Yusr Launcher is on</string>
     <string name="nav_service_label">Yusr Launcher navigation</string>
     <string name="nav_service_summary">Home, back and recent apps from a strip along the bottom edge.</string>

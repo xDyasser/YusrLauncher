@@ -194,6 +194,21 @@ either book carries its source. To add to it, edit `app/src/main/assets/supplica
 rebuild: it is data, not code, so a new supplication is a new object in that file from an edition
 you trust and nothing else.
 
+**The night and khums** (**Settings → The night and khums**). Two things that happen without the
+phone being picked up, and neither loosens a rule, so both apply at once.
+
+The *ṣalāt al-layl alarm* is set from fajr or from the start of the night's last third, and a
+number of minutes before it — an hour before fajr to start, which is time for wuḍūʾ, eleven rakʿāt
+and the duʿāʾ before the adhan. Both are worked out from the sun each night, so the alarm moves
+with the seasons and with you. It is a real alarm clock: it rings through the alarm volume, shows
+as the next alarm in the status bar, lights a locked screen, and keeps sounding until answered —
+*I'm up*, or *ten more minutes*. It needs no permission prompt: on Android 13 and later the
+alarm-clock permission is granted at install. It is set again after a reboot and every time it
+rings, so a change of place or season is picked up the next night.
+
+The *khums reminder* is a date of your own — the day your khums year ends — and a notification a
+week before it and on the day. The app keeps the date; the reckoning is yours.
+
 **Jumuʿa and your week.** On a Friday the home screen adds one line: *al-Kahf*, which opens the
 mushaf at sūrah 18 as a visit — turning its pages does not move the bookmark your reading is kept
 at — and *your week*, the hub's seventh tile. That is a muḥāsaba of the last seven days, out of

@@ -217,6 +217,16 @@ data class AppSettings(
     val earnedMinutesEnabled: Boolean = false,
     /** The most the pool can hold in a day. Raising it waits; lowering it does not. */
     val earnedMinutesCap: Int = dev.yusr.domain.EarnedMinutes.DEFAULT_CAP,
+    /** An alarm for ṣalāt al-layl, off unless asked for — see [dev.yusr.domain.NightWake]. */
+    val nightWakeEnabled: Boolean = false,
+    val nightWakeAnchor: dev.yusr.domain.NightWake.Anchor = dev.yusr.domain.NightWake.Anchor.FAJR,
+    val nightWakeMinutesBefore: Int = 60,
+    /** A reminder that the khums year is ending, on a date of the user's own. */
+    val khumsEnabled: Boolean = false,
+    val khumsMonth: Int = 1,
+    val khumsDay: Int = 1,
+    /** The last day a khums reminder went out, so one day is never reminded twice. */
+    val khumsLastReminded: String? = null,
     val prayer: PrayerSettings = PrayerSettings(),
 )
 
@@ -263,6 +273,13 @@ class SettingsStore(private val context: Context) {
         val TAJWEED = booleanPreferencesKey("tajweed_colours")
         val EARNED_ENABLED = booleanPreferencesKey("earned_minutes_enabled")
         val EARNED_CAP = intPreferencesKey("earned_minutes_cap")
+        val NIGHT_WAKE = booleanPreferencesKey("night_wake_enabled")
+        val NIGHT_WAKE_ANCHOR = stringPreferencesKey("night_wake_anchor")
+        val NIGHT_WAKE_BEFORE = intPreferencesKey("night_wake_minutes_before")
+        val KHUMS = booleanPreferencesKey("khums_enabled")
+        val KHUMS_MONTH = intPreferencesKey("khums_month")
+        val KHUMS_DAY = intPreferencesKey("khums_day")
+        val KHUMS_LAST = stringPreferencesKey("khums_last_reminded")
         val AYAT_READ_DATE = stringPreferencesKey("ayat_read_date")
         val AYAT_READ_COUNT = intPreferencesKey("ayat_read_count")
         val AYAT_READ_LAST = longPreferencesKey("ayat_read_last_counted_at")
@@ -319,6 +336,15 @@ class SettingsStore(private val context: Context) {
             tajweedColours = prefs[Keys.TAJWEED] ?: defaults.tajweedColours,
             earnedMinutesEnabled = prefs[Keys.EARNED_ENABLED] ?: defaults.earnedMinutesEnabled,
             earnedMinutesCap = prefs[Keys.EARNED_CAP] ?: defaults.earnedMinutesCap,
+            nightWakeEnabled = prefs[Keys.NIGHT_WAKE] ?: defaults.nightWakeEnabled,
+            nightWakeAnchor = prefs[Keys.NIGHT_WAKE_ANCHOR]
+                ?.let { runCatching { dev.yusr.domain.NightWake.Anchor.valueOf(it) }.getOrNull() }
+                ?: defaults.nightWakeAnchor,
+            nightWakeMinutesBefore = prefs[Keys.NIGHT_WAKE_BEFORE] ?: defaults.nightWakeMinutesBefore,
+            khumsEnabled = prefs[Keys.KHUMS] ?: defaults.khumsEnabled,
+            khumsMonth = prefs[Keys.KHUMS_MONTH] ?: defaults.khumsMonth,
+            khumsDay = prefs[Keys.KHUMS_DAY] ?: defaults.khumsDay,
+            khumsLastReminded = prefs[Keys.KHUMS_LAST],
             prayer = readPrayer(prefs, defaults.prayer),
         )
     }
@@ -459,6 +485,29 @@ class SettingsStore(private val context: Context) {
     suspend fun setEarnedMinutesEnabled(enabled: Boolean) = putBoolean(Keys.EARNED_ENABLED, enabled)
 
     suspend fun setEarnedMinutesCap(minutes: Int) = putInt(Keys.EARNED_CAP, minutes)
+
+    // ---- the night, and the khums year ---------------------------------------------------
+    //
+    // Neither loosens a rule — an alarm and a reminder are not screen time — so both apply at once
+    // and do not pass through the rule mutator.
+
+    suspend fun setNightWakeEnabled(enabled: Boolean) = putBoolean(Keys.NIGHT_WAKE, enabled)
+
+    suspend fun setNightWakeAnchor(anchor: dev.yusr.domain.NightWake.Anchor) = putString(Keys.NIGHT_WAKE_ANCHOR, anchor.name)
+
+    suspend fun setNightWakeMinutesBefore(minutes: Int) =
+        putInt(Keys.NIGHT_WAKE_BEFORE, minutes.coerceIn(0, dev.yusr.domain.NightWake.MAX_MINUTES_BEFORE))
+
+    suspend fun setKhumsEnabled(enabled: Boolean) = putBoolean(Keys.KHUMS, enabled)
+
+    suspend fun setKhumsDate(month: Int, day: Int) {
+        context.dataStore.edit {
+            it[Keys.KHUMS_MONTH] = month.coerceIn(1, 12)
+            it[Keys.KHUMS_DAY] = day.coerceIn(1, 31)
+        }
+    }
+
+    suspend fun setKhumsLastReminded(date: String) = putString(Keys.KHUMS_LAST, date)
 
     // ---- āyāt read today, for the earned minutes ---------------------------------------------
 

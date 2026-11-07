@@ -17,6 +17,7 @@ object WorkScheduler {
     private const val DIGEST = "notification-digest"
     private const val PRAYER_SYNC = "prayer-sync"
     private const val QURAN_DOWNLOAD = "quran-download"
+    private const val KHUMS = "khums-reminder"
 
     fun scheduleRecurring(context: Context) {
         val manager = WorkManager.getInstance(context)
@@ -33,6 +34,13 @@ object WorkScheduler {
             DIGEST,
             ExistingPeriodicWorkPolicy.KEEP,
             PeriodicWorkRequestBuilder<DigestWorker>(1, TimeUnit.HOURS).build(),
+        )
+
+        // The khums reminder is a date, so a daily look is all it needs.
+        manager.enqueueUniquePeriodicWork(
+            KHUMS,
+            ExistingPeriodicWorkPolicy.KEEP,
+            PeriodicWorkRequestBuilder<KhumsWorker>(1, TimeUnit.DAYS).build(),
         )
 
         // Once a day is plenty: a month of times is fetched at a time, and the solver covers

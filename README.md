@@ -150,6 +150,11 @@ can equally type. Nothing is ever uploaded; there is no account and no analytics
   the Eids and ʿArafah. Today's occasion sits under the date on the home screen, in gold for a
   birth or an Eid and never for a martyrdom; the hub lists the next few, each opening onto its
   ziyāra or aʿmāl in Mafātīḥ where the book has one.
+- **An alarm for the night prayer, and the khums year.** Off until asked for. A real alarm for
+  ṣalāt al-layl, set an hour (or however long) before fajr or from the start of the last third,
+  worked out from the sun each night so it keeps up with the seasons; it rings over the lock
+  screen until you answer it. And a reminder a week before the date your khums year ends, and on
+  the day.
 - **Friday, and the week read back.** On Fridays the home screen offers al-Kahf — opened as a
   visit, so the bookmark stays put — and the week's muḥāsaba: prayers marked and owed, fasts,
   dhikr, screen time, passes through the gate, and the reasons you gave there, most frequent
@@ -226,8 +231,8 @@ Locally:
 domain/     pure logic, no Android imports — GateEvaluator, BudgetCalculator, ForegroundTally,
             BlackoutSchedule,
             NotificationPolicy, PrayerTimes, PrayerWindows, Fadila, Madhab, Qibla, Hijri,
-            FastingCalendar, MafatihDay, Occasions, PrayerLog, Ramadan, EarnedMinutes, Tasbih,
-            Dhikr, FavoriteOrder
+            FastingCalendar, MafatihDay, Occasions, PrayerLog, Ramadan, EarnedMinutes, NightWake,
+            Khums, WeeklyReview, Tasbih, Dhikr, FavoriteOrder
 data/       Room rules and history, DataStore settings, RuleMutator (the tighten/loosen asymmetry),
             the prayer timetable, the Qur'an and its recitation, the bundled supplications,
             al-Mīzān and the rules of tajwīd, and the network fetches

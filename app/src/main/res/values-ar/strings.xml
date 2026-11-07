@@ -22,6 +22,10 @@
     <string name="guard_channel_description">يُبقي فرض الحدود عاملًا.</string>
     <string name="digest_channel_name">مُلخّص الإشعارات</string>
     <string name="digest_channel_description">مُلخّص مرّة أو مرّتين في اليوم للإشعارات التي حُبست.</string>
+    <string name="night_channel_name">صلاة الليل</string>
+    <string name="night_channel_description">منبّه صلاة الليل، إن ضبطتَه.</string>
+    <string name="khums_channel_name">الخمس</string>
+    <string name="khums_channel_description">قبل نهاية سنتك الخمسية بأسبوع، وفي يومها.</string>
     <string name="guard_notification_title">يُسر يعمل</string>
     <string name="nav_service_label">تنقّل يُسر</string>
     <string name="nav_service_summary">الرئيسة والرجوع والتطبيقات الأخيرة من شريط على الحافة السفلى.</string>

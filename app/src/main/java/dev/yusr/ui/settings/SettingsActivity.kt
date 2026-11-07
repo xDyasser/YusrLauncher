@@ -31,7 +31,7 @@ import dev.yusr.ui.stats.UsageDashboardScreen
 import dev.yusr.ui.theme.Faint
 import dev.yusr.ui.theme.YusrTheme
 
-private enum class SettingsRoute { Menu, Setup, Decide, Apps, Blackouts, Prayer, Friction, Appearance, Widget, Pending, Usage }
+private enum class SettingsRoute { Menu, Setup, Decide, Apps, Blackouts, Prayer, Night, Friction, Appearance, Widget, Pending, Usage }
 
 /**
  * Settings live behind a long press on the clock, which is deliberate: they are the one place
@@ -85,6 +85,7 @@ private fun SettingsHost(start: SettingsRoute, onExit: () -> Unit) {
         SettingsRoute.Apps -> AppRulesScreen()
         SettingsRoute.Blackouts -> BlackoutScreen()
         SettingsRoute.Prayer -> PrayerScreen()
+        SettingsRoute.Night -> NightScreen()
         SettingsRoute.Friction -> FrictionScreen()
         SettingsRoute.Appearance -> AppearanceScreen()
         SettingsRoute.Widget -> WidgetScreen()
@@ -144,6 +145,16 @@ private fun SettingsMenu(onNavigate: (SettingsRoute) -> Unit) {
                 }
             },
         ) { onNavigate(SettingsRoute.Prayer) }
+
+        YusrRow(
+            label = t("The night and khums"),
+            detail = when {
+                settings?.nightWakeEnabled == true && settings?.khumsEnabled == true -> t("ṣalāt al-layl alarm · khums reminder")
+                settings?.nightWakeEnabled == true -> t("ṣalāt al-layl alarm on")
+                settings?.khumsEnabled == true -> t("khums reminder on")
+                else -> t("an alarm for the night prayer, a reminder for khums")
+            },
+        ) { onNavigate(SettingsRoute.Night) }
 
         YusrRow(
             label = t("Friction"),
