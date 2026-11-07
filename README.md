@@ -221,7 +221,8 @@ Locally:
 domain/     pure logic, no Android imports — GateEvaluator, BudgetCalculator, ForegroundTally,
             BlackoutSchedule,
             NotificationPolicy, PrayerTimes, PrayerWindows, Fadila, Madhab, Qibla, Hijri,
-            FastingCalendar, MafatihDay, Occasions, PrayerLog, Tasbih, Dhikr, FavoriteOrder
+            FastingCalendar, MafatihDay, Occasions, PrayerLog, Ramadan, EarnedMinutes, Tasbih,
+            Dhikr, FavoriteOrder
 data/       Room rules and history, DataStore settings, RuleMutator (the tighten/loosen asymmetry),
             the prayer timetable, the Qur'an and its recitation, the bundled supplications,
             al-Mīzān and the rules of tajwīd, and the network fetches

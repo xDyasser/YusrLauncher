@@ -77,6 +77,7 @@ import dev.yusr.domain.Prayer
 import dev.yusr.domain.PrayerEntry
 import dev.yusr.domain.PrayerLog
 import dev.yusr.domain.PrayerWindow
+import dev.yusr.domain.Ramadan
 import dev.yusr.domain.SupplicationCollection
 import dev.yusr.service.GuardService
 import dev.yusr.ui.AppLauncher
@@ -333,6 +334,13 @@ private fun HomeScreen(
                 PrayerStrip(
                     today = snapshot,
                     states = prayerStates,
+                    // In Ramaḍān the strip also counts down to whichever of ifṭār and imsāk is
+                    // next; the rest of the year it is the strip it always was.
+                    ramadan = if (Hijri.isRamadan(snapshot.date, prayerSettings?.hijriOffsetDays ?: 0)) {
+                        Ramadan.countdown(snapshot.timetable, snapshot.minuteOfDay)
+                    } else {
+                        null
+                    },
                     onToggle = { entry ->
                         val (prayers, mark) = PrayerLog.toggle(entry, prayerStates)
                         scope.launch {
@@ -575,9 +583,33 @@ private fun PrayerStrip(
     /** Where each of the five stands in the log, or empty before the log has been read. */
     states: Map<Prayer, PrayerLog.State>,
     onToggle: (PrayerEntry) -> Unit,
+    /** The fast's countdown, during Ramaḍān only. */
+    ramadan: Ramadan.Countdown? = null,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
+        // Above the five, in gold, because in Ramaḍān it is the first thing anyone looks for:
+        // how long until ifṭār, or after it how long until imsāk.
+        ramadan?.let { countdown ->
+            Text(
+                text = when (countdown.next) {
+                    Ramadan.Next.IFTAR -> t(
+                        "ifṭār in %s · %s",
+                        DayClock.formatMinutes(countdown.minutesAway),
+                        DayClock.clock(countdown.minuteOfDay),
+                    )
+                    Ramadan.Next.IMSAK -> t(
+                        "imsāk in %s · %s",
+                        DayClock.formatMinutes(countdown.minutesAway),
+                        DayClock.clock(countdown.minuteOfDay),
+                    )
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = Gold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+            )
+        }
         Hairline()
         Row(
             modifier = Modifier.fillMaxWidth().padding(vertical = 13.dp),

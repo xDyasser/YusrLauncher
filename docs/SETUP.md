@@ -194,6 +194,12 @@ either book carries its source. To add to it, edit `app/src/main/assets/supplica
 rebuild: it is data, not code, so a new supplication is a new object in that file from an edition
 you trust and nothing else.
 
+**Ramaḍān.** Through the month the home screen puts one gold line above the prayers: how long
+until ifṭār, and once ifṭār has come, how long until imsāk. Imsāk is set ten minutes before fajr,
+the margin every printed Ramaḍān calendar keeps; it is a precaution and not where the fast
+begins, which is still fajr. The fasting page prints imsāk beside the end of suḥūr and ifṭār all
+year round, for the other fasts.
+
 **Earned minutes** (off unless you turn them on, under **Settings → Friction**). With them on, a
 prayer marked, a completed set of tasbīḥ and the āyāt read on the home screen fill a pool — 5
 minutes a prayer, 2 a set of 33, 1 for every 3 āyāt read at a reading pace — up to a daily

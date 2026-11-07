@@ -31,6 +31,7 @@ import dev.yusr.data.prayer.PrayerToday
 import dev.yusr.domain.FastingCalendar
 import dev.yusr.domain.Madhab
 import dev.yusr.domain.Prayer
+import dev.yusr.domain.Ramadan
 import dev.yusr.ui.t
 import dev.yusr.ui.Hairline
 import dev.yusr.ui.SectionLabel
@@ -112,7 +113,9 @@ fun FastingScreen(onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().padding(bottom = 18.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
+                // Imsāk first: the margin before fajr every printed Ramaḍān calendar keeps.
                 listOf(
+                    t("Imsāk") to Ramadan.imsak(snapshot.timetable),
                     t("Suhūr ends") to snapshot.timetable.minuteOfDay(Prayer.FAJR),
                     t("Ifṭār") to snapshot.timetable.minuteOfDay(Prayer.MAGHRIB),
                 ).forEach { (label, minute) ->
